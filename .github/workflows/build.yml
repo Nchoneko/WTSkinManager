@@ -43,8 +43,40 @@ jobs:
           "WTSM_SIGN_PFX=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "WTSM_SIGN_PASSWORD=$env:PFX_PASSWORD" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
+      - name: Diagnostics
+        shell: pwsh
+        run: |
+          Write-Host ("PowerShell: " + $PSVersionTable.PSVersion.ToString())
+          Write-Host ("csc exists: " + (Test-Path 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'))
+          Write-Host ("signtool: " + ((Get-Command signtool.exe -ErrorAction SilentlyContinue).Source))
+          Write-Host ("sign cert configured: " + (-not [string]::IsNullOrWhiteSpace($env:WTSM_SIGN_PFX)))
+          Get-PSDrive C | ForEach-Object { Write-Host ("disk free: " + [math]::Round($_.Free/1GB,1) + " GB") }
+
       - name: Build
-        run: npm run build
+        shell: pwsh
+        run: |
+          npm run build 2>&1 | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) { throw "build 失败，退出码 $LASTEXITCODE" }
+
+      - name: Publish build log on failure
+        if: failure()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if (-not (Test-Path 'build.log')) { '未生成 build.log' | Out-File -FilePath 'build.log' -Encoding utf8 }
+          $dir = Join-Path $env:RUNNER_TEMP 'ci-log-repo'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Copy-Item 'build.log' (Join-Path $dir 'build.log') -Force
+          Push-Location $dir
+          git init -q
+          git config user.name 'ci-bot'
+          git config user.email 'ci-bot@users.noreply.github.com'
+          git add build.log
+          git commit -q -m 'ci: build log'
+          git branch -M ci-logs
+          git push -f "https://x-access-token:$env:GH_TOKEN@github.com/${{ github.repository }}.git" ci-logs
+          Pop-Location
 
       - name: Verify signature (when certificate configured)
         shell: pwsh
