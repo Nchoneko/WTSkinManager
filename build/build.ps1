@@ -23,6 +23,20 @@ param(
     [switch]$SkipReleaseZip
 )
 
+function Get-Sha256Hex {
+    param([string]$Path)
+    try {
+        return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    } catch {
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        $stream = [System.IO.File]::OpenRead($Path)
+        try {
+            $bytes = $sha.ComputeHash($stream)
+            return (($bytes | ForEach-Object { $_.ToString('x2') }) -join '')
+        } finally { $stream.Dispose(); $sha.Dispose() }
+    }
+}
+
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
@@ -173,7 +187,7 @@ foreach ($e in $entries) {
             if (-not $unique.ContainsKey($file)) {
                 $unique[$file] = $size
                 $totalBytes += $size
-                $hash = (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant()
+                $hash = Get-Sha256Hex $path
                 if ($hash -ne ([string]$e.sha256).ToLowerInvariant()) {
                     $bad += "sha256 不一致: $slug"
                 }
@@ -291,7 +305,7 @@ $certExpected = '1DBFA4F88846892697ED714F02E562F86D0FA01A1105FA1E8B8C73F9D2643DF
 if (-not (Test-Path $CertAsset)) {
     throw ("缺少发布者证书：$CertAsset（只含公钥；私钥不进入仓库）")
 }
-$certHash = (Get-FileHash $CertAsset -Algorithm SHA256).Hash.ToUpperInvariant()
+$certHash = (Get-Sha256Hex $CertAsset).ToUpperInvariant()
 if ($certHash -ne $certExpected) {
     throw ("发布者证书 SHA-256 不符：期望 $certExpected，实际 $certHash")
 }
@@ -404,7 +418,7 @@ else {
 
 # ---------------- 完成 ----------------
 $finalExe = Get-Item $exe
-$exeHash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+$exeHash = Get-Sha256Hex $exe
 Write-Step '构建完成'
 Write-Host ("OK  {0}" -f $finalExe.FullName) -ForegroundColor Green
 Write-Host ("    version {0}   {1:N0} bytes ({2:N1} MB)" -f $buildVersion, $finalExe.Length, ($finalExe.Length / 1MB))
