@@ -20,7 +20,7 @@ npm run pack
 ## 2. 首次推送
 
 ```bash
-cd "<local-path>"
+cd WTSkinManager
 git remote add origin https://github.com/Nchoneko/WTSkinManager.git
 git branch -M main
 git push -u origin main
