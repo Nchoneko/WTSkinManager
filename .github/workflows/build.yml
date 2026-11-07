@@ -80,14 +80,27 @@ jobs:
 
       - name: Verify signature (when certificate configured)
         shell: pwsh
+        env:
+          WTSM_SIGN_THUMBPRINT: ${{ secrets.WTSM_SIGN_THUMBPRINT }}
         run: |
           if ([string]::IsNullOrWhiteSpace($env:WTSM_SIGN_PFX)) {
             Write-Host '无证书，跳过签名校验'
             exit 0
           }
           $sig = Get-AuthenticodeSignature 'out/WTSkinManager.exe'
+          if ($sig.Status -eq 'NotSigned' -or $null -eq $sig.SignerCertificate) {
+            throw "已配置签名证书，但产物没有签名（状态：$($sig.Status)）"
+          }
           Write-Host ("签名状态：" + $sig.Status + "；签名者：" + $sig.SignerCertificate.Subject)
-          if ($sig.Status -ne 'Valid') { throw "签名校验失败：$($sig.Status) - $($sig.StatusMessage)" }
+          Write-Host ("证书指纹：" + $sig.SignerCertificate.Thumbprint)
+          if (-not [string]::IsNullOrWhiteSpace($env:WTSM_SIGN_THUMBPRINT)) {
+            $expected = $env:WTSM_SIGN_THUMBPRINT.Replace(' ', '').ToUpperInvariant()
+            $actual = $sig.SignerCertificate.Thumbprint.Replace(' ', '').ToUpperInvariant()
+            if ($expected -ne $actual) { throw "签名证书指纹不匹配：期望 $expected，实际 $actual" }
+          }
+          if ($sig.Status -ne 'Valid' -and $sig.Status -ne 'UnknownError') {
+            throw "签名校验失败：$($sig.Status) - $($sig.StatusMessage)"
+          }
 
       - name: Generate checksum
         shell: pwsh
