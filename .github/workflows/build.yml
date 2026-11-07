@@ -1,0 +1,90 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check version source
+        run: npm run check:version
+
+      - name: Prepare signing certificate
+        shell: pwsh
+        env:
+          PFX_BASE64: ${{ secrets.WTSM_SIGN_PFX_BASE64 }}
+          PFX_PASSWORD: ${{ secrets.WTSM_SIGN_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PFX_BASE64)) {
+            Write-Host '未配置签名证书，跳过签名（无证书构建是受支持的默认路径）'
+            exit 0
+          }
+          $path = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
+          [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:PFX_BASE64))
+          "WTSM_SIGN_PFX=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "WTSM_SIGN_PASSWORD=$env:PFX_PASSWORD" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify signature (when certificate configured)
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WTSM_SIGN_PFX)) {
+            Write-Host '无证书，跳过签名校验'
+            exit 0
+          }
+          $sig = Get-AuthenticodeSignature 'out/WTSkinManager.exe'
+          Write-Host ("签名状态：" + $sig.Status + "；签名者：" + $sig.SignerCertificate.Subject)
+          if ($sig.Status -ne 'Valid') { throw "签名校验失败：$($sig.Status) - $($sig.StatusMessage)" }
+
+      - name: Generate checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash 'out/WTSkinManager.exe' -Algorithm SHA256).Hash.ToLower()
+          "$hash  WTSkinManager.exe" | Out-File -FilePath 'out/WTSkinManager.exe.sha256' -Encoding ascii
+          Get-Content 'out/WTSkinManager.exe.sha256'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WTSkinManager
+          path: out/WTSkinManager.exe
+          if-no-files-found: error
+
+      - name: Generate release notes
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File build/release-notes.ps1 -Tag "${{ github.ref_name }}"
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" `
+            "out/WTSkinManager.exe" `
+            "out/WTSkinManager.exe.sha256" `
+            "assets/data/updates.dat" `
+            --title "WTSkinManager ${{ github.ref_name }}" `
+            --notes-file "out/release-notes.md"

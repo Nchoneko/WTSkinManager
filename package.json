@@ -25,6 +25,7 @@
     "pack": "powershell -NoProfile -ExecutionPolicy Bypass -File build/pack.ps1",
     "start": "powershell -NoProfile -ExecutionPolicy Bypass -File build/start.ps1",
     "check:version": "powershell -NoProfile -ExecutionPolicy Bypass -File build/check-version.ps1",
-    "sign": "powershell -NoProfile -ExecutionPolicy Bypass -File build/sign.ps1"
+    "sign": "powershell -NoProfile -ExecutionPolicy Bypass -File build/sign.ps1",
+    "release:notes": "powershell -NoProfile -ExecutionPolicy Bypass -File build/release-notes.ps1"
   }
 }
