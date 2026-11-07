@@ -48,7 +48,15 @@ if ($null -eq $signtool) {
     }
 }
 if ($null -eq $signtool) {
-    throw '找不到 signtool.exe：请安装 Windows SDK，或把 signtool 加入 PATH'
+    Write-Host 'SIGN 未找到 signtool.exe，改用 PowerShell Authenticode 签名'
+    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($Pfx, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+    $result = Set-AuthenticodeSignature -FilePath $Exe -Certificate $cert -HashAlgorithm SHA256 -TimestampServer $TimestampUrl
+    Write-Host ("SIGN Authenticode: " + $result.Status + " - " + $result.StatusMessage)
+    if ($result.Status -ne 'Valid' -and $result.Status -ne 'UnknownError') {
+        throw "签名失败：$($result.Status) - $($result.StatusMessage)"
+    }
+    Write-Host 'SIGN OK'
+    exit 0
 }
 
 $signArgs = @('sign', '/fd', 'SHA256', '/f', $Pfx, '/p', $Password)
