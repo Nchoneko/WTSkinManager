@@ -9,6 +9,20 @@ param(
     [string]$OutputDir = ''
 )
 
+function Get-Sha256Hex {
+    param([string]$Path)
+    try {
+        return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    } catch {
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        $stream = [System.IO.File]::OpenRead($Path)
+        try {
+            $bytes = $sha.ComputeHash($stream)
+            return (($bytes | ForEach-Object { $_.ToString('x2') }) -join '')
+        } finally { $stream.Dispose(); $sha.Dispose() }
+    }
+}
+
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($OutputDir)) {
@@ -48,6 +62,6 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 Remove-Item $stage -Recurse -Force
 
 $info = Get-Item $zipPath
-$hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$hash = Get-Sha256Hex $zipPath
 Write-Host ("PACK OK  {0}" -f $info.FullName) -ForegroundColor Green
 Write-Host ("         {0:N1} MB  sha256 {1}" -f ($info.Length / 1MB), $hash)
