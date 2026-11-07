@@ -53,5 +53,21 @@ $header = @(
     "> 版本 $matchedVersion 的变更，数据文件与安装包见下方附件。",
     ''
 ) -join "`n"
-[IO.File]::WriteAllText($outFile, $header + "`n" + $body + "`n", (New-Object Text.UTF8Encoding($false)))
+$footer = @(
+    '',
+    '## 下载与安装',
+    '',
+    '- `WTSkinManager.exe`：单文件程序，Windows 10/11，.NET Framework 4.x，无需安装运行时。',
+    '- `WTSkinManager.exe.sha256`：下载后核对，命令 `certutil -hashfile WTSkinManager.exe SHA256`。',
+    '- `updates.dat`：更新日志数据，供程序内「历史版本」使用。',
+    '',
+    '运行 exe，按向导选择安装目录与 War Thunder 游戏目录即可；升级会保留设置与用户数据。',
+    '',
+    '## 反馈',
+    '',
+    '- 问题反馈：https://github.com/Nchoneko/WTSkinManager/issues',
+    '- 使用说明：https://github.com/Nchoneko/WTSkinManager#readme',
+    ''
+) -join "`n"
+[IO.File]::WriteAllText($outFile, $header + "`n" + $body + "`n" + $footer, (New-Object Text.UTF8Encoding($false)))
 Write-Host "RELEASE NOTES 已生成：$outFile（版本 $matchedVersion）"
