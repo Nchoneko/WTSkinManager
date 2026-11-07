@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用说明与常见问题
+    url: https://github.com/Nchoneko/WTSkinManager#readme
+    about: 首次使用、目录选择、识别失败等先看 README
+  - name: 下载最新版本
+    url: https://github.com/Nchoneko/WTSkinManager/releases
+    about: 请先确认使用的是最新 Release
