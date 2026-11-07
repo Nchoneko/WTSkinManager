@@ -1,0 +1,21 @@
+
+> wtskinmanager@3.9.1 build
+> powershell -NoProfile -ExecutionPolicy Bypass -File build/build.ps1
+
+WTSkinManager build
+Repo:   D:\a\WTSkinManager\WTSkinManager
+Output: D:\a\WTSkinManager\WTSkinManager\out
+
+==> 检查构建环境
+csc: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
+
+==> 校验版本号（AssemblyInfo.cs / package.json）
+VERSION OK  AssemblyInfo=3.9.1.0  package.json=3.9.1
+
+==> 校验载具图标清单
+D:\a\WTSkinManager\WTSkinManager\build\build.ps1 : The term 'Get-FileHash' is not recognized as the name of a cmdlet, 
+function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the 
+path is correct and try again.
+    + CategoryInfo          : ObjectNotFound: (Get-FileHash:String) [build.ps1], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException,build.ps1
+ 
