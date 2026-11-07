@@ -1,0 +1,53 @@
+# ---- 依赖与构建产物 ----
+node_modules/
+dist/
+out/
+*.exe
+WTSkinManager.exe
+
+# 构建期生成，不入库；由 build/build.ps1 从 assets/vehicles 重新生成
+assets/vehicles.zip
+assets/data/data-manifest.json
+assets/build-info.ini
+
+# ---- 运行期数据（程序安装目录 / 本地试运行） ----
+/settings.ini
+/installed.flag
+/user-overrides.json
+/shortnames.ini
+/backups/
+/logs/
+/cache/
+/unmatched.txt
+/shortnames_unmatched.txt
+
+# ---- 研究、抓取与视频素材 ----
+.research/
+/tools/signer/
+/setup_payload/
+/video_frames/
+/m7_frames/
+m7_*
+demo_*
+*.mp4
+
+# ---- 日志、缓存、临时文件 ----
+*.log
+*.tmp
+*.temp
+*.bak
+*.cache
+
+# ---- 密钥与本地配置 ----
+.env
+.env.*
+*.pfx
+*.p12
+*.pvk
+*.key
+*.snk
+
+# ---- 操作系统 ----
+Thumbs.db
+Desktop.ini
+.DS_Store

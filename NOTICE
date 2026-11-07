@@ -1,0 +1,59 @@
+WTSkinManager（战雷涂装管理器）
+Copyright 2026 Nchoneko
+
+This product is licensed under the Apache License, Version 2.0.
+See the LICENSE file for the full license text.
+
+--------------------------------------------------------------------------------
+第三方组件 / Third-party components
+--------------------------------------------------------------------------------
+
+1. .NET Framework 4.x
+   本程序使用 Microsoft .NET Framework 4.x（Windows 10/11 自带）作为运行时，
+   并使用 Windows 自带的 C# 编译器 csc.exe 构建。程序不随包分发 .NET Framework
+   的任何二进制文件；.NET Framework 的版权与许可归 Microsoft Corporation 所有，
+   适用其相应的许可条款。
+
+2. 7-Zip（仅构建期，可选）
+   构建/打包流程允许把本机已安装的 7-Zip 作为可选压缩工具；本仓库默认脚本使用
+   .NET Framework 自带的 System.IO.Compression，不强制调用 7-Zip。7-Zip 不随本
+   程序分发，也不参与程序运行时；7-Zip 的版权归 Igor Pavlov 所有，适用其 LGPL
+   许可与 unRAR 限制条款。
+
+3. 其他运行时库
+   除 .NET Framework 外，本程序不依赖任何第三方运行时库（无 NuGet 包、无原生 DLL）。
+   图标压缩使用 .NET Framework 自带的 System.IO.Compression。
+
+--------------------------------------------------------------------------------
+图标与数据素材 / Artwork and data
+--------------------------------------------------------------------------------
+
+1. 载具图标
+   来自 War Thunder 官方 Wiki（https://wiki.warthunder.com/）与官方百科图床
+   （https://static.encyclopedia.warthunder.com/），仅用于在界面中识别、展示
+   对应载具。图片版权归 Gaijin Entertainment 及各权利人所有，不以 Apache-2.0
+   授权，也不表示与 Gaijin Entertainment 存在隶属、合作或背书关系。
+   来源与抓取方式的逐项说明见 assets/SOURCES.md。
+
+2. 应用图标与界面图形
+   assets/icons/app.ico、assets/icons/icon-256.png 以及程序内的界面图形由
+   Nchoneko 自行绘制/生成，随本仓库以 Apache-2.0 授权。
+
+3. 载具名称与等级/权重数据
+   载具 ID / 名称参考公开数据项目 War-Thunder-Datamine
+   （https://github.com/gszabi99/War-Thunder-Datamine）；等级/权重由程序从
+   War Thunder Wiki 采集。数据仅用于功能展示，可能存在误差，详见 README 免责声明。
+
+4. 发布者证书
+   assets/certs/publisher.cer 是项目自签的代码签名证书，仅包含公钥，用于
+   Windows「受信任的发布者」导入功能；不包含任何私钥。私钥不进入本仓库。
+
+--------------------------------------------------------------------------------
+代码修改说明 / Modifications
+--------------------------------------------------------------------------------
+
+本仓库未复制、修改或再分发任何第三方源代码。若未来引入第三方代码，将在本文件
+与对应源文件中注明来源、版本、许可及修改内容。
+
+War Thunder 是 Gaijin Entertainment 的商标。本项目是非官方第三方工具，
+与 Gaijin Entertainment 无关。

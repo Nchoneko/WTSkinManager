@@ -1,0 +1,59 @@
+# 战雷涂装管理器 - 载具等级/权重基础数据（随程序分发，首次即可显示）
+# 来源：War Thunder Wiki 单位页（Rank + AB/RB/SB）；缺失为 null，不填默认值
+# 格式：slug<TAB>等级(1~9)<TAB>RB<TAB>三档相同<TAB>AB<TAB>SB<TAB>命中方式<TAB>本地 slug<TAB>显示名<TAB>国家<TAB>分支<TAB>采集时间
+format=2
+schemaVersion=1
+dataVersion=2026.11.08.1
+updated=2026-11-07 20:57
+version=2026.11.07.225337
+count=50
+cn_al_khalid_1	7	11.7	1			slug		Al-Khalid-I	china	ground	2026-11-07 22:49
+cn_hq_11	8	13.3	1			slug		HQ11	china	ground	2026-11-07 22:49
+cn_m1a2t	8	13.0	1			slug		M1A2T	china	ground	2026-11-07 22:49
+cn_wz_1001	8	12.7	1			slug		WZ1001(E) LCT	china	ground	2026-11-07 22:49
+cn_zbd_04a	7	10.0	1			slug		ZBD04A	china	ground	2026-11-07 22:49
+cn_ztz_99a	8	12.7	1			slug		ZTZ99A	china	ground	2026-11-07 22:49
+ef_2000_fgr4	9	14.7	1			slug		Typhoon FGR.4	britain	aviation	2026-11-07 22:49
+ef_2000_typhoon_aesa	9	15.0	1			slug		Typhoon (AESA)	britain	aviation	2026-11-07 22:49
+f_16c_block_52_aesa	9	14.3	1			slug		F-16CM PoBIT	usa	aviation	2026-11-07 22:49
+fa_18c_late	8	14.0	1			slug		F/A-18C Late	usa	aviation	2026-11-07 22:49
+fa_18e_block_2	9	14.7	1			slug		F/A-18E	usa		
+fr_leopard_2a5nl	8	12.7	1			slug		Leopard 2A5NL	france		
+germ_leopard_2a5_pso	8	13.0	1			slug		Leopard 2 PSO	germany	ground	2026-11-07 22:49
+germ_leopard_2a7v	8	13.3	1			slug		Leopard 2A7V	germany	ground	2026-11-07 22:49
+j_10a	8	14.0	1			slug		J-10A	china		
+j_10c	9	14.7	1			slug		J-10C	china		
+j_16	9	15.0	1			slug		J-16	china	aviation	2026-11-07 22:49
+jp_tkx_prot	8	13.3	1			slug		TKX	japan	ground	2026-11-07 22:49
+jp_type_10	8	13.3	1			slug		Type 10	japan	ground	2026-11-07 22:49
+mi_28nm	7	13.3	0	11.0	11.0	slug		Mi-28NM	ussr	helicopters	2026-11-07 22:49
+mirage_2000_5ei	8	14.3	0	14.0	14.3	slug		␗Mirage 2000-5Ei	china	aviation	2026-11-07 22:49
+saab_jas39c_south_africa	8	13.7	1			slug		▄JAS39C	britain	aviation	2026-11-07 22:49
+su_30mkk	8	13.7	1			slug		␗Su-30MKK	china	aviation	2026-11-07 22:49
+su_30sm	9	14.7	1			slug		Su-30SM	ussr	aviation	2026-11-07 22:49
+su_30sm2	9	15.0	1			slug		Su-30SM2	ussr	aviation	2026-11-07 22:49
+su_34	8	14.0	1			slug		Su-34	ussr	aviation	2026-11-07 22:49
+tiger_uht	7	13.0	0	10.0	10.7	slug		EC-665 Tiger UHT	germany	helicopters	2026-11-07 22:49
+uk_challenger_2_bn	8	13.0	1			slug		Black Night	britain		
+uk_challenger_2_tes	7	12.0	1			slug		Challenger 2 TES	britain		
+uk_challenger_2e	8	13.0	1			slug		Challenger 2E	britain		
+uk_m1a2_sep3_abrams	8	13.3	1			slug		M1A2	britain		
+us_m1a1_hc_abrams	7	12.7	1			slug		M1A1 HC	usa		
+us_m1a1_hc_usmc	7	12.7	1			slug		M1A1 Click-Bait	usa		
+us_m1a2_abrams	7	12.7	1			slug		M1A2 Abrams	usa		
+us_m1a2_sep2_abrams	8	13.3	1			slug		M1A2 SEPv2	usa		
+us_m1a2_sep2_abrams_trophy	8	13.3	1			slug		M1A2 (Trophy-HV)	usa	ground	2026-11-07 22:49
+us_m1a2_sep3_abrams	8	13.3	1			slug		M1A2 SEPv3	usa		
+us_m1a2_sep_abrams	8	13.3	1			slug		M1A2 SEP	usa	ground	2026-11-07 22:49
+ussr_2s38	7	10.7	1			slug		2S38	ussr	ground	2026-11-07 22:49
+ussr_bmpt	7	12.0	1			slug		BMPT	ussr	ground	2026-11-07 22:49
+ussr_object_292	7	11.0	1			slug		Object 292	ussr	ground	2026-11-07 22:49
+ussr_pantsyr_sm_sv	8	13.3	1			slug		Pantsir SM-SV	ussr	ground	2026-11-07 22:49
+ussr_t_72b3_2011	7	11.3	0	11.7	11.3	slug		T-72B3	ussr	ground	2026-11-07 22:49
+ussr_t_72b3_arena	7	11.0	1			slug		T-72B3 "Arena"	ussr		
+ussr_t_72b3_arena_m	8	12.0	1			slug		T-72B3A	ussr		
+ussr_t_80bvm	8	13.3	1			slug		T-80BVM	ussr	ground	2026-11-07 22:49
+ussr_t_90a	7	11.0	1			slug		T-90A	ussr		
+ussr_t_90m_2020	8	13.0	1			slug		T-90M	ussr	ground	2026-11-07 22:49
+ussr_t_90m_arena_m	8	13.3	1			slug		T-90M (Arena-M)	ussr	ground	2026-11-07 22:49
+z_10me	7	13.3	0	11.0	11.0	slug		Z-10ME	china	helicopters	2026-11-07 22:49

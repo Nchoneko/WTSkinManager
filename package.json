@@ -1,0 +1,30 @@
+{
+  "name": "wtskinmanager",
+  "version": "3.9.1",
+  "description": "War Thunder 自定义涂装管理器",
+  "license": "Apache-2.0",
+  "author": "Nchoneko",
+  "homepage": "https://github.com/Nchoneko/WTSkinManager",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nchoneko/WTSkinManager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Nchoneko/WTSkinManager/issues"
+  },
+  "keywords": [
+    "war-thunder",
+    "skin-manager",
+    "warthunder",
+    "windows",
+    "dotnet-framework"
+  ],
+  "private": false,
+  "scripts": {
+    "build": "powershell -NoProfile -ExecutionPolicy Bypass -File build/build.ps1",
+    "pack": "powershell -NoProfile -ExecutionPolicy Bypass -File build/pack.ps1",
+    "start": "powershell -NoProfile -ExecutionPolicy Bypass -File build/start.ps1",
+    "check:version": "powershell -NoProfile -ExecutionPolicy Bypass -File build/check-version.ps1",
+    "sign": "powershell -NoProfile -ExecutionPolicy Bypass -File build/sign.ps1"
+  }
+}
