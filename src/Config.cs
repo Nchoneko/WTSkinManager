@@ -22,6 +22,14 @@ namespace WtSkin
         public static bool FirstRunDone = false;
         public static bool Installed = false;
 
+        // ---- 更新检查（设置页「更新与日志」+ 启动时静默检查） ----
+        /// <summary>启动时自动检查更新，默认开启；关闭后仅在设置页手动检查。</summary>
+        public static bool AutoCheckUpdate = true;
+        public static string UpdateApiLatest = "https://api.github.com/repos/Nchoneko/WTSkinManager/releases/latest";
+        public static string UpdateApiList = "https://api.github.com/repos/Nchoneko/WTSkinManager/releases";
+        public static string ReleasesPage = "https://github.com/Nchoneko/WTSkinManager/releases";
+        public static string RepoUrl = "https://github.com/Nchoneko/WTSkinManager";
+
         public static string DefaultInstallDir
         {
             get
@@ -184,6 +192,27 @@ namespace WtSkin
                         case "firstrun":
                             FirstRunDone = value == "1";
                             break;
+                        case "autocheckupdate":
+                            AutoCheckUpdate = value != "0";
+                            break;
+                        case "updateapilatest":
+                            if (value.Length > 0)
+                            {
+                                UpdateApiLatest = value;
+                            }
+                            break;
+                        case "updateapilist":
+                            if (value.Length > 0)
+                            {
+                                UpdateApiList = value;
+                            }
+                            break;
+                        case "releasespage":
+                            if (value.Length > 0)
+                            {
+                                ReleasesPage = value;
+                            }
+                            break;
                     }
                 }
             }
@@ -220,6 +249,10 @@ namespace WtSkin
                 sb.AppendLine("IllegalExt=" + IllegalExt);
                 sb.AppendLine("BackupRoot=" + BackupRoot);
                 sb.AppendLine("FirstRun=" + (FirstRunDone ? "1" : "0"));
+                sb.AppendLine("AutoCheckUpdate=" + (AutoCheckUpdate ? "1" : "0"));
+                sb.AppendLine("UpdateApiLatest=" + UpdateApiLatest);
+                sb.AppendLine("UpdateApiList=" + UpdateApiList);
+                sb.AppendLine("ReleasesPage=" + ReleasesPage);
                 File.WriteAllText(SettingsPath, sb.ToString(), new UTF8Encoding(false));
             }
             catch

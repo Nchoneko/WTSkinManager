@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
@@ -415,13 +416,30 @@ namespace WtSkin
         private Panel _pageUi;
         private Panel _pagePrefs;
         private Panel _pageCert;
+        private Panel _pageUpdate;
         private SideTab _tabUi;
         private SideTab _tabPrefs;
         private SideTab _tabCert;
+        private SideTab _tabUpdate;
+        private Panel _pageDonate;
+        private SideTab _tabDonate;
+        private Image _donateAlipay;
+        private Image _donateWechat;
         private Label _certState;
         private Label _certDetail;
         private FlatButton _certAdd;
         private FlatButton _certRemove;
+        private UpdateCheckSection _updateSection;
+        private Panel _logScroll;
+        private SettingsLogView _logView;
+        private Label _logTitle;
+        private Label _logHint;
+        private Label _logCount;
+        private Panel _logDivider;
+        private FlatButton _logMore;
+        private RemoteUpdate _remoteUpdate;
+        private int _shownVersions = 5;
+        private int _startPage;
         private int _theme;
         private int _zoom;
         private int _keepValue;
@@ -429,6 +447,11 @@ namespace WtSkin
         public bool NeedRestart;
 
         public SettingsForm()
+            : this(0)
+        {
+        }
+
+        public SettingsForm(int startPage)
             : base("设置", 840, 640)
         {
             ShowGear = true;
@@ -456,6 +479,18 @@ namespace WtSkin
             _pageCert.Visible = false;
             Content.Controls.Add(_pageCert);
 
+            _pageUpdate = new BufferedPanel();
+            _pageUpdate.BackColor = Ui.Panel;
+            _pageUpdate.SetBounds(Ui.S(200), Ui.S(12), Ui.S(pageWidth), Ui.S(pageHeight));
+            _pageUpdate.Visible = false;
+            Content.Controls.Add(_pageUpdate);
+
+            _pageDonate = new BufferedPanel();
+            _pageDonate.BackColor = Ui.Panel;
+            _pageDonate.SetBounds(Ui.S(200), Ui.S(12), Ui.S(pageWidth), Ui.S(pageHeight));
+            _pageDonate.Visible = false;
+            Content.Controls.Add(_pageDonate);
+
             _tabUi = new SideTab();
             _tabUi.Text = "界面设置";
             _tabUi.Selected = true;
@@ -475,14 +510,31 @@ namespace WtSkin
             _tabCert.Click += delegate { SelectPage(2); };
             Content.Controls.Add(_tabCert);
 
+            _tabUpdate = new SideTab();
+            _tabUpdate.Text = "更新与日志";
+            _tabUpdate.SetBounds(Ui.S(16), Ui.S(160), Ui.S(168), Ui.S(42));
+            _tabUpdate.Click += delegate { SelectPage(3); };
+            Content.Controls.Add(_tabUpdate);
+
+            _tabDonate = new SideTab();
+            _tabDonate.Text = "关于";
+            _tabDonate.SetBounds(Ui.S(16), Content.Height - Ui.S(58), Ui.S(168), Ui.S(42));
+            _tabDonate.Click += delegate { SelectPage(4); };
+            Content.Controls.Add(_tabDonate);
+
             BuildUiPage();
             BuildPrefsPage();
             BuildCertPage();
+            BuildUpdatePage();
+            BuildDonatePage();
 
             FlatButton cancel = MakeButton("取消", 610, 536, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
             FlatButton save = MakeButton("保存", 718, 536, 98, true);
             save.Click += delegate { SaveSettings(); };
+
+            // 分页切换放到 OnShown：此时句柄/滚动容器都已创建，避免在构造函数里提前布局。
+            _startPage = startPage;
         }
 
         private void SelectPage(int page)
@@ -490,15 +542,34 @@ namespace WtSkin
             _pageUi.Visible = page == 0;
             _pagePrefs.Visible = page == 1;
             _pageCert.Visible = page == 2;
+            _pageUpdate.Visible = page == 3;
+            _pageDonate.Visible = page == 4;
             _tabUi.Selected = page == 0;
             _tabPrefs.Selected = page == 1;
             _tabCert.Selected = page == 2;
+            _tabUpdate.Selected = page == 3;
+            _tabDonate.Selected = page == 4;
             _tabUi.Invalidate();
             _tabPrefs.Invalidate();
             _tabCert.Invalidate();
+            _tabUpdate.Invalidate();
+            _tabDonate.Invalidate();
             if (page == 2)
             {
                 RefreshCert();
+            }
+            else if (page == 3)
+            {
+                if (_updateSection != null)
+                {
+                    _updateSection.Activate();
+                }
+                LayoutUpdatePage();
+                if (_logScroll != null)
+                {
+                    Native.ThemeScrollbars(_logScroll);
+                    _logScroll.AutoScrollPosition = new Point(0, 0);
+                }
             }
         }
 
@@ -689,6 +760,232 @@ namespace WtSkin
                     form.ShowDialog(this);
                 }
             };
+        }
+
+        /// <summary>
+        /// 「更新与日志」页：上方检查更新，下方平铺更新日志。日志与安装完成窗口同源
+        /// （assets\data\updates.dat → ReleaseLog），界面不另写版本文案。
+        /// </summary>
+        private void BuildDonatePage()
+        {
+            _donateAlipay = LoadDonateImage("donate_alipay.jpg");
+            _donateWechat = LoadDonateImage("donate_wechat.png");
+            PageLabel(_pageDonate, "关于", 8, 4, 240, 30, Ui.H1, Ui.Text);
+            PageLabel(_pageDonate, "战雷涂装管理器  " + BuildInfo.HeaderText, 8, 40, 580, 22, Ui.Small, Ui.TextDim);
+            PageLabel(_pageDonate, "War Thunder 自定义涂装的识别、导入与管理工具。个人开发，与 Gaijin Entertainment 无关联。",
+                      8, 64, 580, 40, Ui.Small, Ui.TextDim);
+            PageButton(_pageDonate, "GitHub 仓库", 8, 106, 118, true).Click += delegate { OpenUrl(Config.RepoUrl); };
+            PageButton(_pageDonate, "问题反馈", 134, 106, 92, false).Click += delegate { OpenUrl(Config.RepoUrl + "/issues"); };
+            PageButton(_pageDonate, "开源协议", 234, 106, 92, false).Click += delegate { OpenUrl(Config.RepoUrl + "/blob/main/LICENSE"); };
+            PageLabel(_pageDonate, "赞助我", 8, 152, 200, 24, Ui.BodyBold, Ui.Text);
+            PageLabel(_pageDonate, "如果这个工具帮到了你，可以扫码支持一下；完全自愿，不影响任何功能。",
+                      8, 176, 580, 20, Ui.Small, Ui.TextDim);
+            AddDonateCard(_pageDonate, _donateAlipay, "支付宝", 24, 204);
+            AddDonateCard(_pageDonate, _donateWechat, "微信支付", 320, 204);
+        }
+
+        private static void OpenUrl(string url)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch
+            {
+            }
+        }
+
+        private void AddDonateCard(Panel page, Image image, string caption, int x, int y)
+        {
+            Panel card = new Panel();
+            card.BackColor = Ui.Panel;
+            card.SetBounds(Ui.S(x), Ui.S(y), Ui.S(252), Ui.S(276));
+            card.Paint += delegate(object sender, PaintEventArgs e)
+            {
+                Graphics g = e.Graphics;
+                Ui.Smooth(g);
+                Rectangle r = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
+                Ui.FillRound(g, r, Ui.S(10), Ui.BgSoft);
+                Ui.DrawRound(g, r, Ui.S(10), Ui.LineSoft, 1f);
+                if (image != null)
+                {
+                    Rectangle area = new Rectangle(Ui.S(12), Ui.S(12), card.Width - Ui.S(24), card.Height - Ui.S(68));
+                    float scale = Math.Min((float)area.Width / image.Width, (float)area.Height / image.Height);
+                    int w = Math.Max(1, (int)(image.Width * scale));
+                    int h = Math.Max(1, (int)(image.Height * scale));
+                    Rectangle target = new Rectangle(area.X + (area.Width - w) / 2, area.Y + (area.Height - h) / 2, w, h);
+                    System.Drawing.Drawing2D.InterpolationMode old = g.InterpolationMode;
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    g.DrawImage(image, target);
+                    g.InterpolationMode = old;
+                }
+                Ui.DrawText(g, caption, Ui.BodyBold, Ui.Text,
+                        new Rectangle(0, card.Height - Ui.S(50), card.Width, Ui.S(24)), Ui.Center);
+                Ui.DrawText(g, "扫码赞助", Ui.Small, Ui.TextFaint,
+                        new Rectangle(0, card.Height - Ui.S(26), card.Width, Ui.S(20)), Ui.Center);
+            };
+            page.Controls.Add(card);
+        }
+
+        private static Image LoadDonateImage(string resource)
+        {
+            try
+            {
+                using (Stream stream = typeof(SettingsForm).Assembly.GetManifestResourceStream(resource))
+                {
+                    if (stream == null)
+                    {
+                        return null;
+                    }
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        stream.CopyTo(ms);
+                        ms.Position = 0;
+                        using (Bitmap bmp = new Bitmap(ms))
+                        {
+                            return new Bitmap(bmp);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void BuildUpdatePage()
+        {
+            _updateSection = new UpdateCheckSection();
+            _updateSection.Left = 0;
+            _updateSection.Top = 0;
+            _updateSection.Width = Ui.S(608);
+            _pageUpdate.Controls.Add(_updateSection);
+            _updateSection.SendToBack();
+
+            _logDivider = new Panel();
+            _logDivider.BackColor = Ui.LineSoft;
+            _logDivider.Left = Ui.S(8);
+            _logDivider.Top = Ui.S(146);
+            _logDivider.Width = Ui.S(592);
+            _logDivider.Height = 1;
+            _pageUpdate.Controls.Add(_logDivider);
+
+            _logTitle = PageLabel(_pageUpdate, "更新日志", 8, 154, 200, 20, Ui.SmallBold, Ui.TextDim);
+            _logHint = PageLabel(_pageUpdate, "updates.dat · 与安装完成窗口同源", 292, 156, 300, 18,
+                                 Ui.Small, Ui.TextFaint);
+            _logHint.TextAlign = ContentAlignment.MiddleRight;
+
+            _logScroll = new BufferedPanel();
+            _logScroll.Left = Ui.S(8);
+            _logScroll.Top = Ui.S(176);
+            _logScroll.Width = Ui.S(592);
+            _logScroll.Height = Ui.S(294);
+            _logScroll.BackColor = Ui.Panel;
+            _logScroll.AutoScroll = true;
+            _pageUpdate.Controls.Add(_logScroll);
+
+            _logView = new SettingsLogView();
+            _logView.Left = 0;
+            _logView.Top = 0;
+            _logView.Width = _logScroll.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - Ui.S(4);
+            _logScroll.Controls.Add(_logView);
+
+            _logMore = PageButton(_pageUpdate, "加载更早的版本", 8, 474, 160, false);
+            _logMore.Height = Ui.S(30);
+            _logMore.Click += delegate
+            {
+                List<ReleaseNote> all = ReleaseLog.All;
+                _shownVersions = Math.Min(_shownVersions + 5, Math.Max(all.Count, 5));
+                RefreshLog();
+            };
+
+            _logCount = PageLabel(_pageUpdate, "", 300, 480, 292, 18, Ui.Small, Ui.TextFaint);
+            _logCount.TextAlign = ContentAlignment.MiddleRight;
+
+            _updateSection.HeightChanged += delegate { LayoutUpdatePage(); };
+            _updateSection.ResultChanged += OnUpdateResult;
+            RefreshLog();
+            _updateSection.Activate();
+            LayoutUpdatePage();
+        }
+
+        private void OnUpdateResult(UpdateCheckResult result)
+        {
+            if (result != null && result.State == UpdateState.NewVersion)
+            {
+                RemoteUpdate remote = new RemoteUpdate();
+                remote.Version = result.Latest;
+                remote.DateText = result.DateText;
+                remote.Body = result.Body;
+                _remoteUpdate = remote;
+            }
+            else
+            {
+                _remoteUpdate = null;
+            }
+            RefreshLog();
+        }
+
+        private void RefreshLog()
+        {
+            List<ReleaseNote> all = ReleaseLog.All;
+            if (_shownVersions < 5)
+            {
+                _shownVersions = 5;
+            }
+            _logView.SetContent(all, Math.Min(_shownVersions, all.Count), _remoteUpdate);
+            int remaining = all.Count - Math.Min(_shownVersions, all.Count);
+            _logMore.Visible = remaining > 0;
+            _logCount.Visible = all.Count > 0;
+            if (all.Count == 0)
+            {
+                _logCount.Text = "";
+            }
+            else if (remaining > 0)
+            {
+                _logCount.Text = "已显示 " + Math.Min(_shownVersions, all.Count) + " / " + all.Count + " 个版本";
+            }
+            else
+            {
+                _logCount.Text = "已显示全部 " + all.Count + " 个版本";
+            }
+            FitLogView();
+            LayoutUpdatePage();
+        }
+
+        private void FitLogView()
+        {
+            if (_logScroll == null || _logView == null)
+            {
+                return;
+            }
+            // 固定用滚动容器的 Width（不是 ClientSize）：滚动条出现/消失不会反过来改视图宽度，
+            // 否则宽度→高度→滚动条可能形成反复布局。
+            int width = _logScroll.Width - SystemInformation.VerticalScrollBarWidth - Ui.S(6);
+            if (width > Ui.S(200) && _logView.Width != width)
+            {
+                _logView.Width = width;
+            }
+            _logView.Left = 0;
+            _logView.Top = 0;
+        }
+
+        private void LayoutUpdatePage()
+        {
+            if (_updateSection == null || _logScroll == null)
+            {
+                return;
+            }
+            int divider = _updateSection.Height + Ui.S(10);
+            _logDivider.Top = divider;
+            _logTitle.Top = divider + Ui.S(8);
+            _logHint.Top = divider + Ui.S(10);
+            _logScroll.Top = divider + Ui.S(30);
+            _logScroll.Height = Math.Max(Ui.S(80), Ui.S(470) - _logScroll.Top);
+            _logMore.Top = Ui.S(474);
+            _logCount.Top = Ui.S(480);
+            FitLogView();
         }
 
         /// <summary>发布者签名页：显示当前状态，提供「补装」与「移除」（移除前二次确认）。</summary>
@@ -894,7 +1191,19 @@ namespace WtSkin
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
-            _dirBox.Select(0, 0);
+            bool updateStart = _startPage != 0;
+            if (updateStart)
+            {
+                int page = _startPage;
+                _startPage = 0;
+                // 等窗口真正显示完再切页：效果与用户点击左侧分页一致。
+                BeginInvoke((MethodInvoker)delegate { SelectPage(page); });
+            }
+            if (!updateStart)
+            {
+                // 保持原行为：普通打开设置页时聚焦游戏目录输入框。
+                _dirBox.Select(0, 0);
+            }
         }
     }
 
