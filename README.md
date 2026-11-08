@@ -8,6 +8,7 @@
 
 [![下载最新版本](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-WTSkinManager.exe-ff8c00?style=for-the-badge&logo=windows)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 [![Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager?display_name=tag&label=release)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
+[![Gitee](https://img.shields.io/badge/Gitee-orgon%2FWTSkinManager-c71d23?logo=gitee)](https://gitee.com/orgon/WTSkinManager)
 
 > 当前版本 **v3.9.7**（程序内版本 `3.9.7.0`，载具数据 `2026.11.08.1`）。
 
@@ -95,7 +96,12 @@ WTSkinManager 是一个**非官方**的《战争雷霆》自定义涂装管理�
 
 ### 方式一：下载 Releases（推荐）
 
-1. 打开 [Releases](https://github.com/Nchoneko/WTSkinManager/releases)，下载最新 `WTSkinManager.exe`。
+安装包提供两个镜像，任选其一：
+
+- **GitHub Releases**：<https://github.com/Nchoneko/WTSkinManager/releases> —— 单文件 `WTSkinManager.exe`；
+- **Gitee Releases**：<https://gitee.com/orgon/WTSkinManager/releases> —— Gitee 单附件限制 100MB，完整包拆成 3 个分卷（`.7z.001/.002/.003`），下载全部三卷 + `parts.sha256`，用 7-Zip 打开 `.001` 解压，具体见发行版里的 `Gitee-README.txt`。
+
+1. 打开任一 Releases 页面，下载最新版本。
 2. 放到一个普通可写目录（例如 `D:\Tools\WTSkinManager`），双击运行。
 3. 首次运行会弹出安装向导：
    - 选择**安装目录**：程序、设置、备份、日志都放这里；不要选 `C:\Program Files`。
@@ -331,9 +337,11 @@ WTSkinManager/
 
 ## 13. 下载与反馈
 
-- **Releases（下载）**：<https://github.com/Nchoneko/WTSkinManager/releases>
+- **Releases（下载，GitHub）**：<https://github.com/Nchoneko/WTSkinManager/releases>
+- **Releases（下载，Gitee 镜像）**：<https://gitee.com/orgon/WTSkinManager/releases>
 - **Issues（反馈）**：<https://github.com/Nchoneko/WTSkinManager/issues>
-- **源码仓库**：<https://github.com/Nchoneko/WTSkinManager>
+- **源码仓库（GitHub）**：<https://github.com/Nchoneko/WTSkinManager>
+- **源码仓库（Gitee 镜像）**：<https://gitee.com/orgon/WTSkinManager>
 
 从源码构建（Windows 10/11，需 .NET Framework 4.x）：
 
