@@ -9,7 +9,7 @@
 [![下载最新版本](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-WTSkinManager.exe-ff8c00?style=for-the-badge&logo=windows)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 [![Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager?display_name=tag&label=release)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 
-> 当前版本 **v3.9.5**（程序内版本 `3.9.5.0`，载具数据 `2026.11.08.1`）。
+> 当前版本 **v3.9.6**（程序内版本 `3.9.6.0`，载具数据 `2026.11.08.1`）。
 
 ---
 
@@ -21,7 +21,7 @@ WTSkinManager 是一个**非官方**的《战争雷霆》自定义涂装管理�
 2. **装得对**：只写入游戏已经生成的 `template_<载具ID>` 文件夹，不新建、不改名、不碰游戏本体；
 3. **管得住**：导入后可以清空、备份、还原、禁用/启用，并离线显示载具图标与等级/权重。
 
-程序不收集任何数据，不联网检查更新；只有在你主动点击「更新数据 / 更新全部数据」时才会访问 War Thunder Wiki。
+程序不收集任何数据。默认在启动时静默检查 GitHub Releases 是否有新版本（可在设置页关闭）；只有在你主动点击「更新数据 / 更新全部数据」时才会访问 War Thunder Wiki。
 
 ---
 

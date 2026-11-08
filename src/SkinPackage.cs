@@ -73,6 +73,10 @@ namespace WtSkin
     /// <summary>一个待导入的涂装包（zip 或文件夹），负责内容枚举与载具识别。</summary>
     internal class SkinPackage
     {
+        private const int MaxFiles = 5000;
+        private const long MaxSingleBytes = 512L * 1024 * 1024;
+        private const long MaxTotalBytes = 4L * 1024 * 1024 * 1024;
+
         private static readonly Regex FromRegex = new Regex("from\\s*:\\s*t\\s*=\\s*\"([^\"]+)\"", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public string SourcePath;
@@ -129,7 +133,10 @@ namespace WtSkin
 
                 if (package.Files.Count == 0)
                 {
-                    package.Error = "包里没有可导入的文件";
+                    if (string.IsNullOrEmpty(package.Error))
+                    {
+                        package.Error = "包里没有可导入的文件";
+                    }
                     return package;
                 }
                 package.DetectUnits();
@@ -200,6 +207,20 @@ namespace WtSkin
                     {
                         continue;
                     }
+                    if (!Util.IsSafeRel(pe.Rel))
+                    {
+                        Error = "压缩包包含不安全的路径：" + pe.Rel;
+                        Files.Clear();
+                        TotalBytes = 0;
+                        return;
+                    }
+                    if (pe.Length > MaxSingleBytes || Files.Count + 1 > MaxFiles || TotalBytes + pe.Length > MaxTotalBytes)
+                    {
+                        Error = "压缩包内容超过安全上限";
+                        Files.Clear();
+                        TotalBytes = 0;
+                        return;
+                    }
                     Files.Add(pe);
                     TotalBytes += pe.Length;
                 }
@@ -239,6 +260,20 @@ namespace WtSkin
                 catch
                 {
                     pe.Length = 0;
+                }
+                if (!Util.IsSafeRel(pe.Rel))
+                {
+                    Error = "文件夹包含不安全的路径：" + pe.Rel;
+                    Files.Clear();
+                    TotalBytes = 0;
+                    return;
+                }
+                if (pe.Length > MaxSingleBytes || Files.Count + 1 > MaxFiles || TotalBytes + pe.Length > MaxTotalBytes)
+                {
+                    Error = "文件夹内容超过安全上限";
+                    Files.Clear();
+                    TotalBytes = 0;
+                    return;
                 }
                 Files.Add(pe);
                 TotalBytes += pe.Length;
