@@ -53,6 +53,62 @@ Expect $evilPkg.Ready $false 'evil zip rejected'
 if ($evilPkg.Error -notmatch '不安全') { Write-Host ("FAIL evil error text: " + $evilPkg.Error); $fail++ } else { Write-Host 'PASS evil error text' }
 Expect $goodPkg.Ready $true 'benign zip accepted'
 
+# ---- SafeCombine 根目录边界 ----
+$combine = $util.GetMethod('SafeCombine', [Reflection.BindingFlags]'Public,Static')
+$rootDir = Join-Path $env:TEMP ('wtsm-root-' + [Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Force $rootDir | Out-Null
+try {
+    $null = $combine.Invoke($null, [object[]]@([string]$rootDir, [string]'a/b.txt'))
+    Write-Host 'PASS safe combine inside root'
+} catch { Write-Host ('FAIL safe combine: ' + $_.Exception.Message); $script:fail++ }
+try {
+    $null = $combine.Invoke($null, [object[]]@([string]$rootDir, [string]'../escape.txt'))
+    Write-Host 'FAIL combine escape accepted'; $script:fail++
+} catch { Write-Host 'PASS combine rejects escape' }
+Remove-Item -Recurse -Force $rootDir -ErrorAction SilentlyContinue
+
+# ---- 备份清理：手动备份不被删、按时间保留最新 ----
+$config = $asm.GetType('WtSkin.Config')
+$installField = $config.GetField('InstallDir', [Reflection.BindingFlags]'Public,Static')
+$keepField = $config.GetField('KeepBackups', [Reflection.BindingFlags]'Public,Static')
+$oldInstall = $installField.GetValue($null)
+$oldKeep = $keepField.GetValue($null)
+$tmpInstall = Join-Path $env:TEMP ('wtsm-trim-' + [Guid]::NewGuid().ToString('N'))
+$backups = Join-Path $tmpInstall 'backups'
+New-Item -ItemType Directory -Force (Join-Path $backups 'skins') | Out-Null
+$autoA = Join-Path $backups 'template_a_20260101'
+$autoB = Join-Path $backups 'template_b_20260102'
+$autoC = Join-Path $backups 'template_c_20260103'
+foreach ($d in @($autoA,$autoB,$autoC)) { New-Item -ItemType Directory -Force $d | Out-Null }
+[IO.File]::WriteAllText((Join-Path $autoA 'a.blk'),'a')
+[IO.File]::WriteAllText((Join-Path $autoB 'b.blk'),'b')
+[IO.File]::WriteAllText((Join-Path $autoC 'c.blk'),'c')
+(Get-Item $autoA).LastWriteTimeUtc = (Get-Date).AddDays(-3)
+(Get-Item $autoB).LastWriteTimeUtc = (Get-Date).AddDays(-2)
+(Get-Item $autoC).LastWriteTimeUtc = (Get-Date).AddDays(-1)
+$installField.SetValue($null, $tmpInstall)
+$keepField.SetValue($null, 2)
+$importer = $asm.GetType('WtSkin.Importer')
+$trim = $importer.GetMethod('TrimBackups', [Reflection.BindingFlags]'NonPublic,Static')
+$trim.Invoke($null, $null)
+Expect (Test-Path (Join-Path $backups 'skins')) $true 'manual backups preserved'
+Expect (Test-Path $autoA) $false 'oldest auto removed'
+Expect (Test-Path $autoB) $true 'newer auto kept'
+Expect (Test-Path $autoC) $true 'newest auto kept'
+$installField.SetValue($null, $oldInstall)
+$keepField.SetValue($null, $oldKeep)
+Remove-Item -Recurse -Force $tmpInstall -ErrorAction SilentlyContinue
+
+# ---- 资源上限：超过 5000 个条目应被拒绝 ----
+$big = Join-Path $tmp 'big.zip'
+$fs = [IO.File]::Create($big)
+$zip = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
+for ($i = 0; $i -lt 5001; $i++) { $null = $zip.CreateEntry('f' + $i + '.bin') }
+$zip.Dispose(); $fs.Dispose()
+$bigPkg = $analyze.Invoke($null, [object[]]@([string]$big))
+Expect $bigPkg.Ready $false 'oversized zip rejected'
+if ($bigPkg.Error -notmatch '安全上限') { Write-Host ('FAIL oversized error: ' + $bigPkg.Error); $fail++ } else { Write-Host 'PASS oversized error text' }
+
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 if ($fail -gt 0) { Write-Host ("SECURITY TESTS FAILED: " + $fail); exit 1 }
 Write-Host 'SECURITY TESTS OK'
