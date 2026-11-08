@@ -76,10 +76,12 @@ $oldKeep = $keepField.GetValue($null)
 $tmpInstall = Join-Path $env:TEMP ('wtsm-trim-' + [Guid]::NewGuid().ToString('N'))
 $backups = Join-Path $tmpInstall 'backups'
 New-Item -ItemType Directory -Force (Join-Path $backups 'skins') | Out-Null
-$autoA = Join-Path $backups 'template_a_20260101'
-$autoB = Join-Path $backups 'template_b_20260102'
-$autoC = Join-Path $backups 'template_c_20260103'
+$autoA = Join-Path $backups 'template_a_20260101_120000'
+$autoB = Join-Path $backups 'template_b_20260102_120000'
+$autoC = Join-Path $backups 'template_c_20260103_120000'
 foreach ($d in @($autoA,$autoB,$autoC)) { New-Item -ItemType Directory -Force $d | Out-Null }
+$custom = Join-Path $backups 'my_manual_backup'
+New-Item -ItemType Directory -Force $custom | Out-Null
 [IO.File]::WriteAllText((Join-Path $autoA 'a.blk'),'a')
 [IO.File]::WriteAllText((Join-Path $autoB 'b.blk'),'b')
 [IO.File]::WriteAllText((Join-Path $autoC 'c.blk'),'c')
@@ -93,6 +95,7 @@ $trim = $importer.GetMethod('TrimBackups', [Reflection.BindingFlags]'NonPublic,S
 $trim.Invoke($null, $null)
 Expect (Test-Path (Join-Path $backups 'skins')) $true 'manual backups preserved'
 Expect (Test-Path $autoA) $false 'oldest auto removed'
+Expect (Test-Path $custom) $true 'custom backup preserved'
 Expect (Test-Path $autoB) $true 'newer auto kept'
 Expect (Test-Path $autoC) $true 'newest auto kept'
 $installField.SetValue($null, $oldInstall)
