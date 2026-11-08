@@ -1058,6 +1058,12 @@ namespace WtSkin
             Invalidate();
             base.OnEnabledChanged(e);
         }
+
+        protected override void OnTextChanged(EventArgs e)
+        {
+            base.OnTextChanged(e);
+            Invalidate();
+        }
     }
 
     /// <summary>自绘的复选行：一排显示 勾选 / 国旗 / 机名 / 国家 / 状态标签。</summary>

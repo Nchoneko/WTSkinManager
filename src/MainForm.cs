@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.IO;
@@ -248,6 +250,9 @@ namespace WtSkin
 
         private bool _dragging;
         private Rectangle _versionRect;
+        private Rectangle _githubRect;
+        private Bitmap _githubMark;
+        private bool _githubHover;
         private BuildInfoTip _buildTip;
         private Point _dragOffset;
         private int _winHover = -1;
@@ -268,6 +273,9 @@ namespace WtSkin
         private double _animAlpha;
         private int _animOffset;
         private bool _openManagerPage;
+        private UpdateBanner _updateBanner;
+        private SemVer _bannerVersion;
+        private bool _startupCheckStarted;
 
         public MainForm(string[] initialPaths)
         {
@@ -302,6 +310,7 @@ namespace WtSkin
             BuildFooter();
             BuildBody();
             BuildPages();
+            BuildUpdateBanner();
             BuildResizeEdges();
             BuildAnimationLayer();
 
@@ -316,7 +325,12 @@ namespace WtSkin
                 Native.ThemeScrollbars(this);
                 // 主窗口不做透明度淡入：Opacity 会引入 WS_EX_LAYERED，无边框拖动会产生拖影。
                 // 页面切换的滑入动画不受影响。
-                BeginInvoke((MethodInvoker)delegate { Native.BringToFrontOnce(this); });
+                BeginInvoke((MethodInvoker)delegate
+                {
+                    Native.BringToFrontOnce(this);
+                    // 首屏渲染完成后再静默检查更新：后台线程请求，不阻塞窗口显示。
+                    BeginStartupUpdateCheck();
+                });
                 if (_initialPaths != null && _initialPaths.Length > 0)
                 {
                     List<string> paths = new List<string>();
@@ -748,6 +762,13 @@ namespace WtSkin
                 _winHover = hover;
                 _header.Invalidate();
             }
+            bool ghHover = _githubRect.Width > 0 && _githubRect.Contains(e.Location);
+            if (ghHover != _githubHover)
+            {
+                _githubHover = ghHover;
+                _header.Invalidate();
+            }
+            _header.Cursor = ghHover ? Cursors.Hand : Cursors.Default;
             if (!_dragging && _versionRect.Width > 0 && _versionRect.Contains(e.Location))
             {
                 ShowVersionTip();
@@ -799,6 +820,11 @@ namespace WtSkin
             {
                 return;
             }
+            if (_githubRect.Width > 0 && _githubRect.Contains(e.Location))
+            {
+                OpenUrl(Config.RepoUrl);
+                return;
+            }
             if (WinButtonRect(0).Contains(e.Location))
             {
                 WindowState = FormWindowState.Minimized;
@@ -838,13 +864,22 @@ namespace WtSkin
             int headerHeight = Ui.S(80);
             int tabHeight = Ui.S(44);
             int footerHeight = _footer.Visible ? Ui.S(76) : 0;
+            int bannerHeight = _updateBanner != null && _updateBanner.Visible ? Ui.S(40) : 0;
             _header.SetBounds(0, 0, ClientSize.Width, headerHeight);
             if (_tabs != null)
             {
                 _tabs.SetBounds(0, headerHeight, ClientSize.Width, tabHeight);
             }
+            if (_updateBanner != null)
+            {
+                _updateBanner.SetBounds(0, headerHeight + tabHeight, ClientSize.Width, bannerHeight);
+                if (bannerHeight > 0)
+                {
+                    _updateBanner.BringToFront();
+                }
+            }
             _footer.SetBounds(0, ClientSize.Height - footerHeight, ClientSize.Width, footerHeight);
-            int bodyTop = headerHeight + tabHeight;
+            int bodyTop = headerHeight + tabHeight + bannerHeight;
             _body.SetBounds(0, bodyTop, ClientSize.Width, ClientSize.Height - bodyTop - footerHeight);
             _body.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             if (_managerHost != null)
@@ -934,6 +969,39 @@ namespace WtSkin
             }
         }
 
+        private static Bitmap LoadGithubMark()
+        {
+            try
+            {
+                using (Stream stream = typeof(MainForm).Assembly.GetManifestResourceStream("github.png"))
+                {
+                    if (stream == null)
+                    {
+                        return null;
+                    }
+                    using (Bitmap bmp = new Bitmap(stream))
+                    {
+                        return new Bitmap(bmp);
+                    }
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static void OpenUrl(string url)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch
+            {
+            }
+        }
+
         private void PaintHeader(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
@@ -962,9 +1030,41 @@ namespace WtSkin
             Ui.DrawText(g, "战雷涂装管理器", Ui.Title, Ui.Text,
                     new Rectangle(tx, iy - Ui.S(1), Ui.S(320), Ui.S(28)),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
-            Ui.DrawText(g, "War Thunder 自定义涂装 · 识别 / 替换 / 备份", Ui.Small, Ui.TextDim,
+            const string subtitle = "War Thunder 自定义涂装 · 识别 / 替换 / 备份";
+            Ui.DrawText(g, subtitle, Ui.Small, Ui.TextDim,
                     new Rectangle(tx, iy + Ui.S(27), Ui.S(430), Ui.S(18)),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+
+            if (_githubMark == null)
+            {
+                _githubMark = LoadGithubMark();
+            }
+            Size subtitleSize = TextRenderer.MeasureText(subtitle, Ui.Small);
+            int ghSize = Ui.S(18);
+            int ghX = tx + subtitleSize.Width + Ui.S(8);
+            int ghY = iy + Ui.S(27) + (Ui.S(18) - ghSize) / 2;
+            if (_githubMark != null)
+            {
+                Rectangle gh = new Rectangle(ghX, ghY, ghSize, ghSize);
+                Color ghColor = _githubHover ? Ui.Accent : Ui.TextDim;
+                ImageAttributes attrs = new ImageAttributes();
+                ColorMatrix matrix = new ColorMatrix(new float[][]
+                {
+                    new float[] { ghColor.R / 255f, 0, 0, 0, 0 },
+                    new float[] { 0, ghColor.G / 255f, 0, 0, 0 },
+                    new float[] { 0, 0, ghColor.B / 255f, 0, 0 },
+                    new float[] { 0, 0, 0, 1, 0 },
+                    new float[] { 0, 0, 0, 0, 1 }
+                });
+                attrs.SetColorMatrix(matrix);
+                g.DrawImage(_githubMark, gh, 0, 0, _githubMark.Width, _githubMark.Height, GraphicsUnit.Pixel, attrs);
+                attrs.Dispose();
+                _githubRect = gh;
+            }
+            else
+            {
+                _githubRect = Rectangle.Empty;
+            }
 
             // 版本号 + 构建时间：紧接标题右侧，同一行，弱化色
             string versionText = BuildInfo.HeaderText;
@@ -1052,6 +1152,99 @@ namespace WtSkin
             _tabs.BringToFront();
             _header.BringToFront();
             _footer.BringToFront();
+        }
+
+        private void BuildUpdateBanner()
+        {
+            _updateBanner = new UpdateBanner();
+            _updateBanner.Visible = false;
+            _updateBanner.ViewClicked += delegate
+            {
+                SemVer version = _bannerVersion;
+                DismissUpdateBanner(version);
+                OpenSettings(3);
+            };
+            _updateBanner.CloseClicked += delegate
+            {
+                DismissUpdateBanner(_bannerVersion);
+            };
+            Controls.Add(_updateBanner);
+        }
+
+        /// <summary>启动时静默检查：首屏已渲染（BeginInvoke 之后）才调用，失败只写日志。</summary>
+        private void BeginStartupUpdateCheck()
+        {
+            if (_startupCheckStarted)
+            {
+                return;
+            }
+            _startupCheckStarted = true;
+            try
+            {
+                if (!Config.AutoCheckUpdate)
+                {
+                    Config.Log("自动检查更新：设置已关闭，本次启动不发起请求");
+                    return;
+                }
+                Config.Log("自动检查更新：开始（静默；" + UpdateService.UserAgent + "）");
+                UpdateService.CheckAsync(true, delegate(UpdateCheckResult result)
+                {
+                    if (IsDisposed || Disposing || !IsHandleCreated)
+                    {
+                        return;
+                    }
+                    if (result.State == UpdateState.NewVersion && result.Latest != null)
+                    {
+                        if (UpdateService.ShouldNotify(result.Latest))
+                        {
+                            ShowUpdateBanner(result.Latest);
+                        }
+                        else
+                        {
+                            Config.Log("自动检查更新：v" + result.Latest.ToDisplay() + " 已提示过，不重复弹提示条");
+                        }
+                    }
+                    else if (result.State == UpdateState.Failed)
+                    {
+                        Config.Log("自动检查更新：失败（" + result.FailureText + "）→ " + result.ErrorDetail);
+                    }
+                    else
+                    {
+                        Config.Log("自动检查更新：当前已是最新版本 " + BuildInfo.DisplayVersion +
+                                   (result.FromCache ? "（10 分钟缓存）" : ""));
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Config.Log("自动检查更新：启动异常 → " + ex.Message);
+            }
+        }
+
+        private void ShowUpdateBanner(SemVer version)
+        {
+            if (_updateBanner == null || version == null)
+            {
+                return;
+            }
+            _bannerVersion = version;
+            _updateBanner.SetVersion("v" + version.ToDisplay());
+            _updateBanner.Visible = true;
+            LayoutChrome();
+            Config.Log("自动检查更新：发现新版本 v" + version.ToDisplay() + "，显示顶部提示条");
+        }
+
+        private void DismissUpdateBanner(SemVer version)
+        {
+            if (version != null)
+            {
+                UpdateService.MarkNotified(version);
+            }
+            if (_updateBanner != null)
+            {
+                _updateBanner.Visible = false;
+            }
+            LayoutChrome();
         }
 
         private void EnsureManager()
@@ -2230,7 +2423,12 @@ namespace WtSkin
 
         private void OpenSettings()
         {
-            using (SettingsForm settings = new SettingsForm())
+            OpenSettings(0);
+        }
+
+        private void OpenSettings(int startPage)
+        {
+            using (SettingsForm settings = new SettingsForm(startPage))
             {
                 DialogResult result = settings.ShowDialog(this);
                 if (result == DialogResult.OK)
