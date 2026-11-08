@@ -8,6 +8,47 @@ namespace WtSkin
 {
     internal static class Util
     {
+        /// <summary>ZIP/文件夹条目是否是可安全拼接的相对路径（拒绝绝对路径、盘符、.. 与空段）。</summary>
+        public static bool IsSafeRel(string rel)
+        {
+            if (string.IsNullOrEmpty(rel))
+            {
+                return false;
+            }
+            string r = rel.Replace('\\', '/');
+            if (r.StartsWith("/", StringComparison.Ordinal) || r.Contains(":"))
+            {
+                return false;
+            }
+            string[] parts = r.Split('/');
+            for (int i = 0; i < parts.Length; i++)
+            {
+                string part = parts[i];
+                if (part.Length == 0 || part == "." || part == "..")
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>在 root 内拼接相对路径；越界或非法时抛 InvalidDataException。</summary>
+        public static string SafeCombine(string root, string rel)
+        {
+            if (!IsSafeRel(rel))
+            {
+                throw new InvalidDataException("包含不安全的路径：" + rel);
+            }
+            string rootFull = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                              + Path.DirectorySeparatorChar;
+            string dest = Path.GetFullPath(Path.Combine(root, rel.Replace('/', Path.DirectorySeparatorChar)));
+            if (!dest.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException("路径越界：" + rel);
+            }
+            return dest;
+        }
+
         public static string HumanSize(long bytes)
         {
             if (bytes < 1024)

@@ -200,19 +200,27 @@ namespace WtSkin
                 {
                     continue;
                 }
+                string backupPath = null;
                 try
                 {
                     // 1. 备份：复制旧内容到安装目录（不移动、不删除目标文件夹本身，
                     //    避免 Windows 的“删除挂起”状态让后续写入报拒绝访问）。
                     if (Config.Backup && Directory.Exists(target.Folder))
                     {
-                        BackupCopy(target.Folder, ref done, total, progress);
+                        backupPath = BackupCopy(target.Folder, ref done, total, progress);
                     }
 
                     // 2. 原地覆盖写入新涂装。
                     Directory.CreateDirectory(Util.LongPath(target.Folder));
                     HashSet<string> expected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    CopyFiles(target, expected, ref done, total, progress, cancelled);
+                    bool completed = CopyFiles(target, expected, ref done, total, progress, cancelled);
+                    if (!completed)
+                    {
+                        // 取消：不清理旧文件、不计入成功；尽量用本次备份恢复原状。
+                        RestoreBackup(backupPath, target.Folder, ref done, total, progress);
+                        result.Failed.Add(target.Unit.Title + "：已取消");
+                        continue;
+                    }
 
                     // 3. 清掉不属于这套涂装的官方残留文件。
                     RemoveExtras(target.Folder, expected);
@@ -221,6 +229,7 @@ namespace WtSkin
                 }
                 catch (Exception ex)
                 {
+                    RestoreBackup(backupPath, target.Folder, ref done, total, progress);
                     result.Failed.Add(target.Unit.Title + "：" + ex.Message);
                 }
             }
@@ -230,7 +239,7 @@ namespace WtSkin
             return result;
         }
 
-        private static void BackupCopy(string folder, ref long done, long total, Action<long, long, string> progress)
+        private static string BackupCopy(string folder, ref long done, long total, Action<long, long, string> progress)
         {
             if (progress != null)
             {
@@ -250,6 +259,7 @@ namespace WtSkin
                 n++;
             }
             CopyDirectory(folder, dest, ref done, total, progress);
+            return dest;
         }
 
         private static void CopyDirectory(string from, string to, ref long done, long total,
@@ -324,7 +334,7 @@ namespace WtSkin
             }
         }
 
-        private static void CopyFiles(ImportTarget target, HashSet<string> expected, ref long done, long total,
+        private static bool CopyFiles(ImportTarget target, HashSet<string> expected, ref long done, long total,
                                       Action<long, long, string> progress, Func<bool> cancelled)
         {
             SkinPackage package = target.Package;
@@ -336,7 +346,7 @@ namespace WtSkin
                     {
                         if (cancelled != null && cancelled())
                         {
-                            return;
+                            return false;
                         }
                         PackageEntry pe = package.Files[i];
                         if (ImportValidation.IsWarn(pe.Rel) || IsForeignBlk(pe.Rel, target))
@@ -344,7 +354,7 @@ namespace WtSkin
                             continue;
                         }
                         string rel = DestinationRel(pe.Rel, target);
-                        string dest = Path.Combine(target.Folder, rel.Replace('/', '\\'));
+                        string dest = Util.SafeCombine(target.Folder, rel);
                         string destDir = Path.GetDirectoryName(dest);
                         if (!Directory.Exists(destDir))
                         {
@@ -366,7 +376,7 @@ namespace WtSkin
                 {
                     if (cancelled != null && cancelled())
                     {
-                        return;
+                        return false;
                     }
                     PackageEntry pe = package.Files[i];
                     if (ImportValidation.IsWarn(pe.Rel) || IsForeignBlk(pe.Rel, target))
@@ -374,7 +384,7 @@ namespace WtSkin
                         continue;
                     }
                     string rel = DestinationRel(pe.Rel, target);
-                    string dest = Path.Combine(target.Folder, rel.Replace('/', '\\'));
+                    string dest = Util.SafeCombine(target.Folder, rel);
                     string destDir = Path.GetDirectoryName(dest);
                     if (!Directory.Exists(destDir))
                     {
@@ -389,6 +399,7 @@ namespace WtSkin
                     }
                 }
             }
+            return true;
         }
 
         private static FileStream OpenWriteWithRetry(string path)
@@ -488,6 +499,23 @@ namespace WtSkin
             }
         }
 
+        private static void RestoreBackup(string backupPath, string folder, ref long done, long total,
+                                          Action<long, long, string> progress)
+        {
+            if (string.IsNullOrEmpty(backupPath) || !Directory.Exists(backupPath))
+            {
+                return;
+            }
+            try
+            {
+                Util.TryDeleteDirectory(folder);
+                CopyDirectory(backupPath, folder, ref done, total, progress);
+            }
+            catch
+            {
+            }
+        }
+
         private static void TrimBackups()
         {
             try
@@ -497,14 +525,27 @@ namespace WtSkin
                 {
                     return;
                 }
-                string[] dirs = Directory.GetDirectories(root);
-                if (dirs.Length <= Config.KeepBackups)
+                List<string> dirs = new List<string>();
+                foreach (string dir in Directory.GetDirectories(root))
+                {
+                    // 手动备份在 backups\skins，必须与自动备份隔离，绝不参与自动清理。
+                    if (string.Equals(Path.GetFileName(dir), "skins", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                    dirs.Add(dir);
+                }
+                if (dirs.Count <= Config.KeepBackups)
                 {
                     return;
                 }
-                Array.Sort(dirs, StringComparer.OrdinalIgnoreCase);
-                int remove = dirs.Length - Config.KeepBackups;
-                for (int i = 0; i < remove; i++)
+                dirs.Sort(delegate(string a, string b)
+                {
+                    DateTime ta = Directory.GetLastWriteTimeUtc(a);
+                    DateTime tb = Directory.GetLastWriteTimeUtc(b);
+                    return tb.CompareTo(ta);
+                });
+                for (int i = Config.KeepBackups; i < dirs.Count; i++)
                 {
                     Util.TryDeleteDirectory(dirs[i]);
                 }
