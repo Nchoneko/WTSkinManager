@@ -6,6 +6,6 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyProduct("战雷涂装管理器")]
 [assembly: AssemblyCompany("Nchoneko")]
 [assembly: AssemblyCopyright("Copyright 2026 Nchoneko")]
-[assembly: AssemblyVersion("3.9.4.0")]
-[assembly: AssemblyFileVersion("3.9.4.0")]
+[assembly: AssemblyVersion("3.9.5.0")]
+[assembly: AssemblyFileVersion("3.9.5.0")]
 [assembly: ComVisible(false)]

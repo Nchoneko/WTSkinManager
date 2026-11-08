@@ -9,7 +9,7 @@
 [![下载最新版本](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-WTSkinManager.exe-ff8c00?style=for-the-badge&logo=windows)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 [![Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager?display_name=tag&label=release)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 
-> 当前版本 **v3.9.4**（程序内版本 `3.9.4.0`，载具数据 `2026.11.08.1`）。
+> 当前版本 **v3.9.5**（程序内版本 `3.9.5.0`，载具数据 `2026.11.08.1`）。
 
 ---
 
