@@ -6,7 +6,8 @@
 [![Latest Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager)](https://github.com/Nchoneko/WTSkinManager/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2B-0078D6.svg)](#4-环境要求)
 
-[![下载最新版本](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-WTSkinManager.exe-ff8c00?style=for-the-badge&logo=windows)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
+[![从 GitHub 下载](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-GitHub-24292f?style=for-the-badge&logo=github)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
+[![从 Gitee 下载](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Gitee-c71d23?style=for-the-badge&logo=gitee)](https://gitee.com/orgon/WTSkinManager/releases)
 [![Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager?display_name=tag&label=release)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 [![Gitee](https://img.shields.io/badge/Gitee-orgon%2FWTSkinManager-c71d23?logo=gitee)](https://gitee.com/orgon/WTSkinManager)
 
