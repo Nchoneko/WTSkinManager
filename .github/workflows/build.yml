@@ -8,13 +8,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     name: Build (Windows)
     runs-on: windows-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -48,7 +50,6 @@ jobs:
         run: |
           Write-Host ("PowerShell: " + $PSVersionTable.PSVersion.ToString())
           Write-Host ("csc exists: " + (Test-Path 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'))
-          Write-Host ("signtool: " + ((Get-Command signtool.exe -ErrorAction SilentlyContinue).Source))
           Write-Host ("sign cert configured: " + (-not [string]::IsNullOrWhiteSpace($env:WTSM_SIGN_PFX)))
           Get-PSDrive C | ForEach-Object { Write-Host ("disk free: " + [math]::Round($_.Free/1GB,1) + " GB") }
 
@@ -58,25 +59,9 @@ jobs:
           npm run build 2>&1 | Tee-Object -FilePath build.log
           if ($LASTEXITCODE -ne 0) { throw "build 失败，退出码 $LASTEXITCODE" }
 
-      - name: Publish build log on failure
-        if: failure()
+      - name: Security regression tests
         shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if (-not (Test-Path 'build.log')) { '未生成 build.log' | Out-File -FilePath 'build.log' -Encoding utf8 }
-          $dir = Join-Path $env:RUNNER_TEMP 'ci-log-repo'
-          New-Item -ItemType Directory -Force $dir | Out-Null
-          Copy-Item 'build.log' (Join-Path $dir 'build.log') -Force
-          Push-Location $dir
-          git init -q
-          git config user.name 'ci-bot'
-          git config user.email 'ci-bot@users.noreply.github.com'
-          git add build.log
-          git commit -q -m 'ci: build log'
-          git branch -M ci-logs
-          git push -f "https://x-access-token:$env:GH_TOKEN@github.com/${{ github.repository }}.git" ci-logs
-          Pop-Location
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools/security-tests.ps1 -Exe "out/WTSkinManager.exe"
 
       - name: Verify signature (when certificate configured)
         shell: pwsh
@@ -92,14 +77,13 @@ jobs:
             throw "已配置签名证书，但产物没有签名（状态：$($sig.Status)）"
           }
           Write-Host ("签名状态：" + $sig.Status + "；签名者：" + $sig.SignerCertificate.Subject)
-          Write-Host ("证书指纹：" + $sig.SignerCertificate.Thumbprint)
           if (-not [string]::IsNullOrWhiteSpace($env:WTSM_SIGN_THUMBPRINT)) {
             $expected = $env:WTSM_SIGN_THUMBPRINT.Replace(' ', '').ToUpperInvariant()
             $actual = $sig.SignerCertificate.Thumbprint.Replace(' ', '').ToUpperInvariant()
-            if ($expected -ne $actual) { throw "签名证书指纹不匹配：期望 $expected，实际 $actual" }
+            if ($expected -ne $actual) { throw "签名证书指纹不匹配" }
           }
           if ($sig.Status -ne 'Valid' -and $sig.Status -ne 'UnknownError') {
-            throw "签名校验失败：$($sig.Status) - $($sig.StatusMessage)"
+            throw "签名校验失败：$($sig.Status)"
           }
 
       - name: Generate checksum
@@ -113,16 +97,34 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: WTSkinManager
-          path: out/WTSkinManager.exe
+          path: |
+            out/WTSkinManager.exe
+            out/WTSkinManager.exe.sha256
           if-no-files-found: error
 
+  release:
+    name: Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: WTSkinManager
+          path: out
+
       - name: Generate release notes
-        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: powershell -NoProfile -ExecutionPolicy Bypass -File build/release-notes.ps1 -Tag "${{ github.ref_name }}"
 
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}

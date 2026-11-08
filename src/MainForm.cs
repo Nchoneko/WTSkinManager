@@ -2352,8 +2352,22 @@ namespace WtSkin
                 return;
             }
 
+            // 只记录真正成功的目标，取消/失败的不写入导入记录。
+            HashSet<string> doneDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < result.Done.Count; i++)
+            {
+                int arrow = result.Done[i].LastIndexOf(" → ", StringComparison.Ordinal);
+                if (arrow > 0)
+                {
+                    doneDirs.Add(result.Done[i].Substring(arrow + 3).Trim());
+                }
+            }
             for (int i = 0; i < plan.Targets.Count; i++)
             {
+                if (!doneDirs.Contains(Path.GetFileName(plan.Targets[i].Folder)))
+                {
+                    continue;
+                }
                 ImportHistory.Record(plan.Targets[i].Package.Fingerprint,
                                      plan.Targets[i].Unit.UnitId,
                                      plan.Targets[i].Folder);
