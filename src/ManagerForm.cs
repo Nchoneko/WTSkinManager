@@ -1047,10 +1047,11 @@ namespace WtSkin
             List<InstalledSkin> deleted = new List<InstalledSkin>();
             for (int i = 0; i < skins.Count; i++)
             {
+                // 先把当前目录也放进回滚列表：删除到一半失败时，它同样需要从撤销副本恢复。
+                deleted.Add(skins[i]);
                 try
                 {
                     DeleteTree(skins[i].Path);
-                    deleted.Add(skins[i]);
                 }
                 catch (Exception ex)
                 {
@@ -1285,8 +1286,9 @@ namespace WtSkin
                     }
                     try
                     {
-                        CopyDirectory(dirs[i], target);
+                        // 先登记目标再复制：复制到一半失败时，回滚才能把它清掉。
                         created.Add(target);
+                        CopyDirectory(dirs[i], target);
                     }
                     catch (Exception ex)
                     {
