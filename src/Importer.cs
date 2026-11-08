@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace WtSkin
 {
@@ -185,6 +186,22 @@ namespace WtSkin
             Config.EnsureDirs();
 
             long total = plan.TotalBytes;
+            try
+            {
+                string rootPath = Path.GetPathRoot(Path.GetFullPath(skins));
+                if (!string.IsNullOrEmpty(rootPath))
+                {
+                    DriveInfo drive = new DriveInfo(rootPath);
+                    if (drive.AvailableFreeSpace < total + total / 5)
+                    {
+                        result.Failed.Add("磁盘剩余空间不足，未开始写入（需要约 " + Util.HumanSize(total + total / 5) + "）");
+                        return result;
+                    }
+                }
+            }
+            catch
+            {
+            }
             long done = 0;
             result.Folders = plan.Targets.Count;
 
@@ -217,8 +234,10 @@ namespace WtSkin
                     if (!completed)
                     {
                         // 取消：不清理旧文件、不计入成功；尽量用本次备份恢复原状。
-                        RestoreBackup(backupPath, target.Folder, ref done, total, progress);
-                        result.Failed.Add(target.Unit.Title + "：已取消");
+                        bool restored = RestoreBackup(backupPath, target.Folder, ref done, total, progress);
+                        result.Failed.Add(target.Unit.Title + (restored
+                            ? "：已取消，已恢复原状"
+                            : "：已取消，文件可能已部分写入，请检查备份"));
                         continue;
                     }
 
@@ -488,6 +507,10 @@ namespace WtSkin
                 output.Write(buffer, 0, read);
                 fileDone += read;
                 done += read;
+                if (fileDone > SkinPackage.MaxSingleBytes || done > SkinPackage.MaxTotalBytes)
+                {
+                    throw new InvalidDataException("解压内容超过安全上限");
+                }
                 if (progress != null)
                 {
                     progress(done, total, target.Unit.Title);
@@ -499,20 +522,26 @@ namespace WtSkin
             }
         }
 
-        private static void RestoreBackup(string backupPath, string folder, ref long done, long total,
+        private static bool RestoreBackup(string backupPath, string folder, ref long done, long total,
                                           Action<long, long, string> progress)
         {
             if (string.IsNullOrEmpty(backupPath) || !Directory.Exists(backupPath))
             {
-                return;
+                return false;
             }
+            string temp = folder.TrimEnd('\\') + ".restore_" + Guid.NewGuid().ToString("N");
             try
             {
+                // 先复制到同级的临时目录，成功后再替换，避免恢复途中失败把原目录清空。
+                CopyDirectory(backupPath, temp, ref done, total, progress);
                 Util.TryDeleteDirectory(folder);
-                CopyDirectory(backupPath, folder, ref done, total, progress);
+                Directory.Move(temp, folder);
+                return true;
             }
             catch
             {
+                Util.TryDeleteDirectory(temp);
+                return false;
             }
         }
 
@@ -529,7 +558,13 @@ namespace WtSkin
                 foreach (string dir in Directory.GetDirectories(root))
                 {
                     // 手动备份在 backups\skins，必须与自动备份隔离，绝不参与自动清理。
-                    if (string.Equals(Path.GetFileName(dir), "skins", StringComparison.OrdinalIgnoreCase))
+                    string name = Path.GetFileName(dir);
+                    if (string.Equals(name, "skins", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                    // 只清理自动备份（<folder>_yyyyMMdd_HHmmss[_n]），用户自建/改名的备份不参与删除。
+                    if (!Regex.IsMatch(name, @"_\d{8}_\d{6}(_\d+)?$"))
                     {
                         continue;
                     }

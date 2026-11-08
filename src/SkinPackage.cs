@@ -73,9 +73,9 @@ namespace WtSkin
     /// <summary>一个待导入的涂装包（zip 或文件夹），负责内容枚举与载具识别。</summary>
     internal class SkinPackage
     {
-        private const int MaxFiles = 5000;
-        private const long MaxSingleBytes = 512L * 1024 * 1024;
-        private const long MaxTotalBytes = 4L * 1024 * 1024 * 1024;
+        internal const int MaxFiles = 5000;
+        internal const long MaxSingleBytes = 512L * 1024 * 1024;
+        internal const long MaxTotalBytes = 4L * 1024 * 1024 * 1024;
 
         private static readonly Regex FromRegex = new Regex("from\\s*:\\s*t\\s*=\\s*\"([^\"]+)\"", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
