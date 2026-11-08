@@ -934,6 +934,17 @@ namespace WtSkin
             {
                 _shownVersions = 5;
             }
+            int keepScroll = 0;
+            try
+            {
+                keepScroll = _logScroll.VerticalScroll.Value;
+                // 重建前先把滚动位置归零：否则 FitLogView 里的 Top=0 会把
+                // 已滚动的偏移叠加到新布局上，表现为可以无限往上滑。
+                _logScroll.AutoScrollPosition = new Point(0, 0);
+            }
+            catch
+            {
+            }
             _logView.SetContent(all, Math.Min(_shownVersions, all.Count), _remoteUpdate);
             int remaining = all.Count - Math.Min(_shownVersions, all.Count);
             _logMore.Visible = remaining > 0;
@@ -952,6 +963,14 @@ namespace WtSkin
             }
             FitLogView();
             LayoutUpdatePage();
+            try
+            {
+                int maxScroll = Math.Max(0, _logView.Height - _logScroll.ClientSize.Height);
+                _logScroll.AutoScrollPosition = new Point(0, Math.Min(keepScroll, maxScroll));
+            }
+            catch
+            {
+            }
         }
 
         private void FitLogView()
