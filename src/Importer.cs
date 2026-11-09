@@ -227,17 +227,30 @@ namespace WtSkin
                         backupPath = BackupCopy(target.Folder, ref done, total, progress);
                     }
 
-                    // 2. 原地覆盖写入新涂装。
+                    // 2. 先清空目标载具文件夹内的全部内容，再写入新涂装。
+                    //    备份（如果开启）已经在上一步完成，失败时由 RestoreBackup 恢复。
                     Directory.CreateDirectory(Util.LongPath(target.Folder));
+                    ClearFolder(target.Folder);
                     HashSet<string> expected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     bool completed = CopyFiles(target, expected, ref done, total, progress, cancelled);
                     if (!completed)
                     {
                         // 取消：不清理旧文件、不计入成功；尽量用本次备份恢复原状。
                         bool restored = RestoreBackup(backupPath, target.Folder, ref done, total, progress);
-                        result.Failed.Add(target.Unit.Title + (restored
-                            ? "：已取消，已恢复原状"
-                            : "：已取消，文件可能已部分写入，请检查备份"));
+                        string cancelNote;
+                        if (backupPath == null)
+                        {
+                            cancelNote = "：已取消，目标文件夹已被清空且未备份，请手动恢复";
+                        }
+                        else if (restored)
+                        {
+                            cancelNote = "：已取消，已恢复原状";
+                        }
+                        else
+                        {
+                            cancelNote = "：已取消，恢复失败，请检查备份";
+                        }
+                        result.Failed.Add(target.Unit.Title + cancelNote);
                         continue;
                     }
 
@@ -519,6 +532,37 @@ namespace WtSkin
             if (fileDone < expected)
             {
                 done += expected - fileDone;
+            }
+        }
+
+        /// <summary>清空载具文件夹内的全部文件与子目录（保留文件夹本身）。</summary>
+        private static void ClearFolder(string folder)
+        {
+            string root = Path.GetFullPath(Config.UserSkinsDir)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            string full = Path.GetFullPath(folder);
+            if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException("拒绝清空 UserSkins 之外的目录：" + full);
+            }
+            foreach (string entry in Directory.GetFileSystemEntries(full))
+            {
+                try
+                {
+                    if (Directory.Exists(entry))
+                    {
+                        Directory.Delete(Util.LongPath(entry), true);
+                    }
+                    else
+                    {
+                        File.SetAttributes(entry, FileAttributes.Normal);
+                        File.Delete(Util.LongPath(entry));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new IOException("无法清空目标文件夹：" + Path.GetFileName(entry) + "（" + ex.Message + "）", ex);
+                }
             }
         }
 

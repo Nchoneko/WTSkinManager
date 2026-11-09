@@ -112,6 +112,30 @@ $bigPkg = $analyze.Invoke($null, [object[]]@([string]$big))
 Expect $bigPkg.Ready $false 'oversized zip rejected'
 if ($bigPkg.Error -notmatch '安全上限') { Write-Host ('FAIL oversized error: ' + $bigPkg.Error); $fail++ } else { Write-Host 'PASS oversized error text' }
 
+
+# ---- 导入前清空：只清内容、保留文件夹，越界目录拒绝 ----
+$gameField = $config.GetField('GameDir', [Reflection.BindingFlags]'Public,Static')
+$oldGame = $gameField.GetValue($null)
+$tmpGame = Join-Path $env:TEMP ('wtsm-clear-' + [Guid]::NewGuid().ToString('N'))
+$userSkins = Join-Path $tmpGame 'UserSkins'
+$target = Join-Path $userSkins 'unit_test'
+New-Item -ItemType Directory -Force (Join-Path $target 'sub') | Out-Null
+[IO.File]::WriteAllText((Join-Path $target 'old.blk'),'old')
+[IO.File]::WriteAllText((Join-Path $target 'sub\old.png'),'old')
+$gameField.SetValue($null, $tmpGame)
+$clear = $importer.GetMethod('ClearFolder', [Reflection.BindingFlags]'NonPublic,Static')
+$clear.Invoke($null, [object[]]@([string]$target))
+Expect (Test-Path $target) $true 'target folder kept'
+Expect ((Get-ChildItem $target -Force | Measure-Object).Count) 0 'target cleared'
+$outside = Join-Path $env:TEMP ('wtsm-outside-' + [Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Force $outside | Out-Null
+try {
+    $clear.Invoke($null, [object[]]@([string]$outside))
+    Write-Host 'FAIL clear outside accepted'; $script:fail++
+} catch { Write-Host 'PASS clear rejects outside path' }
+Remove-Item -Recurse -Force $tmpGame,$outside -ErrorAction SilentlyContinue
+$gameField.SetValue($null, $oldGame)
+
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 if ($fail -gt 0) { Write-Host ("SECURITY TESTS FAILED: " + $fail); exit 1 }
 Write-Host 'SECURITY TESTS OK'

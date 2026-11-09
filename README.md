@@ -11,7 +11,7 @@
 [![Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager?display_name=tag&label=release)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 [![Gitee](https://img.shields.io/badge/Gitee-orgon%2FWTSkinManager-c71d23?logo=gitee)](https://gitee.com/orgon/WTSkinManager)
 
-> 当前版本 **v3.9.9**（程序内版本 `3.9.9.0`，载具数据 `2026.11.08.1`）。
+> 当前版本 **v3.9.10**（程序内版本 `3.9.10.0`，载具数据 `2026.11.08.1`）。
 
 ---
 
@@ -54,7 +54,7 @@ WTSkinManager 是一个**非官方**的《战争雷霆》自定义涂装管理�
   - 导入前按扩展名三档校验：`.dds/.blk/.tga` 正常安装；`.txt/.md/.pdf/.jpg/.ini/.url/.rtf` 忽略并事后列出；`.png/.exe/.bat/...` 或未知扩展名弹窗确认，默认取消。
 - **只写入游戏文件夹**
   - 只操作 `UserSkins` 下已经存在的 `template_<载具ID>` 或 `<载具ID>` 文件夹。
-  - 导入前自动备份旧内容；覆盖后清理不属于新涂装的旧文件。
+  - 导入前自动备份旧内容；导入时先清空目标载具文件夹，再写入新涂装。
 - **涂装管理**
   - 左侧国家筛选（全部置顶，其余按数量降序），右侧卡片网格，最多三列。
   - 卡片显示载具图标、两行标题、国家旗帜、等级/权重、机型代号、文件夹、启用/禁用状态。
@@ -146,7 +146,7 @@ npm run sign            # 可选签名；需设置 WTSM_SIGN_PFX / WTSM_SIGN_PAS
 2. 回到程序，点右上角游戏路径 →「更改」，选择战雷安装目录（包含 `UserSkins` 与 `aces.exe` 的那一层）。
 3. 把涂装 `.zip` 拖进左侧虚线区域，或点击该区域选择文件。
 4. 右侧会列出这个包能导入的载具；黄色行表示已找到对应文件夹，可以直接导入。
-5. 勾选目标载具 →「导入选中」；程序会先备份旧内容，再覆盖写入。
+5. 勾选目标载具 →「导入选中」；程序会先备份旧内容，再清空该载具文件夹并写入新涂装。
 6. 如果提示「未识别到文件夹」，回游戏创建模板后点「刷新文件夹」。
 
 ### 6.2 目录选择
@@ -215,7 +215,7 @@ WTSkinManager/
 │  ├─ VehicleIcons.cs          # 运行时取图：按清单查表、LRU、占位图（零网络）
 │  ├─ VehicleIconUpdater.cs    # 图标采集任务：间隔 / 超时 / 重试 / 断点
 │  ├─ SkinPackage.cs           # zip/文件夹解析、blk 识别
-│  ├─ Importer.cs              # 导入计划、备份、原地覆盖、清理
+│  ├─ Importer.cs              # 导入计划、备份、清空目标文件夹后写入
 │  ├─ PublisherCert.cs         # 发布者公钥证书校验与导入
 │  ├─ UpdateEngine.cs          # 程序更新与数据更新
 │  ├─ SemVer.cs / History.cs / Util.cs / ...
