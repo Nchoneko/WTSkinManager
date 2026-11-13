@@ -253,6 +253,9 @@ namespace WtSkin
         private Rectangle _githubRect;
         private Bitmap _githubMark;
         private bool _githubHover;
+        private FlatButton _liveButton;
+        private FlatButton _wtButton;
+        private FlatButton _settingsButton;
         private BuildInfoTip _buildTip;
         private Point _dragOffset;
         private int _winHover = -1;
@@ -400,7 +403,8 @@ namespace WtSkin
             int h = Ui.S(36);
             int right = ClientSize.Width - Ui.S(8);
             int x = right - (3 - index) * w;
-            return new Rectangle(x, (Ui.S(80) - h) / 2, w, h);
+            int headerHeight = _header != null ? _header.Height : Ui.S(104);
+            return new Rectangle(x, (headerHeight - h) / 2, w, h);
         }
 
         private bool HeaderHitClient(Point p)
@@ -864,11 +868,17 @@ namespace WtSkin
             {
                 return;
             }
-            int headerHeight = Ui.S(80);
+            int headerHeight = Ui.S(104);
             int tabHeight = Ui.S(44);
             int footerHeight = _footer.Visible ? Ui.S(76) : 0;
             int bannerHeight = _updateBanner != null && _updateBanner.Visible ? Ui.S(40) : 0;
             _header.SetBounds(0, 0, ClientSize.Width, headerHeight);
+            if (_liveButton != null)
+            {
+                _liveButton.SetBounds(Ui.S(24), Ui.S(72), Ui.S(104), Ui.S(24));
+                _wtButton.SetBounds(Ui.S(136), Ui.S(72), Ui.S(92), Ui.S(24));
+                _settingsButton.SetBounds(GameChipRect().Left - Ui.S(10) - Ui.S(76), Ui.S(37), Ui.S(76), Ui.S(30));
+            }
             if (_tabs != null)
             {
                 _tabs.SetBounds(0, headerHeight, ClientSize.Width, tabHeight);
@@ -918,6 +928,27 @@ namespace WtSkin
                 }
             };
             Controls.Add(_header);
+
+            _liveButton = new FlatButton();
+            _liveButton.Text = "Live 涂装站";
+            _liveButton.Font = Ui.SmallBold;
+            _liveButton.BackColor = Ui.Bg;
+            _liveButton.Click += delegate { OpenUrl("https://live.warthunder.com/feed/all/"); };
+            _header.Controls.Add(_liveButton);
+
+            _wtButton = new FlatButton();
+            _wtButton.Text = "战雷中文网";
+            _wtButton.Font = Ui.SmallBold;
+            _wtButton.BackColor = Ui.Bg;
+            _wtButton.Click += delegate { OpenUrl("https://wtliker.com/"); };
+            _header.Controls.Add(_wtButton);
+
+            _settingsButton = new FlatButton();
+            _settingsButton.Text = "设置";
+            _settingsButton.Font = Ui.SmallBold;
+            _settingsButton.BackColor = Ui.Bg;
+            _settingsButton.Click += delegate { OpenSettings(); };
+            _header.Controls.Add(_settingsButton);
         }
 
         private void PaintWindowButtons(Graphics g)
@@ -1576,12 +1607,6 @@ namespace WtSkin
             open.Click += delegate { OpenUserSkins(); };
             _footer.Controls.Add(open);
 
-            FlatButton settings = new FlatButton();
-            settings.Text = "设置";
-            settings.BackColor = Ui.Bg;
-            settings.Click += delegate { OpenSettings(); };
-            _footer.Controls.Add(settings);
-
             FlatButton clear = new FlatButton();
             clear.Text = "清空列表";
             clear.BackColor = Ui.Bg;
@@ -1610,11 +1635,6 @@ namespace WtSkin
             if (open != null)
             {
                 open.SetBounds(width - Ui.S(370), top, Ui.S(160), Ui.S(40));
-            }
-            FlatButton settings = FindButton("设置");
-            if (settings != null)
-            {
-                settings.SetBounds(width - Ui.S(460), top, Ui.S(80), Ui.S(40));
             }
             FlatButton clear = FindButton("清空列表");
             if (clear != null)

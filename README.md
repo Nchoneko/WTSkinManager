@@ -11,7 +11,7 @@
 [![Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager?display_name=tag&label=release)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 [![Gitee](https://img.shields.io/badge/Gitee-orgon%2FWTSkinManager-c71d23?logo=gitee)](https://gitee.com/orgon/WTSkinManager)
 
-> 当前版本 **v3.9.15**（程序内版本 `3.9.15.0`，载具数据 `2026.11.11.2`）。
+> 当前版本 **v3.9.16**（程序内版本 `3.9.16.0`，载具数据 `2026.11.11.2`）。
 >
 > **v3.9.13 本次改动**：新增应用内自动更新（本页内下载 / 断点续传 / SHA-256 校验 / 替换后自动重启）、
 > 更新镜像兜底与失败提示；下载方式改为「GitHub Releases 单文件 exe」唯一推荐，Gitee 改为历史存档、不再自动同步。
