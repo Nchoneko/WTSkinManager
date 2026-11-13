@@ -1695,6 +1695,9 @@ namespace WtSkin
             _refreshButton.Height = Ui.HSecondary;
             _refreshButton.Click += delegate { RefreshFolders(true); };
             _detail.Controls.Add(_refreshButton);
+            // FlatButton 在 OnParentChanged 里会用父容器背景覆盖，Add 之后必须重新指定，
+            // 否则卡片内按钮的圆角四角会露出页面底色（黑色）。
+            _refreshButton.BackColor = Ui.CardBg;
 
             _manualButton = new FlatButton();
             _manualButton.Text = "手动指定载具…";
@@ -1703,6 +1706,7 @@ namespace WtSkin
             _manualButton.Visible = false;
             _manualButton.Click += delegate { ManualAssign(); };
             _detail.Controls.Add(_manualButton);
+            _manualButton.BackColor = Ui.CardBg;
         }
 
         private void LayoutDetail()
@@ -1719,10 +1723,13 @@ namespace WtSkin
             }
             int pad = Ui.Sp24;
             int buttonY = height - pad - Ui.HPrimary;
+            // 按文字实际宽度给按钮留足空间，避免 125%/150% 字号放大后被裁切。
+            int refreshWidth = Math.Max(Ui.S(120),
+                TextRenderer.MeasureText("刷新文件夹", Ui.BodyBold).Width + Ui.S(36));
             _refreshButton.SetBounds(pad, buttonY + (Ui.HPrimary - Ui.HSecondary) / 2,
-                                     Ui.S(120), Ui.HSecondary);
-            _manualButton.SetBounds(pad + Ui.S(120) + Ui.Sp12, buttonY,
-                                    Math.Max(Ui.S(120), width - pad * 2 - Ui.S(120) - Ui.Sp12),
+                                     refreshWidth, Ui.HSecondary);
+            _manualButton.SetBounds(pad + refreshWidth + Ui.Sp12, buttonY,
+                                    Math.Max(Ui.S(120), width - pad * 2 - refreshWidth - Ui.Sp12),
                                     Ui.HPrimary);
 
             int hintHeight = Ui.S(48);

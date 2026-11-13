@@ -393,26 +393,32 @@ namespace WtSkin
             return value * _scale;
         }
 
-        public static void Init(float scale)
+        public static void Init(float scale, float fontZoom)
         {
             if (scale > 0.5f && scale < 4f)
             {
                 _scale = scale;
             }
+            // 字号也要跟着界面缩放走：点值只随系统 DPI 放大，程序内 Zoom 必须单独乘进去，
+            // 否则会出现“卡片/按钮变大、文字不变”的错位。
+            if (fontZoom <= 0.1f || fontZoom > 3f)
+            {
+                fontZoom = 1f;
+            }
             DisposeFonts();
             string family = PickFamily("Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI");
-            _title = new Font(family, 15.5f, FontStyle.Bold, GraphicsUnit.Point);
-            _h1 = new Font(family, 11.5f, FontStyle.Bold, GraphicsUnit.Point);
-            _body = new Font(family, 9.5f, FontStyle.Regular, GraphicsUnit.Point);
-            _bodyBold = new Font(family, 9.5f, FontStyle.Bold, GraphicsUnit.Point);
-            _small = new Font(family, 8.5f, FontStyle.Regular, GraphicsUnit.Point);
-            _smallBold = new Font(family, 8.5f, FontStyle.Bold, GraphicsUnit.Point);
-            _mono = new Font("Consolas", 8.5f, FontStyle.Regular, GraphicsUnit.Point);
+            _title = new Font(family, 15.5f * fontZoom, FontStyle.Bold, GraphicsUnit.Point);
+            _h1 = new Font(family, 11.5f * fontZoom, FontStyle.Bold, GraphicsUnit.Point);
+            _body = new Font(family, 9.5f * fontZoom, FontStyle.Regular, GraphicsUnit.Point);
+            _bodyBold = new Font(family, 9.5f * fontZoom, FontStyle.Bold, GraphicsUnit.Point);
+            _small = new Font(family, 8.5f * fontZoom, FontStyle.Regular, GraphicsUnit.Point);
+            _smallBold = new Font(family, 8.5f * fontZoom, FontStyle.Bold, GraphicsUnit.Point);
+            _mono = new Font("Consolas", 8.5f * fontZoom, FontStyle.Regular, GraphicsUnit.Point);
             // 管理卡片/浮层专用：约 14px / 12px / 11px / 12px，全列表统一。
-            _cardTitle = new Font(family, 10.5f, FontStyle.Bold, GraphicsUnit.Point);
-            _cardSub = new Font(family, 9f, FontStyle.Regular, GraphicsUnit.Point);
-            _cardLabel = new Font(family, 8.25f, FontStyle.Regular, GraphicsUnit.Point);
-            _cardValue = new Font(family, 9f, FontStyle.Regular, GraphicsUnit.Point);
+            _cardTitle = new Font(family, 10.5f * fontZoom, FontStyle.Bold, GraphicsUnit.Point);
+            _cardSub = new Font(family, 9f * fontZoom, FontStyle.Regular, GraphicsUnit.Point);
+            _cardLabel = new Font(family, 8.25f * fontZoom, FontStyle.Regular, GraphicsUnit.Point);
+            _cardValue = new Font(family, 9f * fontZoom, FontStyle.Regular, GraphicsUnit.Point);
         }
 
         public static void SetTheme(int index)
@@ -1747,7 +1753,8 @@ namespace WtSkin
 
             int box = Ui.S(17);
             int by = (Height - box) / 2;
-            Rectangle boxRect = new Rectangle(Ui.S(2), by, box, box);
+            // 与左侧高亮条留出间距，避免勾选框压住黄条。
+            Rectangle boxRect = new Rectangle(Ui.S(10), by, box, box);
             if (_checked)
             {
                 Ui.FillRound(g, boxRect, Ui.S(4), Ui.Accent);

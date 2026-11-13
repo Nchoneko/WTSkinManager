@@ -1,6 +1,6 @@
 # 战雷涂装管理器 · 载具名称表（slug<TAB>中文名<TAB>英文名）
 # schemaVersion=1
-# dataVersion=2026.11.11.2
+# dataVersion=2026.11.11.3
 # count=3705
 Destroyer_USSR_Type7	驱逐舰	Destroyer
 Ki_84	四式战	Ki-84
@@ -1108,7 +1108,7 @@ germ_s_700_s_701	S 700 型快艇 S 701 号	S-700-class, S-701
 germ_s_700_s_706	S-700-class, S-706	S-700-class, S-706
 germ_schutze_class	射手座级扫雷艇“射手座”号 (M1062)	Schütze-class, Schütze (M1062)
 germ_schutzenpanzer_puma	步兵战车 美洲狮	Schützenpanzer Puma
-germ_schutzenpanzer_puma_vjtf	步兵战车 美洲狮 (VJTF 标准)	Schützenpanzer Puma VJTF
+germ_schutzenpanzer_puma_vjtf	步兵战车 美洲狮（VJFT 标准）	Schützenpanzer Puma VJTF
 germ_schutzenpanzer_puma_vjtf_mod	步兵战车 美洲狮 (VJTF 标准) u14	Schützenpanzer Puma VJTF u14
 germ_sdkfz_221_s_pz_b_41	机枪型轻型装甲侦察车 (221 号特种车辆)/sPzB 41	le.Pz.Sp.Wg. (s.Pz.B.41) Sd.Kfz.221
 germ_sdkfz_222	轻型装甲侦察车 B 型 (5 批次)/20 毫米机炮	le.Pz.Sp.Wg. (2 cm) Ausf.B 5.Serie
@@ -3706,4 +3706,4 @@ q_5d	强-5D	Q-5D
 saab_jas39_pre_serie	JAS39-5	JAS39-5
 f_15ia	F-15IA 雷霆 II	F-15IA Ra'am II
 aw_249_pre_serie	AW249 凤凰	AW249 Fenice
-germ_schutzenpanzer_puma_vjft	步兵战车 美洲狮 (VJTF 标准)	Schützenpanzer Puma VJTF
+germ_schutzenpanzer_puma_vjft	步兵战车 美洲狮（VJFT 标准）	Schützenpanzer Puma VJTF

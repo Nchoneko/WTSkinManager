@@ -3,10 +3,10 @@
 # 格式：slug<TAB>等级(1~9)<TAB>RB<TAB>三档相同<TAB>AB<TAB>SB<TAB>命中方式<TAB>本地 slug<TAB>显示名<TAB>国家<TAB>分支<TAB>采集时间
 format=2
 schemaVersion=1
-dataVersion=2026.11.11.2
+dataVersion=2026.11.11.3
 updated=2026-11-14 02:27:23
 version=2026-11-14.005446
-count=72
+count=73
 cn_al_khalid_1	7	11.7	1			slug		Al-Khalid-I	china	ground	2026-11-07 22:49
 cn_hq_11	8	13.3	1			slug		HQ11	china	ground	2026-11-07 22:49
 cn_m1a2t	8	13.0	1			slug		M1A2T	china	ground	2026-11-07 22:49
@@ -79,3 +79,4 @@ saab_jas39_pre_serie	8	13.0	1			slug		JAS39-5	sweden	aviation	2026-11-14 00:54:4
 f_15ia	9	15.0	1			slug		F-15IA Ra'am II	israel	aviation	2026-11-14 00:54:46
 aw_249_pre_serie	7	13.3	0	13.3	11.7	slug		AW249 Fenice	italy	helicopters	2026-11-14 00:54:46
 germ_schutzenpanzer_puma_vjft	7	11.0	1			slug		Schützenpanzer Puma VJTF	germany	ground	2026-11-14 02:27:23
+germ_schutzenpanzer_puma_vjtf	7	11.0	1			slug		Schützenpanzer Puma VJTF	germany	ground	2026-11-14 05:43:34

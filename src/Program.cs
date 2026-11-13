@@ -58,7 +58,7 @@ namespace WtSkin
                 Ui.SetTheme(Config.ThemeIndex);
                 // 全部界面动画关闭：淡入/滑入/分页过渡/浮层渐变都不再执行
                 Ui.Animations = false;
-                Ui.Init(Native.GetDpiScale() * (Config.ZoomPercent / 100f));
+                Ui.Init(Native.GetDpiScale() * (Config.ZoomPercent / 100f), Config.ZoomPercent / 100f);
 
                 // 上次自更新失败回滚过：启动时提示一次（读完即删）。
                 UpdateInstaller.ShowRollbackNotice();
