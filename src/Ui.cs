@@ -945,6 +945,61 @@ namespace WtSkin
     }
 
     /// <summary>扁平按钮，主按钮/普通/危险三种外观。</summary>
+    /// <summary>顶部站点入口：图标 + 文字的轻量按钮，沿用现有配色与圆角。</summary>
+    internal class SiteButton : Control
+    {
+        public Bitmap Icon;
+        private bool _hover;
+
+        public SiteButton()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw |
+                     ControlStyles.SupportsTransparentBackColor, true);
+            BackColor = Ui.Bg;
+            Cursor = Cursors.Hand;
+            Font = Ui.SmallBold;
+            Height = Ui.S(30);
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            base.OnMouseEnter(e);
+            _hover = true;
+            Invalidate();
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            _hover = false;
+            Invalidate();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Ui.Smooth(g);
+            Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
+            Ui.FillRound(g, r, Ui.S(8), _hover ? Ui.PanelHover : Ui.Panel);
+            Ui.DrawRound(g, r, Ui.S(8), _hover ? Ui.Line : Ui.LineSoft, 1f);
+            int pad = Ui.S(10);
+            int icon = Ui.S(18);
+            int tx = pad;
+            if (Icon != null)
+            {
+                Rectangle ir = new Rectangle(pad, (Height - icon) / 2, icon, icon);
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.DrawImage(Icon, ir);
+                tx += icon + Ui.S(8);
+            }
+            Ui.DrawText(g, Text, Font, _hover ? Ui.Text : Ui.TextDim,
+                    new Rectangle(tx, 0, Math.Max(Ui.S(10), Width - tx - pad), Height),
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+        }
+    }
+
     internal class FlatButton : Control
     {
         private bool _hover;

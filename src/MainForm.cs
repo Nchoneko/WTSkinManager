@@ -253,8 +253,8 @@ namespace WtSkin
         private Rectangle _githubRect;
         private Bitmap _githubMark;
         private bool _githubHover;
-        private FlatButton _liveButton;
-        private FlatButton _wtButton;
+        private SiteButton _liveButton;
+        private SiteButton _wtButton;
         private FlatButton _settingsButton;
         private BuildInfoTip _buildTip;
         private Point _dragOffset;
@@ -403,7 +403,7 @@ namespace WtSkin
             int h = Ui.S(36);
             int right = ClientSize.Width - Ui.S(8);
             int x = right - (3 - index) * w;
-            int headerHeight = _header != null ? _header.Height : Ui.S(104);
+            int headerHeight = _header != null ? _header.Height : Ui.S(116);
             return new Rectangle(x, (headerHeight - h) / 2, w, h);
         }
 
@@ -868,16 +868,17 @@ namespace WtSkin
             {
                 return;
             }
-            int headerHeight = Ui.S(104);
+            int headerHeight = Ui.S(116);
             int tabHeight = Ui.S(44);
             int footerHeight = _footer.Visible ? Ui.S(76) : 0;
             int bannerHeight = _updateBanner != null && _updateBanner.Visible ? Ui.S(40) : 0;
             _header.SetBounds(0, 0, ClientSize.Width, headerHeight);
             if (_liveButton != null)
             {
-                _liveButton.SetBounds(Ui.S(24), Ui.S(72), Ui.S(104), Ui.S(24));
-                _wtButton.SetBounds(Ui.S(136), Ui.S(72), Ui.S(92), Ui.S(24));
-                _settingsButton.SetBounds(GameChipRect().Left - Ui.S(10) - Ui.S(76), Ui.S(37), Ui.S(76), Ui.S(30));
+                Rectangle chip = GameChipRect();
+                _liveButton.SetBounds(Ui.S(24), Ui.S(84), Ui.S(132), Ui.S(30));
+                _wtButton.SetBounds(Ui.S(166), Ui.S(84), Ui.S(168), Ui.S(30));
+                _settingsButton.SetBounds(chip.Left - Ui.S(10) - Ui.S(76), chip.Top, Ui.S(76), chip.Height);
             }
             if (_tabs != null)
             {
@@ -929,17 +930,15 @@ namespace WtSkin
             };
             Controls.Add(_header);
 
-            _liveButton = new FlatButton();
-            _liveButton.Text = "Live 涂装站";
-            _liveButton.Font = Ui.SmallBold;
-            _liveButton.BackColor = Ui.Bg;
+            _liveButton = new SiteButton();
+            _liveButton.Text = "官方涂装站";
+            _liveButton.Icon = LoadSiteIcon("live.png");
             _liveButton.Click += delegate { OpenUrl("https://live.warthunder.com/feed/all/"); };
             _header.Controls.Add(_liveButton);
 
-            _wtButton = new FlatButton();
-            _wtButton.Text = "战雷中文网";
-            _wtButton.Font = Ui.SmallBold;
-            _wtButton.BackColor = Ui.Bg;
+            _wtButton = new SiteButton();
+            _wtButton.Text = "战雷涂装中文网";
+            _wtButton.Icon = LoadSiteIcon("wtliker.png");
             _wtButton.Click += delegate { OpenUrl("https://wtliker.com/"); };
             _header.Controls.Add(_wtButton);
 
@@ -1008,6 +1007,28 @@ namespace WtSkin
             try
             {
                 using (Stream stream = typeof(MainForm).Assembly.GetManifestResourceStream("github.png"))
+                {
+                    if (stream == null)
+                    {
+                        return null;
+                    }
+                    using (Bitmap bmp = new Bitmap(stream))
+                    {
+                        return new Bitmap(bmp);
+                    }
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static Bitmap LoadSiteIcon(string resource)
+        {
+            try
+            {
+                using (Stream stream = typeof(MainForm).Assembly.GetManifestResourceStream(resource))
                 {
                     if (stream == null)
                     {

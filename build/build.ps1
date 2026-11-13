@@ -386,6 +386,8 @@ $cscArgs = @(
     ('/resource:' + (Join-Path $DataDir 'updates.dat') + ',updates.dat'),
     ('/resource:' + $buildInfoPath + ',build-info.dat'),
     ('/resource:' + (Join-Path $Root 'assets\github.png') + ',github.png'),
+    ('/resource:' + (Join-Path $Root 'assets\live.png') + ',live.png'),
+    ('/resource:' + (Join-Path $Root 'assets\wtliker.png') + ',wtliker.png'),
     ('/resource:' + (Join-Path $Root 'assets\donate\alipay.jpg') + ',donate_alipay.jpg'),
     ('/resource:' + (Join-Path $Root 'assets\donate\wechat.png') + ',donate_wechat.png'),
     ('/resource:' + $CertAsset + ',publisher.cer'),
