@@ -1552,12 +1552,21 @@ namespace WtSkin
             _drop.Cursor = Cursors.Hand;
             _drop.Click += delegate { BrowseFiles(); };
             _drop.ChooseButton.Click += delegate { BrowseFiles(); };
+            _drop.DragEnter += OnDragEnter;
+            _drop.DragOver += OnDragEnter;
+            _drop.DragLeave += delegate { _drop.Hot = false; };
+            _drop.DragDrop += OnDragDrop;
             _body.Controls.Add(_drop);
 
             _detail = new BufferedPanel();
             _detail.BackColor = Ui.Page;
             _detail.Paint += PaintDetail;
             _detail.Resize += delegate { LayoutDetail(); };
+            _detail.AllowDrop = true;
+            _detail.DragEnter += OnDragEnter;
+            _detail.DragOver += OnDragEnter;
+            _detail.DragLeave += delegate { _drop.Hot = false; };
+            _detail.DragDrop += OnDragDrop;
             _body.Controls.Add(_detail);
             BuildDetail();
 
@@ -1568,6 +1577,11 @@ namespace WtSkin
             _listPanel.BackColor = Ui.Page;
             _listPanel.Padding = new Padding(0);
             _listPanel.Resize += delegate { ResizeCards(); };
+            _listPanel.AllowDrop = true;
+            _listPanel.DragEnter += OnDragEnter;
+            _listPanel.DragOver += OnDragEnter;
+            _listPanel.DragLeave += delegate { _drop.Hot = false; };
+            _listPanel.DragDrop += OnDragDrop;
             _body.Controls.Add(_listPanel);
         }
 
@@ -1577,17 +1591,18 @@ namespace WtSkin
             {
                 return;
             }
-            // 两栏栅格：左侧自适应撑满，右侧固定 400（380~420 区间），容器内边距 24、卡片间距 16。
+            // 两栏栅格：左右各占一半，容器内边距 24、卡片间距 16。
             int pad = Ui.Sp24;
             int gap = Ui.GapCard;
             int width = _body.ClientSize.Width;
             int height = _body.ClientSize.Height;
-            int rightWidth = Ui.S(Tok.RightColumn);
-            int leftWidth = width - pad * 2 - gap - rightWidth;
+            int available = width - pad * 2 - gap;
+            int rightWidth = Math.Max(Ui.S(360), available / 2);
+            int leftWidth = available - rightWidth;
             if (leftWidth < Ui.S(320))
             {
                 leftWidth = Ui.S(320);
-                rightWidth = Math.Max(Ui.S(380), width - pad * 2 - gap - leftWidth);
+                rightWidth = Math.Max(Ui.S(320), available - leftWidth);
             }
             int contentTop = pad;
             int contentHeight = Math.Max(Ui.S(200), height - pad * 2);
