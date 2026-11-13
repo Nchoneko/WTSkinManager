@@ -665,8 +665,9 @@ namespace WtSkin
             PageLabel(_pageUi, "缩放", 8, 118, 60, 20, Ui.SmallBold, Ui.TextDim);
             int zoomValueWidth = Math.Max(Ui.S(70), TextRenderer.MeasureText("150%", Ui.BodyBold).Width + Ui.S(24));
             int zoomButtonWidth = Ui.S(38);
-            int zoomX = Ui.S(62);
-            FlatButton zoomOut = PageButton(_pageUi, "－", 62, 112, 38, false);
+            // “缩放”标签宽 60，按钮从 72 开始，避免标签的实底盖住按钮左边缘。
+            int zoomX = Ui.S(72);
+            FlatButton zoomOut = PageButton(_pageUi, "－", 72, 112, 38, false);
             zoomOut.Click += delegate { ChangeZoom(-5); };
             zoomX += zoomButtonWidth + Ui.S(4);
             _zoomLabel = PageLabel(_pageUi, _zoom + "%", 0, 112, 70, 38, Ui.BodyBold, Ui.Text);
@@ -678,8 +679,11 @@ namespace WtSkin
             zoomIn.Left = zoomX;
             zoomIn.Click += delegate { ChangeZoom(5); };
             zoomX += zoomButtonWidth + Ui.S(12);
-            PageLabel(_pageUi, "75% – 150%，修改后需要重启程序生效。",
-                      zoomX, 120, Math.Max(Ui.S(120), _pageUi.Width - zoomX - Ui.S(8)), 20, Ui.Small, Ui.TextFaint);
+            // 这里传入的是已缩放的物理坐标，直接设 Left/Width，不能再经 PageLabel 二次 Ui.S。
+            Label zoomHint = PageLabel(_pageUi, "75% – 150%，修改后需要重启程序生效。",
+                      0, 120, 10, 20, Ui.Small, Ui.TextFaint);
+            zoomHint.Left = zoomX;
+            zoomHint.Width = Math.Max(Ui.S(120), _pageUi.Width - zoomX - Ui.S(8));
 
             _animRow = new CheckRow();
             _animRow.Title = "界面动画";
