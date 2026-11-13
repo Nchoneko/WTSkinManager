@@ -1,7 +1,7 @@
 # 战雷涂装管理器 · 载具名称表（slug<TAB>中文名<TAB>英文名）
 # schemaVersion=1
-# dataVersion=2026.11.08.1
-# count=3683
+# dataVersion=2026.11.11.1
+# count=3704
 Destroyer_USSR_Type7	驱逐舰	Destroyer
 Ki_84	四式战	Ki-84
 TribalDestroyer	部族级驱逐舰	Tribal Destroyer
@@ -3685,3 +3685,24 @@ z_19e	直-19E	Z-19E
 z_9w	直-9W	Z-9W
 z_9wa	直-9WA	Z-9WA
 zeppelin	齐柏林 LZ 62 (L 30) R	Zeppelin LZ 62 (L 30) R
+us_stingray_2	魟鱼 II	Stingray II
+germ_leopard_2a8	豹2A8	Leopard 2A8
+ussr_btr_90_2004	BTR-90	BTR-90
+uk_olifant_optimering	象式 Mk.1B 优化型	Olifant Mk.1B Optimering
+jp_bmp_3f	BMP-3F	BMP-3F
+cn_zbd_04	ZBD04	ZBD04
+it_v_4_straussler	V-4/40	V-4/40
+it_lancia_flak38	蓝旗亚 3Ro（防空）	Lancia 3Ro (Flak.)
+fr_prtl	猎豹 PRTL	Cheetah PRTL
+sw_leopard_2a8no	豹2A8NO	Leopard 2A8NO
+sw_pv_m39	Pbil m/39	Pbil m/39
+f_15ex	F-15EX	F-15EX
+fa_18d_late	F/A-18D	F/A-18D
+su_15tm	苏-15TM	Su-15TM
+fulmar_mk2	海燕 Mk.II	Fulmar Mk.II
+firefly_mk1_thailand	萤火虫 F.Mk.I（泰国）	Firefly F.Mk.I (Thailand)
+b_33_indonesia	B-33（印度尼西亚）	B-33 (Indonesia)
+q_5d	强-5D	Q-5D
+saab_jas39_pre_serie	JAS39-5	JAS39-5
+f_15ia	F-15IA 雷霆 II	F-15IA Ra'am II
+aw_249_pre_serie	AW249 凤凰	AW249 Fenice

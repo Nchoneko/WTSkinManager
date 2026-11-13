@@ -11,7 +11,7 @@
 [![Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager?display_name=tag&label=release)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 [![Gitee](https://img.shields.io/badge/Gitee-orgon%2FWTSkinManager-c71d23?logo=gitee)](https://gitee.com/orgon/WTSkinManager)
 
-> 当前版本 **v3.9.11**（程序内版本 `3.9.11.0`，载具数据 `2026.11.08.1`）。
+> 当前版本 **v3.9.12**（程序内版本 `3.9.12.0`，载具数据 `2026.11.11.1`）。
 
 ---
 
