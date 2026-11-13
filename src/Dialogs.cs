@@ -633,14 +633,19 @@ namespace WtSkin
         private void BuildUiPage()
         {
             PageLabel(_pageUi, "主题", 8, 6, 120, 22, Ui.SmallBold, Ui.TextDim);
-            for (int i = 0; i < Palettes.All.Length; i++)
+            int chipCount = Palettes.All.Length;
+            int chipMargin = Ui.S(8);
+            int chipGap = Ui.S(10);
+            int chipWidth = Math.Max(Ui.S(96),
+                (_pageUi.Width - chipMargin * 2 - chipGap * (chipCount - 1)) / Math.Max(1, chipCount));
+            for (int i = 0; i < chipCount; i++)
             {
                 ThemeChip chip = new ThemeChip();
                 chip.Index = i;
                 chip.Selected = i == _theme;
-                chip.Left = Ui.S(8 + i * 150);
+                chip.Left = chipMargin + i * (chipWidth + chipGap);
                 chip.Top = Ui.S(32);
-                chip.Width = Ui.S(140);
+                chip.Width = chipWidth;
                 chip.Height = Ui.S(62);
                 chip.BackColor = Ui.Panel;
                 chip.Click += delegate(object sender, EventArgs args)
@@ -658,13 +663,23 @@ namespace WtSkin
             }
 
             PageLabel(_pageUi, "缩放", 8, 118, 60, 20, Ui.SmallBold, Ui.TextDim);
+            int zoomValueWidth = Math.Max(Ui.S(70), TextRenderer.MeasureText("150%", Ui.BodyBold).Width + Ui.S(24));
+            int zoomButtonWidth = Ui.S(38);
+            int zoomX = Ui.S(62);
             FlatButton zoomOut = PageButton(_pageUi, "－", 62, 112, 38, false);
             zoomOut.Click += delegate { ChangeZoom(-5); };
-            _zoomLabel = PageLabel(_pageUi, _zoom + "%", 106, 112, 70, 38, Ui.BodyBold, Ui.Text);
+            zoomX += zoomButtonWidth + Ui.S(4);
+            _zoomLabel = PageLabel(_pageUi, _zoom + "%", 0, 112, 70, 38, Ui.BodyBold, Ui.Text);
+            _zoomLabel.Left = zoomX;
+            _zoomLabel.Width = zoomValueWidth;
             _zoomLabel.TextAlign = ContentAlignment.MiddleCenter;
-            FlatButton zoomIn = PageButton(_pageUi, "＋", 182, 112, 38, false);
+            zoomX += zoomValueWidth + Ui.S(4);
+            FlatButton zoomIn = PageButton(_pageUi, "＋", 0, 112, 38, false);
+            zoomIn.Left = zoomX;
             zoomIn.Click += delegate { ChangeZoom(5); };
-            PageLabel(_pageUi, "75% – 150%，修改后需要重启程序生效。", 232, 120, 360, 20, Ui.Small, Ui.TextFaint);
+            zoomX += zoomButtonWidth + Ui.S(12);
+            PageLabel(_pageUi, "75% – 150%，修改后需要重启程序生效。",
+                      zoomX, 120, Math.Max(Ui.S(120), _pageUi.Width - zoomX - Ui.S(8)), 20, Ui.Small, Ui.TextFaint);
 
             _animRow = new CheckRow();
             _animRow.Title = "界面动画";
