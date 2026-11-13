@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
@@ -587,6 +588,7 @@ namespace WtSkin
         private Label _detail;
         private FlatButton _checkButton;
         private FlatButton _download;
+        private FlatButton _cancel;
         private FlatButton _releases;
         private CheckRow _autoRow;
         private LinkText _allLink;
@@ -594,12 +596,28 @@ namespace WtSkin
         private BufferedPanel _summaryPanel;
         private Label _summaryLabel;
         private Spinner _spinner;
+        private Label _progressLeft;
+        private Label _progressRight;
+        private UpdateProgressBar _bar;
 
         private UpdateCheckResult _result;
         private List<string> _summaryLines = new List<string>();
         private bool _checking;
         private bool _expanded;
         private bool _hasResult;
+
+        // ---- 应用内下载状态（进度区占原按钮行，通过 HeightChanged 让更新日志顺延） ----
+        private UpdateDownloader _downloader;
+        private DownloadPhase _phase = DownloadPhase.Idle;
+        private DownloadProgress _lastProgress;
+        private bool _downloadFailed;
+        private string _downloadError = "";
+        private bool _ready;
+        private string _readyExe = "";
+        private string _readySha = "";
+        private long _readySize;
+        private long _partBytes;
+        private long _partTotal;
 
         public event Action<UpdateCheckResult> ResultChanged;
         public event Action HeightChanged;
@@ -711,17 +729,28 @@ namespace WtSkin
             _summaryLabel.AutoSize = false;
             _summaryPanel.Controls.Add(_summaryLabel);
 
-            _download = MakeButton("前往下载", 8, 132, 120, 34, true);
+            _download = MakeButton("下载更新", 8, 132, 120, 34, true);
             _download.Visible = false;
-            _download.Click += delegate
-            {
-                string url = _result == null ? "" : _result.DownloadUrl;
-                if (!UpdateService.IsHttpUrl(url))
-                {
-                    url = Config.ReleasesPage;
-                }
-                UpdateService.OpenUrl(url);
-            };
+            _download.Click += delegate { OnPrimaryAction(); };
+
+            // 下载中禁用主按钮，右侧出现「取消」；取消后保留 .part，主按钮变「继续下载」。
+            _cancel = MakeButton("取消", 136, 132, 84, 34, false);
+            _cancel.Visible = false;
+            _cancel.Click += delegate { CancelDownload(); };
+
+            _progressLeft = MakeLabel("", 8, 176, 360, 20, Ui.Small, Ui.TextDim);
+            _progressLeft.Visible = false;
+            _progressRight = MakeLabel("", 368, 176, 232, 20, Ui.Small, Ui.TextFaint);
+            _progressRight.TextAlign = ContentAlignment.MiddleRight;
+            _progressRight.Visible = false;
+
+            _bar = new UpdateProgressBar();
+            _bar.Left = Ui.S(8);
+            _bar.Top = Ui.S(198);
+            _bar.Width = Ui.S(592);
+            _bar.Height = Ui.S(6);
+            _bar.Visible = false;
+            Controls.Add(_bar);
 
             _releases = MakeButton("打开 Releases 页面", 8, 158, 160, 34, false);
             _releases.Visible = false;
@@ -755,6 +784,9 @@ namespace WtSkin
             }
             if (_hasResult)
             {
+                // 重新打开设置页时同步「已下载」状态，但不重复弹就绪窗口。
+                SyncReadyState();
+                ApplyLayout();
                 return;
             }
             UpdateCheckResult cached = UpdateService.FromCachePublic(cache);
@@ -840,11 +872,79 @@ namespace WtSkin
                     break;
             }
 
+            // 新的检查结果回到「未下载」起点；下载进行中则保留当前进度不动。
+            if (_downloader == null)
+            {
+                _downloadFailed = false;
+                _downloadError = "";
+                _phase = DownloadPhase.Idle;
+                _lastProgress = null;
+                _partBytes = 0;
+                _partTotal = 0;
+                _progressLeft.Visible = false;
+                _progressRight.Visible = false;
+                _bar.Visible = false;
+                _cancel.Visible = false;
+                _download.Enabled = true;
+                _download.Text = "下载更新";
+            }
+            SyncReadyState();
+
             ApplyLayout();
             if (ResultChanged != null)
             {
                 ResultChanged(result);
             }
+        }
+
+        /// <summary>
+        /// 同步「已下载并校验通过」状态：磁盘上有 <version>\WTSkinManager.exe 且大小与 ready.ini 一致
+        /// 时，按钮变「立即安装」、状态行提示可直接安装（不再自动弹窗）。
+        /// </summary>
+        private void SyncReadyState()
+        {
+            if (_result == null || _result.State != UpdateState.NewVersion || _result.Latest == null)
+            {
+                _ready = false;
+                return;
+            }
+            string version = _result.Latest.ToDisplay();
+            string exe;
+            string sha;
+            long size;
+            if (!UpdateDownloader.TryGetReadyPackage(version, out exe, out sha, out size))
+            {
+                _ready = false;
+                // 上次没下完时会留下 .part：按钮直接提示「继续下载」，点下去按 Range 续传。
+                long part = UpdateDownloader.PartLength(version);
+                if (part > 0 && _downloader == null)
+                {
+                    _partBytes = part;
+                    _partTotal = _result.DownloadSize;
+                    _download.Text = "继续下载";
+                }
+                return;
+            }
+            _ready = true;
+            _readyExe = exe;
+            _readySha = sha;
+            _readySize = size;
+            _downloadFailed = false;
+            _downloadError = "";
+            _phase = DownloadPhase.Completed;
+            _partBytes = size;
+            _partTotal = size;
+            _download.Enabled = true;
+            _download.Text = "立即安装";
+            _status.Text = "更新已下载，可立即安装";
+            _status.ForeColor = Ui.Good;
+            _cancel.Visible = false;
+            _progressLeft.Text = "已下载 " + DownloadFormat.Size(size);
+            _progressRight.Text = "SHA-256 校验通过";
+            _progressLeft.Visible = true;
+            _progressRight.Visible = true;
+            _bar.SetValue(1, true);
+            _bar.Visible = true;
         }
 
         private void BuildSummary(string body)
@@ -934,7 +1034,7 @@ namespace WtSkin
 
             if (newVersion)
             {
-                _download.Left = Ui.S(8);
+                int actionTop = 130;
                 _releases.Visible = false;
                 _detail.Visible = false;
                 if (hasSummary)
@@ -945,30 +1045,35 @@ namespace WtSkin
                     _summaryPanel.Top = Ui.S(130);
                     _summaryPanel.Width = Ui.S(590);
                     _summaryPanel.Height = summaryHeight;
-                    int actionTop = 130 + (_expanded ? 140 : 90) + 4;
-                    _download.Top = Ui.S(actionTop);
+                    actionTop = 130 + (_expanded ? 140 : 90) + 4;
                     _expandLink.Left = Ui.S(536);
                     _expandLink.Top = Ui.S(actionTop + 6);
                     _expandLink.Width = Ui.S(56);
                     _expandLink.Visible = _summaryLines.Count > 5;
-                    SetHeight(actionTop + 34 + 6);
                 }
                 else
                 {
                     _summaryPanel.Visible = false;
-                    _download.Top = Ui.S(130);
                     _expandLink.Visible = false;
-                    SetHeight(130 + 34 + 6);
                 }
+                _download.Visible = true;
+                _download.Left = Ui.S(8);
+                _download.Top = Ui.S(actionTop);
+                LayoutActionBand(actionTop);
                 return;
             }
 
             _summaryPanel.Visible = false;
             _expandLink.Visible = false;
             _download.Visible = false;
+            _cancel.Visible = false;
+            _bar.Visible = false;
+            _progressLeft.Visible = false;
+            _progressRight.Visible = false;
 
             if (failed)
             {
+                _releases.Text = "打开 Releases 页面";
                 _detail.Visible = true;
                 _releases.Visible = true;
                 _releases.Left = Ui.S(8);
@@ -981,6 +1086,409 @@ namespace WtSkin
             _releases.Visible = false;
             _detail.Visible = false;
             SetHeight(136);
+        }
+
+        /// <summary>
+        /// 按钮行 + 进度区：进度区紧贴按钮行下方（占原按钮行位置），
+        /// 高度增长经 SetHeight → HeightChanged 让更新日志整体下移，互不重叠。
+        /// </summary>
+        private void LayoutActionBand(int actionTop)
+        {
+            _download.Width = Ui.S(120);
+
+            if (_downloadFailed)
+            {
+                // 失败兜底：一行提示 +「重试下载」+「打开 GitHub 页面」。
+                _releases.Text = "打开 GitHub 页面";
+                _releases.Visible = true;
+                _releases.Left = Ui.S(136);
+                _releases.Top = Ui.S(actionTop + 26);
+                _releases.Width = Ui.S(168);
+                _detail.Left = Ui.S(8);
+                _detail.Top = Ui.S(actionTop);
+                _detail.Width = Ui.S(592);
+                _detail.Text = string.IsNullOrEmpty(_downloadError) ? "下载失败，请稍后重试" : _downloadError;
+                _detail.Visible = true;
+                _download.Top = Ui.S(actionTop + 26);
+                _cancel.Visible = false;
+                _progressLeft.Visible = false;
+                _progressRight.Visible = false;
+                _bar.Visible = false;
+                SetHeight(actionTop + 26 + 34 + 8);
+                return;
+            }
+
+            _detail.Visible = false;
+            bool band = _phase != DownloadPhase.Idle && _phase != DownloadPhase.Failed;
+            if (band)
+            {
+                _cancel.Left = Ui.S(136);
+                _cancel.Top = Ui.S(actionTop);
+                _cancel.Width = Ui.S(84);
+                _cancel.Visible = _phase == DownloadPhase.Preparing || _phase == DownloadPhase.Downloading ||
+                                  _phase == DownloadPhase.Retrying || _phase == DownloadPhase.Verifying;
+                _progressLeft.Left = Ui.S(8);
+                _progressLeft.Top = Ui.S(actionTop + 40);
+                _progressLeft.Width = Ui.S(360);
+                _progressRight.Left = Ui.S(368);
+                _progressRight.Top = Ui.S(actionTop + 40);
+                _progressRight.Width = Ui.S(232);
+                _progressLeft.Visible = true;
+                _progressRight.Visible = true;
+                _bar.Left = Ui.S(8);
+                _bar.Top = Ui.S(actionTop + 62);
+                _bar.Width = Ui.S(592);
+                _bar.Visible = true;
+                SetHeight(actionTop + 62 + 6 + 10);
+                return;
+            }
+
+            _cancel.Visible = false;
+            _progressLeft.Visible = false;
+            _progressRight.Visible = false;
+            _bar.Visible = false;
+            SetHeight(actionTop + 34 + 6);
+        }
+
+        // ---------------- 应用内下载 ----------------
+
+        private void OnPrimaryAction()
+        {
+            if (_ready)
+            {
+                ShowReadyDialog();
+                return;
+            }
+            StartDownload();
+        }
+
+        private void StartDownload()
+        {
+            if (_result == null || _result.State != UpdateState.NewVersion || _result.Latest == null)
+            {
+                return;
+            }
+            if (_downloader != null)
+            {
+                return;
+            }
+            string version = _result.Latest.ToDisplay();
+            long existing = UpdateDownloader.PartLength(version);
+
+            _downloadFailed = false;
+            _downloadError = "";
+            _lastProgress = null;
+            _partBytes = existing;
+            _partTotal = _result.DownloadSize;
+            _phase = DownloadPhase.Preparing;
+            _download.Enabled = false;
+            _download.Text = "下载中…";
+            _cancel.Visible = true;
+            _cancel.Enabled = true;
+            _cancel.Text = "取消";
+            _progressLeft.Text = existing > 0 ? "继续下载…" : "准备下载…";
+            _progressLeft.Visible = true;
+            _progressRight.Text = "";
+            _progressRight.Visible = true;
+            _bar.SetValue(existing > 0 && _result.DownloadSize > 0
+                ? (double)existing / _result.DownloadSize
+                : 0, false);
+            _bar.Visible = true;
+            ApplyLayout();
+
+            Config.Log("自更新：开始下载 v" + version +
+                       (_result.DownloadUrl.Length > 0 ? "，地址 " + _result.DownloadUrl : "") +
+                       (existing > 0 ? "，断点续传起始 " + existing + " 字节" : ""));
+            UpdateDownloader downloader = new UpdateDownloader(version, _result.DownloadUrl, _result.Sha256,
+                                                               _result.Sha256Url, _result.DownloadSize,
+                                                               OnDownloadProgress, OnDownloadDone);
+            _downloader = downloader;
+            downloader.Start();
+        }
+
+        private void CancelDownload()
+        {
+            if (_downloader == null)
+            {
+                return;
+            }
+            _cancel.Enabled = false;
+            _cancel.Text = "取消中…";
+            _progressLeft.Text = "正在取消…";
+            _progressRight.Text = "";
+            Config.Log("自更新：用户点击取消，等待下载线程收尾");
+            _downloader.Cancel();
+        }
+
+        private void OnDownloadProgress(DownloadProgress progress)
+        {
+            if (progress == null || IsDisposed || Disposing || !IsHandleCreated)
+            {
+                return;
+            }
+            try
+            {
+                // 工作线程 → UI 线程：BeginInvoke（下载器已把刷新限制在 10 次/秒内）。
+                BeginInvoke(new MethodInvoker(delegate { UpdateProgressUi(progress); }));
+            }
+            catch
+            {
+            }
+        }
+
+        private void OnDownloadDone(DownloadResult result)
+        {
+            if (IsDisposed || Disposing || !IsHandleCreated)
+            {
+                return;
+            }
+            try
+            {
+                BeginInvoke(new MethodInvoker(delegate { ApplyDownloadDone(result); }));
+            }
+            catch
+            {
+            }
+        }
+
+        private void UpdateProgressUi(DownloadProgress progress)
+        {
+            if (IsDisposed || Disposing)
+            {
+                return;
+            }
+            _lastProgress = progress;
+            _phase = progress.Phase;
+            _partBytes = progress.Received;
+            if (progress.Total > 0)
+            {
+                _partTotal = progress.Total;
+            }
+
+            switch (progress.Phase)
+            {
+                case DownloadPhase.Preparing:
+                    _progressLeft.Text = progress.Message.Length > 0 ? progress.Message : "准备下载…";
+                    _progressRight.Text = "";
+                    _bar.SetValue(Fraction(progress.Received, progress.Total), false);
+                    _download.Text = "下载中…";
+                    _download.Enabled = false;
+                    _cancel.Visible = true;
+                    break;
+                case DownloadPhase.Downloading:
+                    _progressLeft.Text = DescribeProgress(progress);
+                    _progressRight.Text = DescribeSpeed(progress);
+                    _bar.SetValue(Fraction(progress.Received, progress.Total), false);
+                    _download.Text = "下载中…";
+                    _download.Enabled = false;
+                    _cancel.Visible = true;
+                    break;
+                case DownloadPhase.Retrying:
+                    _progressLeft.Text = "网络中断，正在重试 " + progress.Retry + "/" + progress.RetryMax;
+                    _progressRight.Text = DescribeSpeed(progress);
+                    _bar.SetValue(Fraction(progress.Received, progress.Total), false);
+                    _download.Text = "重试中…";
+                    _download.Enabled = false;
+                    _cancel.Visible = true;
+                    break;
+                case DownloadPhase.Verifying:
+                    _progressLeft.Text = "正在校验…";
+                    _progressRight.Text = "";
+                    _bar.SetValue(1, false);
+                    _download.Text = "校验中…";
+                    _download.Enabled = false;
+                    _cancel.Visible = false;
+                    break;
+                case DownloadPhase.Canceled:
+                    _download.Text = "继续下载";
+                    _download.Enabled = true;
+                    _cancel.Visible = false;
+                    _progressLeft.Text = progress.Received > 0
+                        ? "已取消 · 已下载 " + DownloadFormat.Size(progress.Received)
+                        : "已取消";
+                    _progressRight.Text = "";
+                    _bar.SetValue(Fraction(progress.Received, progress.Total), false);
+                    break;
+            }
+            ApplyLayout();
+        }
+
+        private void ApplyDownloadDone(DownloadResult result)
+        {
+            if (IsDisposed || Disposing)
+            {
+                return;
+            }
+            _downloader = null;
+            _cancel.Enabled = true;
+            _cancel.Text = "取消";
+            _download.Enabled = true;
+
+            if (result == null)
+            {
+                _phase = DownloadPhase.Failed;
+                _downloadFailed = true;
+                _downloadError = "下载已中断，请重试";
+                _download.Text = "重试下载";
+                _status.Text = "下载失败";
+                _status.ForeColor = Ui.Bad;
+                ApplyLayout();
+                return;
+            }
+
+            if (result.Canceled)
+            {
+                string version = _result == null || _result.Latest == null ? "" : _result.Latest.ToDisplay();
+                long part = result.PartBytes > 0 ? result.PartBytes : UpdateDownloader.PartLength(version);
+                _downloadFailed = false;
+                _downloadError = "";
+                DownloadProgress canceled = new DownloadProgress();
+                canceled.Phase = DownloadPhase.Canceled;
+                canceled.Received = part;
+                canceled.Total = _partTotal > 0 ? _partTotal : (_result == null ? 0 : _result.DownloadSize);
+                UpdateProgressUi(canceled);
+                Config.Log("自更新：已取消下载，保留 .part " + part + " 字节，可继续下载");
+                return;
+            }
+
+            if (result.Ok)
+            {
+                _ready = true;
+                _readyExe = result.ExePath;
+                _readySha = result.Sha256;
+                _readySize = result.Size;
+                _phase = DownloadPhase.Completed;
+                _downloadFailed = false;
+                _downloadError = "";
+                _download.Enabled = true;
+                _download.Text = "立即安装";
+                _status.Text = "更新已下载，可立即安装";
+                _status.ForeColor = Ui.Good;
+                _cancel.Visible = false;
+                _progressLeft.Text = "已下载 " + DownloadFormat.Size(result.Size);
+                _progressLeft.Visible = true;
+                _progressRight.Text = "SHA-256 校验通过";
+                _progressRight.Visible = true;
+                _bar.SetValue(1, true);
+                _bar.Visible = true;
+                Config.Log("自更新：下载并校验完成 → " + result.ExePath);
+                ApplyLayout();
+                ShowReadyDialog();
+                return;
+            }
+
+            _phase = DownloadPhase.Failed;
+            _downloadFailed = true;
+            _downloadError = result.MirrorHint
+                ? "GitHub 直连失败，可挂梯子重试，或使用国内镜像下载"
+                : (result.Error.Length > 0 ? result.Error : "下载失败，请重试");
+            _download.Text = "重试下载";
+            _download.Enabled = true;
+            _status.Text = "下载失败";
+            _status.ForeColor = Ui.Bad;
+            _progressLeft.Visible = false;
+            _progressRight.Visible = false;
+            _bar.Visible = false;
+            Config.Log("自更新：下载失败 → " + _downloadError);
+            ApplyLayout();
+        }
+
+        /// <summary>就绪弹窗：模态、深色现有样式；「稍后」保留已下载文件并显示「可立即安装」。</summary>
+        private void ShowReadyDialog()
+        {
+            if (!_ready || _result == null || _result.Latest == null)
+            {
+                return;
+            }
+            Form owner = FindForm();
+            bool install;
+            using (UpdateReadyDialog dialog = new UpdateReadyDialog(AppInfo.VersionText,
+                                                                    _result.Latest.ToDisplay(), _readySize))
+            {
+                install = owner != null
+                    ? dialog.ShowDialog(owner) == DialogResult.OK
+                    : dialog.ShowDialog() == DialogResult.OK;
+            }
+            if (!install)
+            {
+                _status.Text = "更新已下载，可立即安装";
+                _status.ForeColor = Ui.Good;
+                _download.Text = "立即安装";
+                Config.Log("自更新：用户选择稍后安装 v" + _result.Latest.ToDisplay());
+                return;
+            }
+
+            string installDir = Path.GetDirectoryName(Config.CurrentExe);
+            string error = "";
+            Cursor previous = Cursor;
+            try
+            {
+                Cursor = Cursors.WaitCursor;
+                if (UpdateInstaller.Begin(_readyExe, installDir, AppInfo.VersionText, out error))
+                {
+                    Config.Log("自更新：已交给替换助手，主程序退出");
+                    Application.Exit();
+                    return;
+                }
+            }
+            finally
+            {
+                Cursor = previous;
+            }
+
+            _downloadFailed = true;
+            _downloadError = "无法开始更新：" + error;
+            Config.Log("自更新：无法开始更新 → " + error);
+            if (owner != null)
+            {
+                MessageBox.Show(owner, "无法开始更新：\n\n" + error +
+                                       "\n\n可以先继续使用当前版本，或到 GitHub Releases 手动下载。",
+                                "更新失败", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            ApplyLayout();
+        }
+
+        private static string DescribeProgress(DownloadProgress progress)
+        {
+            if (progress.Total > 0)
+            {
+                int percent = (int)Math.Floor(progress.Received * 100.0 / progress.Total);
+                if (percent < 0)
+                {
+                    percent = 0;
+                }
+                if (percent > 100)
+                {
+                    percent = 100;
+                }
+                return "下载中 " + percent + "% · " + DownloadFormat.Size(progress.Received) +
+                       " / " + DownloadFormat.Size(progress.Total);
+            }
+            return "下载中 · " + DownloadFormat.Size(progress.Received) + " / 大小未知";
+        }
+
+        private static string DescribeSpeed(DownloadProgress progress)
+        {
+            if (!progress.SpeedReady || progress.Speed <= 0)
+            {
+                return "计算中…";
+            }
+            if (progress.EtaSeconds >= 0)
+            {
+                return DownloadFormat.Speed(progress.Speed) + " · 剩余 " +
+                       DownloadFormat.Eta(progress.EtaSeconds);
+            }
+            return DownloadFormat.Speed(progress.Speed);
+        }
+
+        private static double Fraction(long received, long total)
+        {
+            if (received <= 0 || total <= 0)
+            {
+                return 0;
+            }
+            double value = (double)received / total;
+            return value > 1 ? 1 : value;
         }
 
         private void SetHeight(int height)

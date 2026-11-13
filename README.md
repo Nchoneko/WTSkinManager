@@ -7,11 +7,14 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2B-0078D6.svg)](#4-环境要求)
 
 [![从 GitHub 下载](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-GitHub-24292f?style=for-the-badge&logo=github)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
-[![从 Gitee 下载](https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Gitee-c71d23?style=for-the-badge&logo=gitee)](https://gitee.com/orgon/WTSkinManager/releases)
+[![历史存档](https://img.shields.io/badge/%E5%8E%86%E5%8F%B2%E5%AD%98%E6%A1%A3-Gitee-c71d23?style=for-the-badge&logo=gitee)](https://gitee.com/orgon/WTSkinManager/releases)
 [![Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager?display_name=tag&label=release)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 [![Gitee](https://img.shields.io/badge/Gitee-orgon%2FWTSkinManager-c71d23?logo=gitee)](https://gitee.com/orgon/WTSkinManager)
 
-> 当前版本 **v3.9.12**（程序内版本 `3.9.12.0`，载具数据 `2026.11.11.1`）。
+> 当前版本 **v3.9.13**（程序内版本 `3.9.13.0`，载具数据 `2026.11.11.1`）。
+>
+> **v3.9.13 本次改动**：新增应用内自动更新（本页内下载 / 断点续传 / SHA-256 校验 / 替换后自动重启）、
+> 更新镜像兜底与失败提示；下载方式改为「GitHub Releases 单文件 exe」唯一推荐，Gitee 改为历史存档、不再自动同步。
 
 ---
 
@@ -87,7 +90,7 @@ WTSkinManager 是一个**非官方**的《战争雷霆》自定义涂装管理�
 | 操作系统 | Windows 10（1809+）/ Windows 11，x64 |
 | 运行时 | .NET Framework 4.x（Windows 10/11 自带，无需单独安装） |
 | 权限 | 普通用户即可；**不要**安装到 `C:\Program Files` 等需要管理员权限的目录 |
-| 网络 | **可选**。导入、管理、图标与已缓存数据完全离线；只有点击「更新数据 / 更新全部数据」时才联网访问 War Thunder Wiki |
+| 网络 | **可选**。导入、管理、图标与已缓存数据完全离线；只有点击「更新数据 / 更新全部数据」时才联网访问 War Thunder Wiki，只有点「下载更新」时才下载新版本（GitHub 或镜像） |
 | 磁盘 | 程序本体约 180 MB；备份占用取决于涂装包大小 |
 | 构建 | Windows 自带的 `csc.exe`（.NET Framework 4.x）与 PowerShell 5.1；Node.js/npm 仅用于执行快捷脚本，不是必需 |
 
@@ -97,18 +100,34 @@ WTSkinManager 是一个**非官方**的《战争雷霆》自定义涂装管理�
 
 ### 方式一：下载 Releases（推荐）
 
-安装包提供两个镜像，任选其一：
+**唯一推荐：GitHub Releases 上的单文件 `WTSkinManager.exe`。**
 
-- **GitHub Releases**：<https://github.com/Nchoneko/WTSkinManager/releases> —— 单文件 `WTSkinManager.exe`；
-- **Gitee Releases**：<https://gitee.com/orgon/WTSkinManager/releases> —— Gitee 单附件限制 100MB，完整包拆成 3 个分卷（`.7z.001/.002/.003`），下载全部三卷 + `parts.sha256`，用 7-Zip 打开 `.001` 解压，具体见发行版里的 `Gitee-README.txt`。
+- **GitHub Releases（唯一发布渠道）**：<https://github.com/Nchoneko/WTSkinManager/releases>
+  —— 每个版本都有自己的 tag 页面（例如 `releases/tag/v3.9.12`）与附件直链，
+  下载里面的 `WTSkinManager.exe` 即可；单文件、无需安装运行时，同一页面还附带
+  `WTSkinManager.exe.sha256` 与发布说明。
+- **Gitee 不再自动同步**：<https://gitee.com/orgon/WTSkinManager/releases> 里的内容只是
+  **历史存档**（Gitee 单附件限制 100MB，旧版本被拆成 `.7z.001/.002/.003` 分卷 + `parts.sha256`）。
+  存档可能不是最新版本，**不建议**从这里取新版本；新版本请看上面的 GitHub Releases。
 
-1. 打开任一 Releases 页面，下载最新版本；下载后建议核对发行版附带的 `.sha256`（GitHub 发行说明里附有校验命令），并确认 exe 的数字签名。
+1. 打开 GitHub Releases（最新版直达：<https://github.com/Nchoneko/WTSkinManager/releases/latest>），
+   下载最新版本的 `WTSkinManager.exe`，并核对 SHA-256（见下方命令）。
 2. 放到一个普通可写目录（例如 `D:\Tools\WTSkinManager`），双击运行。
 3. 首次运行会弹出安装向导：
    - 选择**安装目录**：程序、设置、备份、日志都放这里；不要选 `C:\Program Files`。
    - 选择**游戏目录**：选到包含 `UserSkins` 和 `aces.exe` 的那一层，例如 `...\steamapps\common\War Thunder`。
    - 可选「安装发布者签名」：把随包的自签公钥证书导入当前用户的「受信任的发布者」，减少 Windows 的未知发布者提示；不需要管理员权限，可随时在设置里移除。
 4. 安装完成后即可使用。程序是单文件，没有独立卸载器；删除安装目录即可（先确认备份已不需要）。
+
+校验下载到的安装包（`certutil` 是 Windows 自带命令，不需要装任何工具）：
+
+```powershell
+# 结果应与 Release 附件 WTSkinManager.exe.sha256 里的哈希一致
+certutil -hashfile .\WTSkinManager.exe SHA256
+
+# 也可以直接查看附件内容再比对
+Get-Content .\WTSkinManager.exe.sha256
+```
 
 > 如果 Windows SmartScreen 提示「已保护你的电脑」：点「更多信息」→「仍要运行」，或右键 exe → 属性 → 勾选「解除锁定」。
 
@@ -186,6 +205,32 @@ unmatched.txt                # 未匹配载具清单
 shortnames_unmatched.txt     # 简称回退全名的载具清单
 ```
 
+### 6.5 应用内自动更新
+
+从 v3.9.12 起，可以在设置页里直接下载并安装新版本，不用再手动去网页下载：
+
+1. 打开「设置 → 更新与日志」，看到「发现新版本」后点「下载更新」（就是原来「前往下载」按钮的位置）。
+2. 下载在本页内完成，不弹浏览器：按钮变灰、右侧出现「取消」；下方显示进度条、百分比与
+   「已下载 / 总大小」，右侧显示实时速度与剩余时间（1 秒滑动窗口 + EMA 平滑，样本不足时显示「计算中…」）。
+3. 中途点「取消」会保留已下载的 `.part`，按钮变成「继续下载」；再点时从断点续传（HTTP 206）。
+   网络抖动时显示「网络中断，正在重试 n/3」，程序自动退避重试 3 次（1、2、4 秒）。
+4. 下载完成会显示「正在校验…」，用 Release 提供的 SHA-256 校验安装包；不一致会删除文件并提示
+   「文件校验失败，请重试或到 GitHub 下载」，不会进入安装。
+5. 校验通过弹出「更新已就绪」，显示新旧版本、包大小与「SHA-256 校验通过」：
+   - 「立即更新」：关闭当前程序 → 备份旧 exe → 替换 → 自动重新启动；
+   - 「稍后」（或按 Esc）：保留已下载的包，设置页显示「更新已下载，可立即安装」，下次点「立即安装」再走。
+6. 替换失败会自动回滚到旧版本，并在下次启动时提示「更新失败，已回滚到 vX」；
+   安装目录不可写时会提示用管理员身份运行，或把程序放到可写目录。
+
+相关文件（都不在游戏目录里）：
+
+| 路径 | 内容 |
+| --- | --- |
+| `%LOCALAPPDATA%\WTSkinManager\updates\<版本>\WTSkinManager.exe` | 已下载并校验通过的安装包 |
+| `%LOCALAPPDATA%\WTSkinManager\updates\<版本>\WTSkinManager.exe.part` | 未下完的断点文件（取消后保留） |
+| `%LOCALAPPDATA%\WTSkinManager\updates\update.log` | 替换日志（旧/新版本、SHA-256、结果） |
+| `%LOCALAPPDATA%\WTSkinManager\backups\WTSkinManager_<旧版本>_<时间戳>.exe` | 替换前的旧 exe（保留最近 3 份） |
+
 ---
 
 ## 7. 目录结构
@@ -218,6 +263,9 @@ WTSkinManager/
 │  ├─ Importer.cs              # 导入计划、备份、清空目标文件夹后写入
 │  ├─ PublisherCert.cs         # 发布者公钥证书校验与导入
 │  ├─ UpdateEngine.cs          # 程序更新与数据更新
+│  ├─ UpdateDownload.cs        # 应用内更新下载：续传 / 重试 / 镜像 / SHA-256
+│  ├─ UpdateInstaller.cs       # 替换助手：备份 / 原子替换 / 回滚 / update.log
+│  ├─ UpdateReadyDialog.cs     # 6px 下载进度条与「更新已就绪」弹窗
 │  ├─ SemVer.cs / History.cs / Util.cs / ...
 │  └─ app.manifest             # Per-Monitor V2 DPI
 ├─ assets/
@@ -235,7 +283,7 @@ WTSkinManager/
 │  │  └─ data-version.ini      # schemaVersion / dataVersion
 │  ├─ certs/publisher.cer      # 自签发布者证书（仅公钥，无私钥）
 │  └─ SOURCES.md               # 素材来源与版权说明
-├─ docs/                       # 截图与说明
+├─ docs/                       # 截图、说明与发布流程（release.md）
 └─ build/
    ├─ build.ps1                # 一键构建：校验 → 生成 zip → csc → exe
    ├─ check-version.ps1        # AssemblyInfo ↔ package.json 版本一致
@@ -291,6 +339,19 @@ WTSkinManager/
 - 默认构建不会签名，`WTSM_SIGN_PFX` 未设置时 `build/sign.ps1` 会直接跳过。
 - 需要签名时设置 `WTSM_SIGN_PFX` 与 `WTSM_SIGN_PASSWORD`，并安装 Windows SDK 的 `signtool.exe`；私钥 `.pfx` 不要提交到仓库。
 
+### 8.8 下载更新很慢或总是失败？
+
+- 更新包下载会走**系统代理**设置（检查更新本身是直连 GitHub API）。直连慢时，先挂梯子或让系统代理生效，再点「重试下载」。
+- 直连失败时程序会按 `settings.ini` 里的 `DownloadMirrors=` 顺序探测镜像：每条先发 `Range: bytes=0-0` 探测、3 秒超时，失败换下一个。默认三条模板：
+  - `https://ghfast.top/https://github.com/Nchoneko/WTSkinManager/releases/download/v{version}/WTSkinManager.exe`
+  - `https://gh-proxy.com/https://github.com/Nchoneko/WTSkinManager/releases/download/v{version}/WTSkinManager.exe`
+  - `https://ghproxy.net/https://github.com/Nchoneko/WTSkinManager/releases/download/v{version}/WTSkinManager.exe`
+
+  `{version}` 会替换成 `3.9.13` 这样的三段版本号；把这一行改成空字符串即可完全关闭镜像。
+- 镜像下载同样做 SHA-256 校验，校验不过不会安装。全部失败时界面提示「GitHub 直连失败，可挂梯子重试，或使用国内镜像下载」，并给出「打开 GitHub 页面」按钮。
+- 也可以直接去 GitHub Releases 手动下载单文件 exe；Gitee 只剩历史存档（旧分卷），**不要**从那里取新版本。
+- 仍然失败请在 Issues 反馈，附上 `logs\import.log` 与 `%LOCALAPPDATA%\WTSkinManager\updates\update.log`。
+
 ---
 
 ## 9. 免责声明
@@ -339,7 +400,7 @@ WTSkinManager/
 ## 13. 下载与反馈
 
 - **Releases（下载，GitHub）**：<https://github.com/Nchoneko/WTSkinManager/releases>
-- **Releases（下载，Gitee 镜像）**：<https://gitee.com/orgon/WTSkinManager/releases>
+- **历史存档（Gitee，不再自动同步）**：<https://gitee.com/orgon/WTSkinManager/releases>
 - **Issues（反馈）**：<https://github.com/Nchoneko/WTSkinManager/issues>
 - **源码仓库（GitHub）**：<https://github.com/Nchoneko/WTSkinManager>
 - **源码仓库（Gitee 镜像）**：<https://gitee.com/orgon/WTSkinManager>

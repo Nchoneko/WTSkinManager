@@ -30,6 +30,17 @@ namespace WtSkin
         public static string ReleasesPage = "https://github.com/Nchoneko/WTSkinManager/releases";
         public static string RepoUrl = "https://github.com/Nchoneko/WTSkinManager";
 
+        /// <summary>
+        /// 应用内更新的镜像前缀模板（逗号分隔，按顺序探测；{version} 替换成 3.9.13 这样的三段版本）。
+        /// 直连 GitHub 失败时才会用到；改成空字符串即完全关闭镜像。
+        /// </summary>
+        public static string DefaultDownloadMirrors =
+            "https://ghfast.top/https://github.com/Nchoneko/WTSkinManager/releases/download/v{version}/WTSkinManager.exe," +
+            "https://gh-proxy.com/https://github.com/Nchoneko/WTSkinManager/releases/download/v{version}/WTSkinManager.exe," +
+            "https://ghproxy.net/https://github.com/Nchoneko/WTSkinManager/releases/download/v{version}/WTSkinManager.exe";
+
+        public static string DownloadMirrors = DefaultDownloadMirrors;
+
         public static string DefaultInstallDir
         {
             get
@@ -213,6 +224,10 @@ namespace WtSkin
                                 ReleasesPage = value;
                             }
                             break;
+                        case "downloadmirrors":
+                            // 允许显式留空来关闭镜像；未配置时保持默认三条模板。
+                            DownloadMirrors = value;
+                            break;
                     }
                 }
             }
@@ -253,6 +268,7 @@ namespace WtSkin
                 sb.AppendLine("UpdateApiLatest=" + UpdateApiLatest);
                 sb.AppendLine("UpdateApiList=" + UpdateApiList);
                 sb.AppendLine("ReleasesPage=" + ReleasesPage);
+                sb.AppendLine("DownloadMirrors=" + DownloadMirrors);
                 File.WriteAllText(SettingsPath, sb.ToString(), new UTF8Encoding(false));
             }
             catch

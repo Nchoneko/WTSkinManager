@@ -13,6 +13,13 @@ namespace WtSkin
         [STAThread]
         private static void Main(string[] args)
         {
+            // 自更新替换助手：最先处理，不加载任何界面（除失败提示框外）。
+            //   WTSkinManager.exe --update-helper <pid> <新exe> <安装目录> <旧版本>
+            if (args != null && args.Length >= 5 && args[0] == UpdateInstaller.HelperFlag)
+            {
+                UpdateInstaller.RunHelper(args[1], args[2], args[3], args[4]);
+                return;
+            }
             if (args != null && args.Length >= 1 && args[0] == "--diagnose")
             {
                 RunDiagnose(args.Length >= 2 ? args[1] : "");
@@ -52,6 +59,9 @@ namespace WtSkin
                 // 全部界面动画关闭：淡入/滑入/分页过渡/浮层渐变都不再执行
                 Ui.Animations = false;
                 Ui.Init(Native.GetDpiScale() * (Config.ZoomPercent / 100f));
+
+                // 上次自更新失败回滚过：启动时提示一次（读完即删）。
+                UpdateInstaller.ShowRollbackNotice();
 
                 bool installed = File.Exists(Config.InstalledFlag);
                 if (!installed)
@@ -99,6 +109,12 @@ namespace WtSkin
                     // 首次安装 / 覆盖更新完成后弹一次；普通启动不弹（待展示文件不存在）。
                     UpdateNotesForm.ShowPendingIfAny();
                     DataFiles.CheckAndReport();
+                }
+
+                if (UpdateInstaller.ExitRequested)
+                {
+                    // 设置页点了「立即更新」：替换助手已经接手，这里直接退出进程。
+                    return;
                 }
 
                 NameMap.EnsureFile();

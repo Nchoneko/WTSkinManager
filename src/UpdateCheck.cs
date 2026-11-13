@@ -37,6 +37,9 @@ namespace WtSkin
         public string Body = "";
         public string DownloadUrl = "";
         public string ReleaseUrl = "";
+        public long DownloadSize;
+        public string Sha256 = "";
+        public string Sha256Url = "";
         public string ErrorDetail = "";
         public DateTime CheckedAt = DateTime.MinValue;
         public bool FromCache;
@@ -79,6 +82,9 @@ namespace WtSkin
         public string Body = "";
         public string DownloadUrl = "";
         public string ReleaseUrl = "";
+        public long DownloadSize;
+        public string Sha256 = "";
+        public string Sha256Url = "";
         public string NotifiedVersion = "";
         public string LastFailure = "";
         public string LastError = "";
@@ -368,6 +374,8 @@ namespace WtSkin
             }
 
             string exeUrl = "";
+            string shaUrl = "";
+            long exeSize = 0;
             for (int i = 0; i < assets.Count; i++)
             {
                 Dictionary<string, object> asset = assets[i] as Dictionary<string, object>;
@@ -377,10 +385,15 @@ namespace WtSkin
                 }
                 string name = Json.Str(asset, "name");
                 string url = Json.Str(asset, "browser_download_url");
-                if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && IsHttpUrl(url))
+                if (exeUrl.Length == 0 && name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && IsHttpUrl(url))
                 {
                     exeUrl = url;
-                    break;
+                    exeSize = (long)Json.Num(asset, "size");
+                }
+                else if (shaUrl.Length == 0 && name.EndsWith(".sha256", StringComparison.OrdinalIgnoreCase) &&
+                         IsHttpUrl(url))
+                {
+                    shaUrl = url;
                 }
             }
 
@@ -395,6 +408,9 @@ namespace WtSkin
             result.Body = body;
             result.ReleaseUrl = IsHttpUrl(htmlUrl) ? htmlUrl : Config.ReleasesPage;
             result.DownloadUrl = exeUrl.Length > 0 ? exeUrl : Config.ReleasesPage;
+            result.DownloadSize = exeSize > 0 ? exeSize : 0;
+            result.Sha256 = ParseShaFromBody(Json.Str(obj, "body"));
+            result.Sha256Url = shaUrl;
             result.CheckedAt = DateTime.Now;
             result.State = latest.CompareTo(result.Current) > 0 ? UpdateState.NewVersion : UpdateState.UpToDate;
 
@@ -406,6 +422,9 @@ namespace WtSkin
             cache.Body = body;
             cache.DownloadUrl = result.DownloadUrl;
             cache.ReleaseUrl = result.ReleaseUrl;
+            cache.DownloadSize = result.DownloadSize;
+            cache.Sha256 = result.Sha256;
+            cache.Sha256Url = result.Sha256Url;
             cache.LastFailure = "";
             cache.LastError = "";
             WriteCache(cache);
@@ -414,6 +433,59 @@ namespace WtSkin
                        "，判定 " + (result.State == UpdateState.NewVersion ? "有新版本" : "已是最新") +
                        "，下载地址 " + result.DownloadUrl);
             return result;
+        }
+
+        private static readonly Regex ShaPattern =
+            new Regex(@"(?<![0-9a-fA-F])[0-9a-fA-F]{64}(?![0-9a-fA-F])", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Release 正文里的校验值：优先认「WTSkinManager.exe」同一行/相邻行的 64 位 SHA-256，
+        /// 其次是带 sha256/certutil 提示的行。找不到返回空串（改为下载 .sha256 资产）。
+        /// </summary>
+        public static string ParseShaFromBody(string markdown)
+        {
+            if (string.IsNullOrEmpty(markdown))
+            {
+                return "";
+            }
+            string[] lines = markdown.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+            string sha = ScanSha(lines, true);
+            if (sha.Length > 0)
+            {
+                return sha;
+            }
+            return ScanSha(lines, false);
+        }
+
+        private static string ScanSha(string[] lines, bool requireExe)
+        {
+            string previous = "";
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                Match match = ShaPattern.Match(line);
+                if (match.Success)
+                {
+                    string lower = line.ToLowerInvariant();
+                    bool named = lower.Contains("wtskinmanager.exe");
+                    if (!named && !requireExe)
+                    {
+                        named = lower.Contains("sha256") || lower.Contains("sha-256") ||
+                                lower.Contains(".exe") || lower.Contains("certutil") ||
+                                previous.ToLowerInvariant().Contains("sha");
+                    }
+                    if (named)
+                    {
+                        return match.Value.ToLowerInvariant();
+                    }
+                }
+                string trimmed = line.Trim();
+                if (trimmed.Length > 0)
+                {
+                    previous = trimmed;
+                }
+            }
+            return "";
         }
 
         // ---------------- 缓存 ----------------
@@ -442,6 +514,14 @@ namespace WtSkin
                     cache.PublishedAt = ReadKey(path, "publishedAt", "PublishedAt");
                     cache.DownloadUrl = ReadKey(path, "downloadUrl", "DownloadUrl");
                     cache.ReleaseUrl = ReadKey(path, "releaseUrl", "ReleaseUrl");
+                    cache.Sha256 = ReadKey(path, "sha256", "Sha256");
+                    cache.Sha256Url = ReadKey(path, "sha256Url", "Sha256Url");
+                    long downloadSize;
+                    if (long.TryParse(ReadKey(path, "downloadSize", "DownloadSize"), NumberStyles.Integer,
+                                      CultureInfo.InvariantCulture, out downloadSize))
+                    {
+                        cache.DownloadSize = downloadSize;
+                    }
                     cache.NotifiedVersion = ReadKey(path, "notifiedVersion", "NotifiedVersion");
                     cache.LastFailure = ReadKey(path, "lastFailure", "LastFailure");
                     cache.LastError = ReadKey(path, "lastError", "LastError");
@@ -504,6 +584,9 @@ namespace WtSkin
                     sb.AppendLine("body=" + body);
                     sb.AppendLine("downloadUrl=" + cache.DownloadUrl);
                     sb.AppendLine("releaseUrl=" + cache.ReleaseUrl);
+                    sb.AppendLine("downloadSize=" + cache.DownloadSize.ToString(CultureInfo.InvariantCulture));
+                    sb.AppendLine("sha256=" + cache.Sha256);
+                    sb.AppendLine("sha256Url=" + cache.Sha256Url);
                     sb.AppendLine("notifiedVersion=" + cache.NotifiedVersion);
                     sb.AppendLine("lastFailure=" + cache.LastFailure);
                     sb.AppendLine("lastError=" + cache.LastError);
@@ -547,6 +630,9 @@ namespace WtSkin
             result.Body = cache.Body;
             result.DownloadUrl = cache.DownloadUrl;
             result.ReleaseUrl = cache.ReleaseUrl;
+            result.DownloadSize = cache.DownloadSize;
+            result.Sha256 = cache.Sha256;
+            result.Sha256Url = cache.Sha256Url;
             result.CheckedAt = cache.LastCheck;
             result.FromCache = true;
             if (string.Equals(cache.LastState, "failed", StringComparison.OrdinalIgnoreCase))

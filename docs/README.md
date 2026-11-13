@@ -1,9 +1,10 @@
 # docs 说明
 
-本目录存放 README 使用的界面截图。
+本目录存放 README 使用的界面截图与发布说明。
 
 | 文件 | 内容 |
 | --- | --- |
+| `release.md` | 发布流程：只走 GitHub Releases，禁止任何脚本/CI 自动推 Gitee |
 | `screenshot-import.png` | 导入页：拖入一个多载具涂装包后自动识别出的载具列表 |
 | `screenshot-manager.png` | 涂装管理页：国家筛选、卡片网格、图标、等级/权重、启用状态 |
 | `screenshot-vehicle-popup.png` | 等级/权重浮层：三档不一致时补 AB / RB / SB 明细 |
