@@ -765,7 +765,7 @@ namespace WtSkin
         }
 
         [DllImport("user32.dll")]
-        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+        public static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
         [DllImport("dwmapi.dll")]
         private static extern int DwmFlush();
         [DllImport("user32.dll")]
@@ -783,9 +783,9 @@ namespace WtSkin
             }
         }
         [DllImport("user32.dll")]
-        private static extern int GetWindowLong(IntPtr hWnd, int index);
+        public static extern int GetWindowLong(IntPtr hWnd, int index);
         [DllImport("user32.dll")]
-        private static extern int SetWindowLong(IntPtr hWnd, int index, int value);
+        public static extern int SetWindowLong(IntPtr hWnd, int index, int value);
 
         /// <summary>
         /// 去掉 WS_EX_LAYERED。窗口用 Opacity 做过淡入后会被打上分层窗口样式，

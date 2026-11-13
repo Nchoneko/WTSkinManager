@@ -422,6 +422,9 @@ namespace WtSkin
             {
                 CreateParams cp = base.CreateParams;
                 cp.ClassStyle |= 0x00020000; // CS_DROPSHADOW
+                // 合成整个窗口后再呈现：拖动边角连续缩放时，子控件异步重绘
+                // 会在旧画面上留下条状残影。恢复最小化后需要重建合成表面。
+                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
                 return cp;
             }
         }
@@ -437,6 +440,8 @@ namespace WtSkin
             Invalidate(true);
         }
 
+        private bool _wasMinimized;
+
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
@@ -445,8 +450,17 @@ namespace WtSkin
             if (m.Msg == 0x0005) // WM_SIZE
             {
                 LogLayout("WM_SIZE");
-                if (WindowState != FormWindowState.Minimized)
+                if (WindowState == FormWindowState.Minimized)
                 {
+                    _wasMinimized = true;
+                }
+                else
+                {
+                    if (_wasMinimized)
+                    {
+                        _wasMinimized = false;
+                        ResetComposition();
+                    }
                     LayoutChrome();
                     Invalidate(true);
                 }
@@ -478,6 +492,29 @@ namespace WtSkin
                         Invalidate(true);
                     });
                 }
+            }
+        }
+
+        /// <summary>最小化恢复后重建 WS_EX_COMPOSITED 合成表面，避免窗口尺寸已变、画面仍停留在旧尺寸。</summary>
+        private void ResetComposition()
+        {
+            if (!IsHandleCreated)
+            {
+                return;
+            }
+            try
+            {
+                int ex = Native.GetWindowLong(Handle, -20);
+                Native.SetWindowLong(Handle, -20, ex & ~0x02000000);
+                Native.SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0,
+                                    0x0001 | 0x0002 | 0x0004 | 0x0020 | 0x0010); // NOSIZE|NOMOVE|NOZORDER|FRAMECHANGED|NOACTIVATE
+                Native.SetWindowLong(Handle, -20, ex);
+                Native.SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0,
+                                    0x0001 | 0x0002 | 0x0004 | 0x0020 | 0x0010);
+                LogLayout("RESET_COMPOSITED");
+            }
+            catch
+            {
             }
         }
 
