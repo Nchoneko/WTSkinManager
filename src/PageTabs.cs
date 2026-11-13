@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -15,27 +15,29 @@ namespace WtSkin
         public PageTabs()
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
-                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-            BackColor = Ui.Bg;
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw |
+                     ControlStyles.Selectable, true);
+            BackColor = Ui.Page;
             Height = Ui.S(44);
             Cursor = Cursors.Hand;
+            TabStop = true;
         }
 
         private Rectangle TabRect(int index)
         {
             int width = Ui.S(96);
-            return new Rectangle(Ui.S(24) + index * (width + Ui.S(6)), Ui.S(2), width, Height - Ui.S(4));
+            return new Rectangle(Ui.Sp24 + index * (width + Ui.Sp8), Ui.S(2), width, Height - Ui.S(4));
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
             Ui.Smooth(g);
-            using (SolidBrush brush = new SolidBrush(Ui.Bg))
+            using (SolidBrush brush = new SolidBrush(Ui.Page))
             {
                 g.FillRectangle(brush, ClientRectangle);
             }
-            using (Pen pen = new Pen(Ui.LineSoft, 1f))
+            using (Pen pen = new Pen(Ui.StrokeSoft, Ui.BorderWidth))
             {
                 g.DrawLine(pen, 0, Height - 1, Width, Height - 1);
             }
@@ -45,17 +47,72 @@ namespace WtSkin
                 bool active = i == Active;
                 if (active)
                 {
-                    Ui.FillRound(g, r, Ui.S(8), Ui.PanelHover);
-                    Ui.DrawRound(g, r, Ui.S(8), Ui.LineSoft, 1f);
-                    Ui.FillRound(g, new Rectangle(r.X + Ui.S(12), r.Bottom - Ui.S(4), r.Width - Ui.S(24), Ui.S(2)), Ui.S(1), Ui.Accent);
+                    Ui.FillRound(g, r, Ui.RButton, Ui.Surface);
+                    Ui.DrawRound(g, r, Ui.RButton, Ui.Stroke, Ui.BorderWidth);
+                    Ui.FillRound(g, new Rectangle(r.X + Ui.Sp12, r.Bottom - Ui.S(3), r.Width - Ui.Sp24, Ui.S(2)), Ui.S(1), Ui.Accent);
                 }
                 else if (_hover == i)
                 {
-                    Ui.FillRound(g, r, Ui.S(8), Ui.Panel);
+                    Ui.FillRound(g, r, Ui.RButton, Ui.PanelHover);
                 }
                 Ui.DrawText(g, _labels[i], active ? Ui.BodyBold : Ui.Body,
-                        active ? Ui.Text : Ui.TextDim, r, Ui.Center);
+                        active ? Ui.TextPrimary : Ui.TextSecondary, r, Ui.Center);
+                if (active && Focused)
+                {
+                    Ui.DrawFocus(g, r, Ui.RButton, Ui.TextSecondary);
+                }
             }
+        }
+
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            Invalidate();
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            Invalidate();
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            Keys key = keyData & Keys.KeyCode;
+            if (key == Keys.Left || key == Keys.Right || key == Keys.Space || key == Keys.Enter)
+            {
+                return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Left || e.KeyCode == Keys.Right)
+            {
+                int next = e.KeyCode == Keys.Left ? Math.Max(0, Active - 1) : Math.Min(_labels.Length - 1, Active + 1);
+                if (next != Active)
+                {
+                    Active = next;
+                    Invalidate();
+                    if (PageChanged != null)
+                    {
+                        PageChanged(this, EventArgs.Empty);
+                    }
+                }
+                e.Handled = true;
+                return;
+            }
+            if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)
+            {
+                if (PageChanged != null)
+                {
+                    PageChanged(this, EventArgs.Empty);
+                }
+                e.Handled = true;
+                return;
+            }
+            base.OnKeyDown(e);
         }
 
         protected override void OnMouseMove(MouseEventArgs e)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
@@ -69,16 +70,17 @@ namespace WtSkin
             Palette p = new Palette();
             p.Name = "暗夜琥珀";
             p.Dark = true;
-            p.Bg = C(15, 18, 22);
+            // 与 Tok 中的三层表面/描边/三级文字对齐：页面底 #0d0f12、面板 #14171c、卡片 #1a1e24。
+            p.Bg = Tok.Page;
             p.BgSoft = C(20, 24, 29);
-            p.Panel = C(24, 29, 35);
-            p.PanelHover = C(30, 36, 44);
-            p.PanelActive = C(35, 42, 51);
-            p.Line = C(44, 51, 61);
-            p.LineSoft = C(34, 40, 48);
-            p.Text = C(232, 237, 243);
-            p.TextDim = C(150, 160, 173);
-            p.TextFaint = C(105, 115, 128);
+            p.Panel = Tok.Panel;
+            p.PanelHover = C(30, 35, 42);
+            p.PanelActive = C(37, 43, 52);
+            p.Line = Tok.Stroke;
+            p.LineSoft = Tok.StrokeSoft;
+            p.Text = Tok.TextPrimary;
+            p.TextDim = Tok.TextSecondary;
+            p.TextFaint = Tok.TextWeak;
             p.Accent = C(233, 164, 62);
             p.AccentSoft = C(255, 196, 108);
             p.AccentDeep = C(176, 116, 30);
@@ -89,11 +91,11 @@ namespace WtSkin
             p.GoodBg = C(28, 48, 40);
             p.WarnBg = C(50, 43, 26);
             p.BadBg = C(52, 30, 30);
-            p.CardBg = C(22, 27, 33);
-            p.CardSel = C(33, 40, 49);
-            p.BtnFillHover = C(35, 42, 51);
-            p.BtnDisabledFill = C(30, 34, 40);
-            p.BtnDisabledText = C(105, 115, 128);
+            p.CardBg = Tok.Card;
+            p.CardSel = C(34, 41, 50);
+            p.BtnFillHover = C(34, 41, 50);
+            p.BtnDisabledFill = C(23, 27, 33);
+            p.BtnDisabledText = C(93, 102, 114);
             p.DangerFill = C(50, 33, 33);
             p.DangerFillHover = C(70, 38, 38);
             p.DangerBorder = C(120, 62, 62);
@@ -207,16 +209,17 @@ namespace WtSkin
             Palette p = new Palette();
             p.Name = "纸白";
             p.Dark = false;
-            p.Bg = C(243, 245, 248);
+            // 亮色主题同样保持 页面底 / 面板 / 卡片 三层可区分（配合 1px 描边）。
+            p.Bg = C(238, 241, 246);
             p.BgSoft = C(255, 255, 255);
             p.Panel = C(255, 255, 255);
-            p.PanelHover = C(240, 243, 247);
-            p.PanelActive = C(232, 236, 242);
-            p.Line = C(208, 214, 222);
-            p.LineSoft = C(228, 232, 238);
+            p.PanelHover = C(243, 246, 250);
+            p.PanelActive = C(234, 239, 245);
+            p.Line = C(211, 218, 227);
+            p.LineSoft = C(228, 233, 240);
             p.Text = C(27, 33, 41);
             p.TextDim = C(86, 97, 111);
-            p.TextFaint = C(132, 143, 157);
+            p.TextFaint = C(124, 136, 150);
             p.Accent = C(214, 130, 36);
             p.AccentSoft = C(236, 160, 72);
             p.AccentDeep = C(160, 92, 18);
@@ -227,10 +230,10 @@ namespace WtSkin
             p.GoodBg = C(226, 244, 235);
             p.WarnBg = C(250, 241, 220);
             p.BadBg = C(252, 230, 230);
-            p.CardBg = C(255, 255, 255);
-            p.CardSel = C(243, 246, 250);
-            p.BtnFillHover = C(240, 243, 247);
-            p.BtnDisabledFill = C(236, 238, 242);
+            p.CardBg = C(248, 250, 252);
+            p.CardSel = C(238, 243, 249);
+            p.BtnFillHover = C(243, 246, 250);
+            p.BtnDisabledFill = C(240, 242, 245);
             p.BtnDisabledText = C(160, 168, 178);
             p.DangerFill = C(253, 235, 235);
             p.DangerFillHover = C(250, 220, 220);
@@ -254,11 +257,63 @@ namespace WtSkin
         }
     }
 
+    /// <summary>
+    /// 主界面设计令牌：颜色、圆角、间距与可点击高度。
+    /// 所有自绘界面统一从这里取值，不再各处硬编码 0.5px/2px/随意圆角。
+    /// 颜色以默认暗色主题为基准，其它主题通过 Palette 保持可用。
+    /// </summary>
+    internal static class Tok
+    {
+        // 页面底 / 面板 / 卡片：三层表面
+        public static readonly Color Page = Color.FromArgb(0x0D, 0x0F, 0x12);
+        public static readonly Color Panel = Color.FromArgb(0x14, 0x17, 0x1C);
+        public static readonly Color Card = Color.FromArgb(0x1A, 0x1E, 0x24);
+        // 1px 描边
+        public static readonly Color Stroke = Color.FromArgb(0x2A, 0x31, 0x3A);
+        public static readonly Color StrokeSoft = Color.FromArgb(0x20, 0x26, 0x2E);
+        // 文字三级：主 / 次 / 弱
+        public static readonly Color TextPrimary = Color.FromArgb(0xE8, 0xED, 0xF3);
+        public static readonly Color TextSecondary = Color.FromArgb(0x98, 0xA2, 0xAF);
+        public static readonly Color TextWeak = Color.FromArgb(0x6B, 0x75, 0x83);
+
+        // 圆角（设计像素）
+        public const int CardRadius = 12;
+        public const int ButtonRadius = 8;
+
+        // 可点击高度（设计像素）
+        public const int PrimaryHeight = 36;
+        public const int SecondaryHeight = 32;
+        public const int IconButton = 32;
+
+        // 间距基准：4 / 8 / 12 / 16 / 24 / 32
+        public const int Space4 = 4;
+        public const int Space8 = 8;
+        public const int Space12 = 12;
+        public const int Space16 = 16;
+        public const int Space24 = 24;
+        public const int Space32 = 32;
+
+        public const int PagePadding = 24;
+        public const int CardGap = 16;
+        public const int RightColumn = 400;
+
+        // 描边与动效
+        public const float Border = 1f;
+        public const float FocusRing = 2f;
+        public const int MotionMs = 140;
+        public const int PanelMotionMs = 170;
+    }
+
     /// <summary>主题、缩放、字体和绘图小工具。</summary>
     internal static class Ui
     {
         public static Palette T = Palettes.All[0];
         public static bool Animations = true;
+        /// <summary>
+        /// 颜色/描边微过渡（hover/focus/面板切换）。只改变颜色与透明度，
+        /// 不移动控件，也不改动窗口整体透明度，因此不受“关闭界面动画”开关影响。
+        /// </summary>
+        public static bool Motion = true;
 
         private static float _scale = 1f;
         private static Font _title;
@@ -295,6 +350,33 @@ namespace WtSkin
         public static Color BadBg { get { return T.BadBg; } }
         public static Color CardBg { get { return T.CardBg; } }
         public static Color CardSel { get { return T.CardSel; } }
+
+        // ---- 设计令牌访问器：主界面一律用这些，不再直接写颜色/圆角数值 ----
+        public static Color Page { get { return T.Bg; } }
+        public static Color Surface { get { return T.Panel; } }
+        public static Color Card { get { return T.CardBg; } }
+        public static Color Stroke { get { return T.Line; } }
+        public static Color StrokeSoft { get { return T.LineSoft; } }
+        public static Color TextPrimary { get { return T.Text; } }
+        public static Color TextSecondary { get { return T.TextDim; } }
+        public static Color TextWeak { get { return T.TextFaint; } }
+        public static int RCard { get { return S(Tok.CardRadius); } }
+        public static int RButton { get { return S(Tok.ButtonRadius); } }
+        public static int HPrimary { get { return S(Tok.PrimaryHeight); } }
+        public static int HSecondary { get { return S(Tok.SecondaryHeight); } }
+        public static int HIcon { get { return S(Tok.IconButton); } }
+        public static int PadPage { get { return S(Tok.PagePadding); } }
+        public static int GapCard { get { return S(Tok.CardGap); } }
+        public static int Sp4 { get { return S(Tok.Space4); } }
+        public static int Sp8 { get { return S(Tok.Space8); } }
+        public static int Sp12 { get { return S(Tok.Space12); } }
+        public static int Sp16 { get { return S(Tok.Space16); } }
+        public static int Sp24 { get { return S(Tok.Space24); } }
+        public static int Sp32 { get { return S(Tok.Space32); } }
+        /// <summary>1px 设计描边；保持 1 设备像素，避免半像素抗锯齿把描边冲淡。</summary>
+        public static float BorderWidth { get { return 1f; } }
+        /// <summary>大面积虚线拖放框在高 DPI 下取整到 1~2 设备像素，保证虚线可见。</summary>
+        public static float Hairline { get { return Math.Max(1f, (float)Math.Round(_scale)); } }
 
         public static float Scale
         {
@@ -444,6 +526,45 @@ namespace WtSkin
         public static void DrawText(Graphics g, string text, Font font, Color color, Rectangle rect, TextFormatFlags flags)
         {
             TextRenderer.DrawText(g, text, font, rect, color, flags);
+        }
+
+        /// <summary>焦点描边：2px 可见轮廓，向内收 3px，不依赖颜色变化。</summary>
+        public static void DrawFocus(Graphics g, Rectangle rect, int radius, Color color)
+        {
+            int inset = S(3);
+            Rectangle r = new Rectangle(rect.X + inset, rect.Y + inset,
+                                        Math.Max(1, rect.Width - inset * 2),
+                                        Math.Max(1, rect.Height - inset * 2));
+            DrawRound(g, r, Math.Max(S(2), radius - inset), color, Tok.FocusRing);
+        }
+
+        /// <summary>单色着色绘制图标（彩色站点图标统一压成灰度/弱化色，避免抢焦点）。</summary>
+        public static void DrawIconTinted(Graphics g, Image image, Rectangle rect, Color color)
+        {
+            if (image == null || rect.Width <= 0 || rect.Height <= 0)
+            {
+                return;
+            }
+            // 先转灰度再染成目标色：否则红色/彩色 favicon 会保留原色，破坏单色按钮体系。
+            float rf = color.R / 255f;
+            float gf = color.G / 255f;
+            float bf = color.B / 255f;
+            ColorMatrix matrix = new ColorMatrix(new float[][]
+            {
+                new float[] { 0.299f * rf, 0.587f * rf, 0.114f * rf, 0, 0 },
+                new float[] { 0.299f * gf, 0.587f * gf, 0.114f * gf, 0, 0 },
+                new float[] { 0.299f * bf, 0.587f * bf, 0.114f * bf, 0, 0 },
+                new float[] { 0, 0, 0, 1, 0 },
+                new float[] { 0, 0, 0, 0, 1 }
+            });
+            using (ImageAttributes attrs = new ImageAttributes())
+            {
+                attrs.SetColorMatrix(matrix);
+                InterpolationMode old = g.InterpolationMode;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.DrawImage(image, rect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, attrs);
+                g.InterpolationMode = old;
+            }
         }
 
         /// <summary>按字符宽度硬换行（中文优先）。用于键值行，保证长值换行而不是省略号截断。</summary>
@@ -944,36 +1065,173 @@ namespace WtSkin
         }
     }
 
-    /// <summary>扁平按钮，主按钮/普通/危险三种外观。</summary>
-    /// <summary>顶部站点入口：图标 + 文字的轻量按钮，沿用现有配色与圆角。</summary>
+    /// <summary>
+    /// 控件内的颜色过渡（120~160ms）。只插值颜色，不移动控件，不改变窗口透明度。
+    /// </summary>
+    internal sealed class Tween
+    {
+        private readonly Control _owner;
+        private readonly Timer _timer;
+        private DateTime _start;
+        private float _from;
+        private float _to;
+        private int _duration;
+        public float Value;
+
+        public Tween(Control owner, float value)
+        {
+            _owner = owner;
+            Value = value;
+            _timer = new Timer();
+            _timer.Interval = 16;
+            _timer.Tick += delegate { Step(); };
+        }
+
+        public bool Running
+        {
+            get { return _timer.Enabled; }
+        }
+
+        public void To(float target, int durationMs)
+        {
+            if (Math.Abs(target - Value) < 0.001f)
+            {
+                return;
+            }
+            if (!Ui.Motion || _owner == null || !_owner.IsHandleCreated)
+            {
+                Value = target;
+                if (_owner != null)
+                {
+                    _owner.Invalidate();
+                }
+                return;
+            }
+            _from = Value;
+            _to = target;
+            _duration = Math.Max(1, durationMs);
+            _start = DateTime.UtcNow;
+            _timer.Stop();
+            _timer.Start();
+        }
+
+        public void Snap(float value)
+        {
+            _timer.Stop();
+            Value = value;
+            if (_owner != null)
+            {
+                _owner.Invalidate();
+            }
+        }
+
+        private void Step()
+        {
+            double t = (DateTime.UtcNow - _start).TotalMilliseconds / _duration;
+            if (t >= 1)
+            {
+                Value = _to;
+                _timer.Stop();
+            }
+            else
+            {
+                double eased = 1 - Math.Pow(1 - t, 3);
+                Value = _from + (_to - _from) * (float)eased;
+            }
+            if (_owner != null && !_owner.IsDisposed)
+            {
+                _owner.Invalidate();
+            }
+        }
+
+        public void Dispose()
+        {
+            _timer.Stop();
+            _timer.Dispose();
+        }
+    }
+
+    /// <summary>顶部站点入口：第二行的次级/幽灵按钮，图标统一弱化色。</summary>
     internal class SiteButton : Control
     {
         public Bitmap Icon;
-        private bool _hover;
+        private readonly Tween _hoverT;
+        private bool _down;
 
         public SiteButton()
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                      ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw |
-                     ControlStyles.SupportsTransparentBackColor, true);
-            BackColor = Ui.Bg;
+                     ControlStyles.SupportsTransparentBackColor | ControlStyles.Selectable, true);
+            BackColor = Ui.Page;
             Cursor = Cursors.Hand;
-            Font = Ui.SmallBold;
-            Height = Ui.S(30);
+            Font = Ui.CardSub;
+            Height = Ui.HSecondary;
+            TabStop = true;
+            _hoverT = new Tween(this, 0f);
         }
 
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
-            _hover = true;
-            Invalidate();
+            _hoverT.To(1f, Tok.MotionMs);
         }
 
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
-            _hover = false;
+            _down = false;
+            _hoverT.To(0f, Tok.MotionMs);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                _down = true;
+                Invalidate();
+            }
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            _down = false;
             Invalidate();
+            base.OnMouseUp(e);
+        }
+
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            Invalidate();
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            Invalidate();
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            Keys key = keyData & Keys.KeyCode;
+            if (key == Keys.Space || key == Keys.Enter)
+            {
+                return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)
+            {
+                OnClick(EventArgs.Empty);
+                e.Handled = true;
+                return;
+            }
+            base.OnKeyDown(e);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -981,43 +1239,185 @@ namespace WtSkin
             Graphics g = e.Graphics;
             Ui.Smooth(g);
             Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
-            Ui.FillRound(g, r, Ui.S(8), _hover ? Ui.PanelHover : Ui.Panel);
-            Ui.DrawRound(g, r, Ui.S(8), _hover ? Ui.Line : Ui.LineSoft, 1f);
-            int pad = Ui.S(10);
-            int icon = Ui.S(18);
+            float t = _hoverT.Value;
+            Color fill = Ui.Mix(Ui.Page, Ui.PanelHover, _down ? Math.Max(t, 0.7f) : t);
+            Color border = Ui.Mix(Ui.Stroke, Ui.TextWeak, Math.Max(t * 0.45f, _down ? 0.5f : 0f));
+            Color text = Ui.Mix(Ui.TextSecondary, Ui.TextPrimary, t);
+            Ui.FillRound(g, r, Ui.RButton, fill);
+            Ui.DrawRound(g, r, Ui.RButton, border, Ui.BorderWidth);
+            int pad = Ui.Sp12;
+            int icon = Ui.S(16);
             int tx = pad;
             if (Icon != null)
             {
                 Rectangle ir = new Rectangle(pad, (Height - icon) / 2, icon, icon);
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                g.DrawImage(Icon, ir);
-                tx += icon + Ui.S(8);
+                Ui.DrawIconTinted(g, Icon, ir, Ui.Mix(Ui.TextWeak, Ui.TextSecondary, t));
+                tx += icon + Ui.Sp8;
             }
-            Ui.DrawText(g, Text, Font, _hover ? Ui.Text : Ui.TextDim,
+            Ui.DrawText(g, Text, Font, text,
                     new Rectangle(tx, 0, Math.Max(Ui.S(10), Width - tx - pad), Height),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter |
                     TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+            if (Focused)
+            {
+                Ui.DrawFocus(g, r, Ui.RButton, Ui.TextSecondary);
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _hoverT.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 
+    /// <summary>顶部路径选择：状态点 + 路径 + “更改”，与设置按钮同高（38）。</summary>
+    internal class PathChip : Control
+    {
+        public bool Valid = true;
+        public string PathText = "";
+        private readonly Tween _hoverT;
+        private bool _down;
+
+        public PathChip()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw |
+                     ControlStyles.SupportsTransparentBackColor | ControlStyles.Selectable, true);
+            BackColor = Ui.Page;
+            Cursor = Cursors.Hand;
+            Font = Ui.CardSub;
+            Height = Ui.S(38);
+            TabStop = true;
+            _hoverT = new Tween(this, 0f);
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            base.OnMouseEnter(e);
+            _hoverT.To(1f, Tok.MotionMs);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            _down = false;
+            _hoverT.To(0f, Tok.MotionMs);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                _down = true;
+                Focus();
+                Invalidate();
+            }
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            _down = false;
+            Invalidate();
+            base.OnMouseUp(e);
+        }
+
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            Invalidate();
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            Invalidate();
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            Keys key = keyData & Keys.KeyCode;
+            if (key == Keys.Space || key == Keys.Enter)
+            {
+                return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)
+            {
+                OnClick(EventArgs.Empty);
+                e.Handled = true;
+                return;
+            }
+            base.OnKeyDown(e);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Ui.Smooth(g);
+            Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
+            float t = _hoverT.Value;
+            Ui.FillRound(g, r, Ui.RButton, Ui.Mix(_down ? Ui.PanelActive : Ui.Surface, Ui.PanelHover, t));
+            Ui.DrawRound(g, r, Ui.RButton, Ui.Mix(Ui.Stroke, Ui.TextWeak, t * 0.4f), Ui.BorderWidth);
+            using (SolidBrush dot = new SolidBrush(Valid ? Ui.Good : Ui.Bad))
+            {
+                g.FillEllipse(dot, Ui.Sp12, (Height - Ui.S(8)) / 2, Ui.S(8), Ui.S(8));
+            }
+            string action = "更改";
+            Size actionSize = TextRenderer.MeasureText(action, Font);
+            int actionX = Width - Ui.Sp12 - actionSize.Width;
+            Ui.DrawText(g, PathText, Font, Ui.Mix(Ui.TextSecondary, Ui.TextPrimary, t),
+                    new Rectangle(Ui.Sp12 + Ui.S(16), 0, Math.Max(Ui.S(20), actionX - Ui.Sp8 - (Ui.Sp12 + Ui.S(16))), Height),
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+            Ui.DrawText(g, action, Font, Ui.Mix(Ui.TextWeak, Ui.TextSecondary, t),
+                    new Rectangle(actionX, 0, actionSize.Width + Ui.S(2), Height),
+                    TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+            if (Focused)
+            {
+                Ui.DrawFocus(g, r, Ui.RButton, Ui.TextSecondary);
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _hoverT.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+
+    /// <summary>扁平按钮：主按钮 / 次级 / 危险三种外观，36 高，8 圆角，四态 + 焦点描边。</summary>
     internal class FlatButton : Control
     {
-        private bool _hover;
-        private bool _down;
+        private readonly Tween _hoverT;
+        private readonly Tween _pressT;
         private bool _primary;
         private bool _danger;
-        private int _radius = 9;
+        private int _radiusPx = Tok.ButtonRadius;
 
         public FlatButton()
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                      ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw |
-                     ControlStyles.SupportsTransparentBackColor, true);
+                     ControlStyles.SupportsTransparentBackColor | ControlStyles.Selectable, true);
             BackColor = Ui.Panel;
             Cursor = Cursors.Hand;
-            TabStop = false;
-            Height = Ui.S(36);
+            TabStop = true;
+            Height = Ui.HPrimary;
             Font = Ui.BodyBold;
+            _hoverT = new Tween(this, 0f);
+            _pressT = new Tween(this, 0f);
         }
 
         protected override void OnParentChanged(EventArgs e)
@@ -1047,10 +1447,11 @@ namespace WtSkin
             set { _danger = value; Invalidate(); }
         }
 
+        /// <summary>圆角（设计像素），默认 8。</summary>
         public int Radius
         {
-            get { return _radius; }
-            set { _radius = value; Invalidate(); }
+            get { return _radiusPx; }
+            set { _radiusPx = value; Invalidate(); }
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -1058,55 +1459,65 @@ namespace WtSkin
             Graphics g = e.Graphics;
             Ui.Smooth(g);
             Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
+            int radius = Ui.S(_radiusPx);
+            float h = _hoverT.Value;
+            float p = _pressT.Value;
             Color fill;
             Color border;
             Color text;
             if (!Enabled)
             {
+                // 禁用态保留描边与底纹，只降低文字对比度。
                 fill = Ui.T.BtnDisabledFill;
-                border = Ui.LineSoft;
+                border = Ui.Stroke;
                 text = Ui.T.BtnDisabledText;
             }
             else if (_primary)
             {
-                fill = _hover ? Ui.AccentSoft : Ui.Accent;
-                if (_down)
+                fill = Ui.Mix(Ui.Accent, Ui.AccentSoft, h);
+                if (p > 0)
                 {
-                    fill = Ui.AccentDeep;
+                    fill = Ui.Mix(fill, Ui.AccentDeep, p * 0.85f);
                 }
                 border = fill;
                 text = Ui.OnAccent;
             }
             else if (_danger)
             {
-                fill = _hover ? Ui.T.DangerFillHover : Ui.T.DangerFill;
+                fill = Ui.Mix(Ui.T.DangerFill, Ui.T.DangerFillHover, h);
                 border = Ui.T.DangerBorder;
                 text = Ui.T.DangerText;
             }
             else
             {
-                fill = _hover ? Ui.PanelActive : Ui.Panel;
-                border = _hover ? Ui.Line : Ui.LineSoft;
-                text = Ui.Text;
+                fill = Ui.Mix(Ui.Surface, Ui.PanelHover, h);
+                if (p > 0)
+                {
+                    fill = Ui.Mix(fill, Ui.PanelActive, p);
+                }
+                border = Ui.Mix(Ui.Stroke, Ui.TextWeak, Math.Max(h * 0.4f, p * 0.5f));
+                text = Ui.TextPrimary;
             }
 
-            Ui.FillRound(g, r, _radius, fill);
-            Ui.DrawRound(g, r, _radius, border, 1f);
+            Ui.FillRound(g, r, radius, fill);
+            Ui.DrawRound(g, r, radius, border, Ui.BorderWidth);
             Ui.DrawText(g, Text, Font, text, r, Ui.Center);
+            if (Focused && Enabled)
+            {
+                Ui.DrawFocus(g, r, radius, _primary ? Ui.OnAccent : Ui.TextSecondary);
+            }
         }
 
         protected override void OnMouseEnter(EventArgs e)
         {
-            _hover = true;
-            Invalidate();
+            _hoverT.To(1f, Tok.MotionMs);
             base.OnMouseEnter(e);
         }
 
         protected override void OnMouseLeave(EventArgs e)
         {
-            _hover = false;
-            _down = false;
-            Invalidate();
+            _hoverT.To(0f, Tok.MotionMs);
+            _pressT.Snap(0f);
             base.OnMouseLeave(e);
         }
 
@@ -1114,21 +1525,61 @@ namespace WtSkin
         {
             if (e.Button == MouseButtons.Left)
             {
-                _down = true;
-                Invalidate();
+                _pressT.To(1f, 90);
+                Focus();
             }
             base.OnMouseDown(e);
         }
 
         protected override void OnMouseUp(MouseEventArgs e)
         {
-            _down = false;
-            Invalidate();
+            _pressT.To(0f, Tok.MotionMs);
             base.OnMouseUp(e);
+        }
+
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            Invalidate();
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            Invalidate();
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            Keys key = keyData & Keys.KeyCode;
+            if (key == Keys.Space || key == Keys.Enter)
+            {
+                return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)
+            {
+                if (Enabled)
+                {
+                    OnClick(EventArgs.Empty);
+                }
+                e.Handled = true;
+                return;
+            }
+            base.OnKeyDown(e);
         }
 
         protected override void OnEnabledChanged(EventArgs e)
         {
+            if (!Enabled)
+            {
+                _hoverT.Snap(0f);
+                _pressT.Snap(0f);
+            }
             Invalidate();
             base.OnEnabledChanged(e);
         }
@@ -1138,6 +1589,16 @@ namespace WtSkin
             base.OnTextChanged(e);
             Invalidate();
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _hoverT.Dispose();
+                _pressT.Dispose();
+            }
+            base.Dispose(disposing);
+        }
     }
 
     /// <summary>自绘的复选行：一排显示 勾选 / 国旗 / 机名 / 国家 / 状态标签。</summary>
@@ -1145,6 +1606,7 @@ namespace WtSkin
     {
         private bool _checked = true;
         private bool _hover;
+        private bool _down;
         private string _title = "";
         private string _country = "";
         private string _model = "";
@@ -1160,11 +1622,12 @@ namespace WtSkin
         public CheckRow()
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
-                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw |
+                     ControlStyles.Selectable, true);
             BackColor = Ui.Panel;
             Height = Ui.S(46);
             Cursor = Cursors.Hand;
-            TabStop = false;
+            TabStop = true;
         }
 
         public bool Checked
@@ -1268,7 +1731,11 @@ namespace WtSkin
             {
                 fill = Ui.Mix(fill, Ui.PanelHover, 0.55f);
             }
-            Ui.FillRound(g, r, Ui.S(7), fill);
+            if (_down)
+            {
+                fill = Ui.Mix(fill, Ui.Page, 0.2f);
+            }
+            Ui.FillRound(g, r, Ui.RButton, fill);
             if (_highlight)
             {
                 Ui.FillRound(g, new Rectangle(r.X, r.Y + Ui.S(7), Ui.S(3), r.Height - Ui.S(14)), Ui.S(2), Ui.Accent);
@@ -1279,7 +1746,7 @@ namespace WtSkin
             Rectangle boxRect = new Rectangle(Ui.S(2), by, box, box);
             if (_checked)
             {
-                Ui.FillRound(g, boxRect, Ui.S(5), Ui.Accent);
+                Ui.FillRound(g, boxRect, Ui.S(4), Ui.Accent);
                 using (Pen pen = new Pen(Ui.T.CheckMark, Math.Max(1.6f, Ui.Scale * 1.8f)))
                 {
                     pen.StartCap = LineCap.Round;
@@ -1293,7 +1760,7 @@ namespace WtSkin
             }
             else
             {
-                Ui.DrawRound(g, boxRect, Ui.S(5), Ui.Line, 1.4f);
+                Ui.DrawRound(g, boxRect, Ui.S(4), Ui.Stroke, Ui.BorderWidth);
             }
 
             int titleX = boxRect.Right + Ui.S(11);
@@ -1315,8 +1782,8 @@ namespace WtSkin
                 Rectangle pill = new Rectangle(Width - badgeWidth - Ui.S(8), (Height - pillH) / 2, badgeWidth, pillH);
                 Color badgeColor = _badgeKind == 2 ? Ui.Bad : (_badgeKind == 1 ? Ui.Good : Ui.TextDim);
                 Color badgeFill = _badgeKind == 2 ? Ui.BadBg : Ui.T.CardBg;
-                Ui.FillRound(g, pill, Ui.S(9), badgeFill);
-                Ui.DrawRound(g, pill, Ui.S(9), badgeColor, 1f);
+                Ui.FillRound(g, pill, pill.Height / 2, badgeFill);
+                Ui.DrawRound(g, pill, pill.Height / 2, badgeColor, Ui.BorderWidth);
                 Ui.DrawText(g, _badge, Ui.SmallBold, badgeColor, pill, Ui.Center);
             }
 
@@ -1361,6 +1828,43 @@ namespace WtSkin
                 Ui.DrawText(g, meta, Ui.Small, Ui.TextFaint, metaRect,
                         TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
             }
+            if (Focused)
+            {
+                Ui.DrawFocus(g, r, Ui.RButton, Ui.TextSecondary);
+            }
+        }
+
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            Invalidate();
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            Invalidate();
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            Keys key = keyData & Keys.KeyCode;
+            if (key == Keys.Space || key == Keys.Enter)
+            {
+                return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)
+            {
+                OnClick(EventArgs.Empty);
+                e.Handled = true;
+                return;
+            }
+            base.OnKeyDown(e);
         }
 
         protected override void OnMouseEnter(EventArgs e)
@@ -1373,8 +1877,26 @@ namespace WtSkin
         protected override void OnMouseLeave(EventArgs e)
         {
             _hover = false;
+            _down = false;
             Invalidate();
             base.OnMouseLeave(e);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                _down = true;
+                Invalidate();
+            }
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            _down = false;
+            Invalidate();
+            base.OnMouseUp(e);
         }
 
         protected override void OnClick(EventArgs e)
@@ -1605,7 +2127,7 @@ namespace WtSkin
                 y = bounds.Top + Ui.S(8);
             }
             ClientSize = size;
-            using (GraphicsPath path = Ui.Round(new Rectangle(0, 0, size.Width, size.Height), Ui.S(10)))
+            using (GraphicsPath path = Ui.Round(new Rectangle(0, 0, size.Width, size.Height), Ui.RCard))
             {
                 Region = new Region(path);
             }
@@ -1721,8 +2243,8 @@ namespace WtSkin
             Graphics g = e.Graphics;
             Ui.Smooth(g);
             Rectangle r = new Rectangle(0, 0, ClientSize.Width - 1, ClientSize.Height - 1);
-            Ui.FillRound(g, r, Ui.S(10), Ui.Panel);
-            Ui.DrawRound(g, r, Ui.S(10), Ui.Line, 1f);
+            Ui.FillRound(g, r, Ui.RCard, Ui.Surface);
+            Ui.DrawRound(g, r, Ui.RCard, Ui.Stroke, Ui.BorderWidth);
 
             int textH = TextBlockHeight();
             int iconH = IconSize().Height;
@@ -1762,7 +2284,7 @@ namespace WtSkin
                 DrawStatus(g, statusW, textTop);
             }
             y += Ui.S(DividerGap);
-            using (Pen pen = new Pen(Ui.LineSoft, 1f))
+            using (Pen pen = new Pen(Ui.StrokeSoft, Ui.BorderWidth))
             {
                 g.DrawLine(pen, TextLeft(), y - Ui.S(4), ClientSize.Width - Ui.S(Pad), y - Ui.S(4));
             }
@@ -1802,8 +2324,8 @@ namespace WtSkin
             Rectangle pill = new Rectangle(ClientSize.Width - Ui.S(Pad) - width, top, width, pillH);
             Color color = _info.StatusKind == 2 ? Ui.Bad : (_info.StatusKind == 1 ? Ui.Good : Ui.TextDim);
             Color fill = _info.StatusKind == 2 ? Ui.BadBg : (_info.StatusKind == 1 ? Ui.GoodBg : Ui.T.CardBg);
-            Ui.FillRound(g, pill, Ui.S(10), fill);
-            Ui.DrawRound(g, pill, Ui.S(10), color, 1f);
+            Ui.FillRound(g, pill, pill.Height / 2, fill);
+            Ui.DrawRound(g, pill, pill.Height / 2, color, Ui.BorderWidth);
             Ui.DrawText(g, _info.Status, Ui.SmallBold, color, pill, Ui.Center);
         }
 
@@ -1814,7 +2336,7 @@ namespace WtSkin
             if (_icon == null)
             {
                 Rectangle box = new Rectangle(Ui.S(Pad), top, Ui.S(IconBox), Ui.S(IconBox));
-                Ui.FillRound(g, box, Ui.S(8), Ui.Mix(Ui.CardBg, Ui.PanelHover, 0.6f));
+                Ui.FillRound(g, box, Ui.RButton, Ui.Mix(Ui.CardBg, Ui.PanelHover, 0.6f));
                 return;
             }
             System.Drawing.Drawing2D.InterpolationMode old = g.InterpolationMode;
@@ -1866,31 +2388,79 @@ namespace WtSkin
         }
     }
 
-    /// <summary>虚线拖放区域。</summary>
+    /// <summary>
+    /// 拖放区：有内容时是顶部紧凑条，空列表时是整栏空态（图标 + 主文案 + 说明 + 选择文件）。
+    /// 默认虚线描边，悬停实线提亮，拖拽经过变 Accent 并微亮背景。
+    /// </summary>
     internal class DropZone : Control
     {
         private bool _hot;
+        private bool _hover;
         private string _main = "";
         private string _sub = "";
+        private bool _empty;
+        private readonly Tween _hoverT;
+        private readonly FlatButton _choose;
 
         public DropZone()
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
-                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-            BackColor = Ui.Bg;
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw |
+                     ControlStyles.Selectable, true);
+            BackColor = Ui.Page;
             AllowDrop = true;
+            TabStop = true;
+            _hoverT = new Tween(this, 0f);
+
+            _choose = new FlatButton();
+            _choose.Text = "选择文件";
+            _choose.Primary = true;
+            _choose.Font = Ui.BodyBold;
+            _choose.Visible = false;
+            _choose.TabIndex = 0;
+            Controls.Add(_choose);
+            // 放在卡片底上，而不是页面底上，避免圆角处透出深色底。
+            _choose.BackColor = Ui.Surface;
         }
 
-        protected override void OnResize(EventArgs e)
+        public FlatButton ChooseButton
         {
-            base.OnResize(e);
-            Invalidate();
+            get { return _choose; }
         }
 
         public bool Hot
         {
             get { return _hot; }
-            set { if (_hot != value) { _hot = value; Invalidate(); } }
+            set
+            {
+                if (_hot != value)
+                {
+                    _hot = value;
+                    Invalidate();
+                }
+            }
+        }
+
+        /// <summary>空列表：整栏空态。</summary>
+        public bool Empty
+        {
+            get { return _empty; }
+            set
+            {
+                if (_empty == value)
+                {
+                    return;
+                }
+                _empty = value;
+                _choose.Visible = value;
+                if (value)
+                {
+                    _hover = false;
+                    _hoverT.Snap(0f);
+                }
+                LayoutChoose();
+                Invalidate();
+            }
         }
 
         public string Main
@@ -1905,52 +2475,199 @@ namespace WtSkin
             set { _sub = value; Invalidate(); }
         }
 
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            LayoutChoose();
+            Invalidate();
+        }
+
+        private int EmptyBlockHeight()
+        {
+            return Ui.S(56) + Ui.Sp16 + Ui.LineHeight(Ui.CardTitle) + Ui.Sp8 +
+                   Ui.LineHeight(Ui.Body) + Ui.Sp24 + Ui.HPrimary;
+        }
+
+        private void LayoutChoose()
+        {
+            if (!_empty || _choose == null)
+            {
+                return;
+            }
+            int width = Math.Max(Ui.S(112), TextRenderer.MeasureText(_choose.Text, _choose.Font).Width + Ui.S(40));
+            int blockTop = Math.Max(0, (Height - EmptyBlockHeight()) / 2);
+            int y = blockTop + Ui.S(56) + Ui.Sp16 + Ui.LineHeight(Ui.CardTitle) + Ui.Sp8 +
+                    Ui.LineHeight(Ui.Body) + Ui.Sp24;
+            _choose.SetBounds((Width - width) / 2, y, width, Ui.HPrimary);
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            _hover = true;
+            _hoverT.To(1f, Tok.MotionMs);
+            base.OnMouseEnter(e);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            _hover = false;
+            _hoverT.To(0f, Tok.MotionMs);
+            base.OnMouseLeave(e);
+        }
+
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            Invalidate();
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            Invalidate();
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            Keys key = keyData & Keys.KeyCode;
+            if (key == Keys.Space || key == Keys.Enter)
+            {
+                return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)
+            {
+                OnClick(EventArgs.Empty);
+                e.Handled = true;
+                return;
+            }
+            base.OnKeyDown(e);
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
             Ui.Smooth(g);
             Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
-            Color fill = _hot ? Ui.T.DropHotFill : Ui.Panel;
-            Color border = _hot ? Ui.Accent : Ui.Line;
-            Ui.FillRound(g, r, Ui.S(12), fill);
-            using (GraphicsPath path = Ui.Round(r, Ui.S(12)))
-            using (Pen pen = new Pen(border, 1.4f))
+            float t = _hoverT.Value;
+            Color fill = _hot
+                ? Ui.Mix(Ui.Surface, Ui.Accent, 0.08f)
+                : Ui.Mix(Ui.Surface, Ui.PanelHover, t * 0.65f);
+            Color border = _hot ? Ui.Accent : Ui.Mix(Ui.Stroke, Ui.TextWeak, t * 0.35f);
+            Ui.FillRound(g, r, Ui.RCard, fill);
+
+            bool dashed = !_hover && !_hot;
+            using (GraphicsPath path = Ui.Round(r, Ui.RCard))
+            using (Pen pen = new Pen(border, Ui.Hairline))
+            using (SolidBrush brush = new SolidBrush(fill))
             {
-                pen.DashStyle = DashStyle.Dash;
-                pen.DashPattern = new float[] { 4f, 3f };
+                g.FillPath(brush, path);
+                if (dashed)
+                {
+                    pen.DashStyle = DashStyle.Custom;
+                    pen.DashPattern = new float[] { 3f, 2.5f };
+                }
                 g.DrawPath(pen, path);
             }
 
-            int icon = Ui.S(38);
-            int ix = Ui.S(22);
-            int iy = (Height - icon) / 2;
-            Rectangle iconRect = new Rectangle(ix, iy, icon, icon);
-            Ui.FillRound(g, iconRect, Ui.S(10), _hot ? Ui.Accent : Ui.T.DropIconBg);
-            Color plus = _hot ? Ui.OnAccent : Ui.Accent;
-            using (Pen pen = new Pen(plus, Math.Max(1.8f, Ui.Scale * 2.2f)))
+            if (_empty)
             {
-                pen.StartCap = LineCap.Round;
-                pen.EndCap = LineCap.Round;
-                int cx = iconRect.X + icon / 2;
-                int cy = iconRect.Y + icon / 2;
-                int arm = icon / 5;
-                g.DrawLine(pen, cx - arm, cy, cx + arm, cy);
-                g.DrawLine(pen, cx, cy - arm, cx, cy + arm);
-            }
-
-            int textX = iconRect.Right + Ui.S(16);
-            Rectangle mainRect = new Rectangle(textX, 0, Width - textX - Ui.S(12), Height);
-            if (_sub.Length > 0)
-            {
-                mainRect = new Rectangle(textX, Ui.S(6), Width - textX - Ui.S(12), Height / 2 - Ui.S(6));
-                Ui.DrawText(g, _main, Ui.BodyBold, _hot ? Ui.Accent : Ui.Text, mainRect, TextFormatFlags.Left | TextFormatFlags.Bottom | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
-                Rectangle subRect = new Rectangle(textX, Height / 2 + Ui.S(2), Width - textX - Ui.S(12), Height / 2 - Ui.S(4));
-                Ui.DrawText(g, _sub, Ui.Small, Ui.TextDim, subRect, TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+                PaintEmpty(g, t);
             }
             else
             {
-                Ui.DrawText(g, _main, Ui.BodyBold, Ui.Text, mainRect, Ui.LeftMiddle);
+                PaintCompact(g, t);
             }
+
+            if (Focused)
+            {
+                Ui.DrawFocus(g, r, Ui.RCard, Ui.TextSecondary);
+            }
+        }
+
+        private void PaintEmpty(Graphics g, float t)
+        {
+            int blockTop = Math.Max(0, (Height - EmptyBlockHeight()) / 2);
+            int icon = Ui.S(56);
+            int iconX = (Width - icon) / 2;
+            Rectangle iconRect = new Rectangle(iconX, blockTop, icon, icon);
+            Ui.FillRound(g, iconRect, Ui.RCard, Ui.Mix(Ui.PanelHover, Ui.Card, 0.45f));
+            Ui.DrawRound(g, iconRect, Ui.RCard, Ui.Mix(Ui.StrokeSoft, Ui.Stroke, t), Ui.BorderWidth);
+            DrawDropGlyph(g, iconRect, _hot ? Ui.Accent : Ui.Mix(Ui.TextWeak, Ui.TextSecondary, t));
+
+            Font mainFont = Ui.CardTitle;
+            Font subFont = Ui.Body;
+            int mainH = Ui.LineHeight(mainFont);
+            int subH = Ui.LineHeight(subFont);
+            int mainTop = iconRect.Bottom + Ui.Sp16;
+            Ui.DrawText(g, _main, mainFont, Ui.TextPrimary,
+                    new Rectangle(Ui.Sp24, mainTop, Width - Ui.Sp24 * 2, mainH),
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+            Ui.DrawText(g, _sub, subFont, Ui.Mix(Ui.TextSecondary, Ui.TextPrimary, t * 0.35f),
+                    new Rectangle(Ui.Sp24, mainTop + mainH + Ui.Sp8, Width - Ui.Sp24 * 2, subH),
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+        }
+
+        private void PaintCompact(Graphics g, float t)
+        {
+            int icon = Ui.S(38);
+            int ix = Ui.Sp24;
+            int iy = (Height - icon) / 2;
+            Rectangle iconRect = new Rectangle(ix, iy, icon, icon);
+            Ui.FillRound(g, iconRect, Ui.RButton, Ui.Mix(Ui.PanelHover, Ui.Card, 0.35f));
+            DrawDropGlyph(g, iconRect, _hot ? Ui.Accent : Ui.Mix(Ui.TextWeak, Ui.TextSecondary, t));
+
+            int textX = iconRect.Right + Ui.Sp16;
+            Rectangle mainRect = new Rectangle(textX, 0, Math.Max(Ui.S(20), Width - textX - Ui.Sp16), Height);
+            if (_sub.Length > 0)
+            {
+                mainRect = new Rectangle(textX, Ui.Sp8, Width - textX - Ui.Sp16, Height / 2 - Ui.Sp8);
+                Ui.DrawText(g, _main, Ui.BodyBold, Ui.TextPrimary, mainRect,
+                        TextFormatFlags.Left | TextFormatFlags.Bottom | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+                Rectangle subRect = new Rectangle(textX, Height / 2 + Ui.Sp4, Width - textX - Ui.Sp16, Height / 2 - Ui.Sp8);
+                Ui.DrawText(g, _sub, Ui.Small, Ui.TextSecondary, subRect,
+                        TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+            }
+            else
+            {
+                Ui.DrawText(g, _main, Ui.BodyBold, Ui.TextPrimary, mainRect, Ui.LeftMiddle);
+            }
+        }
+
+        /// <summary>向下箭头落入托盘，避免再用一个强调色图标。</summary>
+        private void DrawDropGlyph(Graphics g, Rectangle box, Color color)
+        {
+            int arm = Math.Max(Ui.S(7), box.Width / 5);
+            int cx = box.X + box.Width / 2;
+            int cy = box.Y + box.Height / 2 - Ui.S(1);
+            using (Pen pen = new Pen(color, Math.Max(1.4f, Ui.Scale * 1.6f)))
+            {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Round;
+                g.DrawLine(pen, cx, cy - arm, cx, cy + arm);
+                g.DrawLine(pen, cx - arm + Ui.S(1), cy + Ui.S(2), cx, cy + arm + Ui.S(1));
+                g.DrawLine(pen, cx + arm - Ui.S(1), cy + Ui.S(2), cx, cy + arm + Ui.S(1));
+                int tray = Math.Max(Ui.S(10), box.Width / 3);
+                int trayY = cy + arm + Ui.S(7);
+                g.DrawLine(pen, cx - tray, trayY, cx - tray, trayY + Ui.S(5));
+                g.DrawLine(pen, cx + tray, trayY, cx + tray, trayY + Ui.S(5));
+                g.DrawLine(pen, cx - tray, trayY + Ui.S(5), cx + tray, trayY + Ui.S(5));
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _hoverT.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

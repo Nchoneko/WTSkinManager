@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -11,65 +12,33 @@ using System.Windows.Forms;
 
 namespace WtSkin
 {
-    /// <summary>左侧的涂装包卡片。</summary>
+    /// <summary>左侧的涂装包卡片：卡片 12 圆角、1px 描边，选中态用 Accent 描边。</summary>
     internal class PackageCard : Control
     {
         public SkinPackage Package;
         public bool Selected;
         public event EventHandler RemoveClicked;
 
-        private float _hoverT;
-        private bool _hoverTarget;
+        private readonly Tween _hoverT;
         private bool _closeHover;
-        private Timer _timer;
+        private bool _down;
 
         public PackageCard()
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
-                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw |
+                     ControlStyles.Selectable, true);
             Height = Ui.S(76);
             Cursor = Cursors.Hand;
-            BackColor = Ui.Bg;
+            BackColor = Ui.Page;
+            TabStop = true;
+            _hoverT = new Tween(this, 0f);
         }
 
         private Rectangle CloseRect()
         {
             int size = Ui.S(26);
-            return new Rectangle(Width - size - Ui.S(10), Ui.S(10), size, size);
-        }
-
-        private void Animate()
-        {
-            if (!Ui.Animations)
-            {
-                _hoverT = _hoverTarget ? 1f : 0f;
-                Invalidate();
-                return;
-            }
-            if (_timer == null)
-            {
-                _timer = new Timer();
-                _timer.Interval = 16;
-                _timer.Tick += delegate
-                {
-                    float target = _hoverTarget ? 1f : 0f;
-                    float step = 0.16f;
-                    if (Math.Abs(_hoverT - target) <= step)
-                    {
-                        _hoverT = target;
-                        _timer.Stop();
-                    }
-                    else
-                    {
-                        _hoverT += _hoverT < target ? step : -step;
-                    }
-                    Invalidate();
-                };
-            }
-            if (!_timer.Enabled)
-            {
-                _timer.Start();
-            }
+            return new Rectangle(Width - size - Ui.Sp12, Ui.S(10), size, size);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -77,14 +46,19 @@ namespace WtSkin
             Graphics g = e.Graphics;
             Ui.Smooth(g);
             Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
+            float t = _hoverT.Value;
             Color baseFill = Selected ? Ui.CardSel : Ui.CardBg;
-            Color fill = Ui.Mix(baseFill, Selected ? Ui.PanelActive : Ui.PanelHover, _hoverT);
-            Color border = Selected ? Ui.Accent : Ui.Mix(Ui.LineSoft, Ui.Line, _hoverT);
-            Ui.FillRound(g, r, Ui.S(10), fill);
-            Ui.DrawRound(g, r, Ui.S(10), border, Selected ? 1.6f : 1f);
+            Color fill = Ui.Mix(baseFill, Selected ? Ui.PanelActive : Ui.PanelHover, t);
+            if (_down)
+            {
+                fill = Ui.Mix(fill, Ui.Page, 0.22f);
+            }
+            Color border = Selected ? Ui.Accent : Ui.Mix(Ui.Stroke, Ui.TextWeak, t * 0.35f);
+            Ui.FillRound(g, r, Ui.RCard, fill);
+            Ui.DrawRound(g, r, Ui.RCard, border, Ui.BorderWidth);
 
-            int badge = Ui.S(38);
-            Rectangle badgeRect = new Rectangle(Ui.S(14), (Height - badge) / 2, badge, badge);
+            int badge = Ui.S(40);
+            Rectangle badgeRect = new Rectangle(Ui.Sp16, (Height - badge) / 2, badge, badge);
             Color badgeColor = Ui.PanelActive;
             if (Package != null && Package.Ready)
             {
@@ -94,10 +68,10 @@ namespace WtSkin
             {
                 badgeColor = Ui.T.BadgeBadBg;
             }
-            Ui.FillRound(g, badgeRect, Ui.S(9), badgeColor);
+            Ui.FillRound(g, badgeRect, Ui.RButton, badgeColor);
 
             string badgeText = "?";
-            Color badgeTextColor = Ui.TextDim;
+            Color badgeTextColor = Ui.TextSecondary;
             if (Package != null)
             {
                 if (Package.Error.Length > 0)
@@ -108,7 +82,7 @@ namespace WtSkin
                 else if (Package.Units.Count > 0)
                 {
                     badgeText = Package.Units.Count.ToString(CultureInfo.InvariantCulture);
-                    badgeTextColor = Ui.Accent;
+                    badgeTextColor = Ui.TextPrimary;
                 }
                 else
                 {
@@ -118,15 +92,15 @@ namespace WtSkin
             }
             Ui.DrawText(g, badgeText, Ui.H1, badgeTextColor, badgeRect, Ui.Center);
 
-            int textX = badgeRect.Right + Ui.S(13);
-            int rightReserve = Ui.S(96);
-            Rectangle nameRect = new Rectangle(textX, Ui.S(12), Width - textX - rightReserve, Ui.S(24));
+            int textX = badgeRect.Right + Ui.Sp12;
+            int rightReserve = Ui.S(88);
+            Rectangle nameRect = new Rectangle(textX, Ui.Sp12, Math.Max(Ui.S(40), Width - textX - rightReserve), Ui.S(22));
             string name = Package == null ? "" : Package.Name;
-            Ui.DrawText(g, name, Ui.BodyBold, Ui.Text, nameRect,
+            Ui.DrawText(g, name, Ui.BodyBold, Ui.TextPrimary, nameRect,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
 
             string meta;
-            Color metaColor = Ui.TextFaint;
+            Color metaColor = Ui.TextWeak;
             if (Package == null)
             {
                 meta = "";
@@ -147,23 +121,30 @@ namespace WtSkin
                 else if (Package.UnknownIds.Count > 0)
                 {
                     meta += "  ·  " + Package.UnknownIds.Count + " 个未识别";
-                    metaColor = Ui.TextDim;
+                    metaColor = Ui.TextSecondary;
                 }
             }
-            Rectangle metaRect = new Rectangle(textX, Ui.S(39), Width - textX - rightReserve, Ui.S(20));
+            Rectangle metaRect = new Rectangle(textX, Ui.S(38), Math.Max(Ui.S(40), Width - textX - rightReserve), Ui.S(20));
             Ui.DrawText(g, meta, Ui.Small, metaColor, metaRect,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
 
             Rectangle close = CloseRect();
             if (_closeHover)
             {
-                Ui.FillRound(g, close, Ui.S(6), Ui.T.CloseHoverBg);
+                Ui.FillRound(g, close, Ui.RButton, Ui.T.CloseHoverBg);
             }
-            using (Pen pen = new Pen(_closeHover ? Ui.T.CloseHoverFg : Ui.TextFaint, 1.5f))
+            using (Pen pen = new Pen(_closeHover ? Ui.T.CloseHoverFg : Ui.TextWeak, Math.Max(1.3f, Ui.Scale * 1.4f)))
             {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Round;
                 int pad = Ui.S(8);
                 g.DrawLine(pen, close.Left + pad, close.Top + pad, close.Right - pad, close.Bottom - pad);
                 g.DrawLine(pen, close.Right - pad, close.Top + pad, close.Left + pad, close.Bottom - pad);
+            }
+
+            if (Focused)
+            {
+                Ui.DrawFocus(g, r, Ui.RCard, Ui.TextSecondary);
             }
         }
 
@@ -180,17 +161,31 @@ namespace WtSkin
 
         protected override void OnMouseEnter(EventArgs e)
         {
-            _hoverTarget = true;
-            Animate();
+            _hoverT.To(1f, Tok.MotionMs);
             base.OnMouseEnter(e);
         }
 
         protected override void OnMouseLeave(EventArgs e)
         {
-            _hoverTarget = false;
             _closeHover = false;
-            Animate();
+            _down = false;
+            _hoverT.To(0f, Tok.MotionMs);
             base.OnMouseLeave(e);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            _down = true;
+            Focus();
+            Invalidate();
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            _down = false;
+            Invalidate();
+            base.OnMouseUp(e);
         }
 
         protected override void OnMouseClick(MouseEventArgs e)
@@ -206,12 +201,44 @@ namespace WtSkin
             base.OnMouseClick(e);
         }
 
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            Invalidate();
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            Invalidate();
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            Keys key = keyData & Keys.KeyCode;
+            if (key == Keys.Space || key == Keys.Enter)
+            {
+                return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)
+            {
+                OnClick(EventArgs.Empty);
+                e.Handled = true;
+                return;
+            }
+            base.OnKeyDown(e);
+        }
+
         protected override void Dispose(bool disposing)
         {
-            if (disposing && _timer != null)
+            if (disposing)
             {
-                _timer.Dispose();
-                _timer = null;
+                _hoverT.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -237,15 +264,24 @@ namespace WtSkin
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern bool SystemParametersInfo(uint action, uint param, ref bool value, uint winIni);
         private DetailCard _detailCard;
-        private Label _detailName;
-        private Label _detailMeta;
-        private Label _detailSection;
-        private Label _detailHint;
+        private string _detailNameText = "";
+        private string _detailMetaText = "";
+        private Color _detailMetaColor = Ui.TextDim;
+        private string _detailSectionText = "";
+        private string _detailHintText = "";
+        private Color _detailHintColor = Ui.TextFaint;
+        private bool _detailRefreshVisible;
+        private bool _detailManualVisible;
+        private bool _detailGuide = true;
+        private float _guideT = 1f;
+        private float _guideFrom;
+        private bool _guideAnimating;
+        private Timer _guideTimer;
+        private DateTime _guideStart;
         private FlatButton _manualButton;
         private FlatButton _refreshButton;
         private Label _status;
         private FlatButton _importButton;
-        private Label _emptyLabel;
         private Bitmap _logo;
 
         private bool _dragging;
@@ -256,6 +292,7 @@ namespace WtSkin
         private SiteButton _liveButton;
         private SiteButton _wtButton;
         private FlatButton _settingsButton;
+        private PathChip _pathChip;
         private BuildInfoTip _buildTip;
         private Point _dragOffset;
         private int _winHover = -1;
@@ -331,6 +368,8 @@ namespace WtSkin
                 BeginInvoke((MethodInvoker)delegate
                 {
                     Native.BringToFrontOnce(this);
+                    // 启动时不把焦点停在任何按钮上：避免次级按钮出现焦点描边、看起来像主操作。
+                    ActiveControl = null;
                     // 首屏渲染完成后再静默检查更新：后台线程请求，不阻塞窗口显示。
                     BeginStartupUpdateCheck();
                 });
@@ -400,11 +439,11 @@ namespace WtSkin
         private Rectangle WinButtonRect(int index)
         {
             int w = Ui.S(46);
-            int h = Ui.S(36);
+            int h = Ui.S(ControlHeight38);
             int right = ClientSize.Width - Ui.S(8);
             int x = right - (3 - index) * w;
-            int headerHeight = _header != null ? _header.Height : Ui.S(116);
-            return new Rectangle(x, (headerHeight - h) / 2, w, h);
+            int y = Ui.S(Row1Top) + (Ui.S(Row1Height) - h) / 2;
+            return new Rectangle(x, y, w, h);
         }
 
         private bool HeaderHitClient(Point p)
@@ -415,10 +454,6 @@ namespace WtSkin
                 {
                     return true;
                 }
-            }
-            if (GameChipRect().Contains(p))
-            {
-                return true;
             }
             return false;
         }
@@ -847,10 +882,6 @@ namespace WtSkin
                 Close();
                 return;
             }
-            if (GameChipRect().Contains(e.Location))
-            {
-                OpenSettings();
-            }
         }
 
         private void HeaderMouseDoubleClick(object sender, MouseEventArgs e)
@@ -862,23 +893,47 @@ namespace WtSkin
             ToggleMaximize();
         }
 
+        // 顶部/底部的设计栅格（设计像素，统一 8px 基准）
+        private const int HeaderDesignHeight = 112;
+        private const int TabsDesignHeight = 44;
+        private const int Row1Top = 18;
+        private const int Row1Height = 40;
+        private const int Row2Top = 66;
+        private const int Row2Height = 32;
+        private const int ControlHeight38 = 38;
+
         private void LayoutChrome()
         {
             if (_header == null)
             {
                 return;
             }
-            int headerHeight = Ui.S(116);
-            int tabHeight = Ui.S(44);
+            int headerHeight = Ui.S(HeaderDesignHeight);
+            int tabHeight = Ui.S(TabsDesignHeight);
             int footerHeight = _footer.Visible ? Ui.S(76) : 0;
             int bannerHeight = _updateBanner != null && _updateBanner.Visible ? Ui.S(40) : 0;
             _header.SetBounds(0, 0, ClientSize.Width, headerHeight);
+            Rectangle chip = GameChipRect();
+            if (_pathChip != null)
+            {
+                _pathChip.Bounds = chip;
+            }
             if (_liveButton != null)
             {
-                Rectangle chip = GameChipRect();
-                _liveButton.SetBounds(Ui.S(24), Ui.S(84), Ui.S(132), Ui.S(30));
-                _wtButton.SetBounds(Ui.S(166), Ui.S(84), Ui.S(168), Ui.S(30));
-                _settingsButton.SetBounds(chip.Left - Ui.S(10) - Ui.S(76), chip.Top, Ui.S(76), chip.Height);
+                // 第二行右侧：两个外链改为次级/幽灵按钮，不与第一行的主操作抢焦点。
+                int pad = Ui.Sp24;
+                int gap = Ui.Sp8;
+                int wtW = Math.Max(Ui.S(156), TextRenderer.MeasureText(_wtButton.Text, _wtButton.Font).Width + Ui.S(56));
+                int liveW = Math.Max(Ui.S(124), TextRenderer.MeasureText(_liveButton.Text, _liveButton.Font).Width + Ui.S(56));
+                int right = ClientSize.Width - pad;
+                int row2Top = Ui.S(Row2Top);
+                int row2H = Ui.S(Row2Height);
+                _liveButton.SetBounds(right - liveW - gap - wtW, row2Top, liveW, row2H);
+                _wtButton.SetBounds(right - wtW, row2Top, wtW, row2H);
+            }
+            if (_settingsButton != null)
+            {
+                _settingsButton.SetBounds(chip.Left - Ui.Sp8 - Ui.S(76), chip.Top, Ui.S(76), chip.Height);
             }
             if (_tabs != null)
             {
@@ -900,11 +955,24 @@ namespace WtSkin
             {
                 _managerHost.Bounds = _body.Bounds;
             }
+            RefreshPathChip();
             _header.Invalidate();
             _footer.Invalidate();
             LayoutFooter();
             LayoutBody();
             LayoutResizeEdges();
+        }
+
+        private void RefreshPathChip()
+        {
+            if (_pathChip == null)
+            {
+                return;
+            }
+            string dir = Config.GameDir;
+            _pathChip.Valid = Config.GameDirLooksValid(dir);
+            _pathChip.PathText = string.IsNullOrEmpty(dir) ? "未设置游戏目录" : ShortPath(dir);
+            _pathChip.Invalidate();
         }
 
         private void BuildHeader()
@@ -945,9 +1013,14 @@ namespace WtSkin
             _settingsButton = new FlatButton();
             _settingsButton.Text = "设置";
             _settingsButton.Font = Ui.SmallBold;
-            _settingsButton.BackColor = Ui.Bg;
+            _settingsButton.BackColor = Ui.Page;
             _settingsButton.Click += delegate { OpenSettings(); };
             _header.Controls.Add(_settingsButton);
+
+            _pathChip = new PathChip();
+            _pathChip.Font = Ui.CardSub;
+            _pathChip.Click += delegate { OpenSettings(); };
+            _header.Controls.Add(_pathChip);
         }
 
         private void PaintWindowButtons(Graphics g)
@@ -958,26 +1031,31 @@ namespace WtSkin
                 bool close = i == 2;
                 if (_winHover == i)
                 {
-                    Ui.FillRound(g, r, Ui.S(6), close ? Ui.T.CloseHoverBg : Ui.PanelHover);
+                    Ui.FillRound(g, r, Ui.RButton, close ? Ui.T.CloseHoverBg : Ui.PanelHover);
                 }
-                Color color = (_winHover == i && close) ? Ui.T.CloseHoverFg : Ui.TextDim;
+                Color color = (_winHover == i && close) ? Ui.T.CloseHoverFg : Ui.TextSecondary;
+                int cx = r.X + r.Width / 2;
+                int cy = r.Y + r.Height / 2;
+                float width = Math.Max(1.3f, Ui.Scale * 1.4f);
                 if (i == 0)
                 {
-                    using (Pen pen = new Pen(color, Math.Max(1.2f, Ui.Scale * 1.4f)))
+                    using (Pen pen = new Pen(color, width))
                     {
-                        g.DrawLine(pen, r.X + Ui.S(17), r.Y + r.Height / 2, r.Right - Ui.S(17), r.Y + r.Height / 2);
+                        pen.StartCap = LineCap.Round;
+                        pen.EndCap = LineCap.Round;
+                        g.DrawLine(pen, cx - Ui.S(6), cy, cx + Ui.S(6), cy);
                     }
                 }
                 else if (i == 1)
                 {
-                    using (Pen pen = new Pen(color, Math.Max(1.2f, Ui.Scale * 1.4f)))
+                    using (Pen pen = new Pen(color, width))
                     {
                         if (_maximizedByUser || WindowState == FormWindowState.Maximized)
                         {
-                            Rectangle back = new Rectangle(r.X + Ui.S(16), r.Y + Ui.S(12), Ui.S(12), Ui.S(11));
-                            Rectangle front = new Rectangle(r.X + Ui.S(19), r.Y + Ui.S(15), Ui.S(12), Ui.S(11));
+                            Rectangle back = new Rectangle(cx - Ui.S(5), cy - Ui.S(6), Ui.S(11), Ui.S(10));
+                            Rectangle front = new Rectangle(cx - Ui.S(2), cy - Ui.S(3), Ui.S(11), Ui.S(10));
                             g.DrawRectangle(pen, back);
-                            using (SolidBrush fill = new SolidBrush(Ui.Bg))
+                            using (SolidBrush fill = new SolidBrush(Ui.Page))
                             {
                                 g.FillRectangle(fill, new Rectangle(front.X, front.Y, front.Width - 1, front.Height - 1));
                             }
@@ -985,18 +1063,18 @@ namespace WtSkin
                         }
                         else
                         {
-                            g.DrawRectangle(pen, r.X + Ui.S(17), r.Y + Ui.S(12), Ui.S(12), Ui.S(11));
+                            g.DrawRectangle(pen, cx - Ui.S(6), cy - Ui.S(5), Ui.S(12), Ui.S(10));
                         }
                     }
                 }
                 else
                 {
-                    using (Pen pen = new Pen(color, Math.Max(1.3f, Ui.Scale * 1.5f)))
+                    using (Pen pen = new Pen(color, width))
                     {
                         pen.StartCap = LineCap.Round;
                         pen.EndCap = LineCap.Round;
-                        g.DrawLine(pen, r.X + Ui.S(17), r.Y + Ui.S(12), r.Right - Ui.S(17), r.Bottom - Ui.S(12));
-                        g.DrawLine(pen, r.Right - Ui.S(17), r.Y + Ui.S(12), r.X + Ui.S(17), r.Bottom - Ui.S(12));
+                        g.DrawLine(pen, cx - Ui.S(5), cy - Ui.S(5), cx + Ui.S(5), cy + Ui.S(5));
+                        g.DrawLine(pen, cx + Ui.S(5), cy - Ui.S(5), cx - Ui.S(5), cy + Ui.S(5));
                     }
                 }
             }
@@ -1061,15 +1139,16 @@ namespace WtSkin
         {
             Graphics g = e.Graphics;
             Ui.Smooth(g);
-            using (Pen pen = new Pen(Ui.LineSoft, 1f))
+            using (Pen pen = new Pen(Ui.StrokeSoft, Ui.BorderWidth))
             {
-                g.DrawLine(pen, Ui.S(24), _header.Height - 1, _header.Width - Ui.S(24), _header.Height - 1);
+                g.DrawLine(pen, 0, _header.Height - 1, _header.Width, _header.Height - 1);
             }
 
+            int row1Top = Ui.S(Row1Top);
+            int row1H = Ui.S(Row1Height);
+            int pad = Ui.Sp24;
             int iconSize = Ui.S(40);
-            int ix = Ui.S(24);
-            int iy = (_header.Height - iconSize) / 2 - Ui.S(2);
-            Rectangle iconRect = new Rectangle(ix, iy, iconSize, iconSize);
+            Rectangle iconRect = new Rectangle(pad, row1Top, iconSize, iconSize);
             Bitmap logo = LoadLogo();
             if (logo != null)
             {
@@ -1078,42 +1157,57 @@ namespace WtSkin
             }
             else
             {
-                Ui.FillRound(g, iconRect, Ui.S(10), Ui.Accent);
+                Ui.FillRound(g, iconRect, Ui.RCard, Ui.Accent);
             }
 
-            int tx = iconRect.Right + Ui.S(14);
-            Ui.DrawText(g, "战雷涂装管理器", Ui.Title, Ui.Text,
-                    new Rectangle(tx, iy - Ui.S(1), Ui.S(320), Ui.S(28)),
-                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+            // 第一行：图标 / 标题 / 版本号+构建时间（11~12px 弱化色，与标题基线对齐）。
+            int tx = iconRect.Right + Ui.Sp16;
+            int titleLine = Ui.LineHeight(Ui.Title);
+            int titleTop = row1Top + (row1H - titleLine) / 2;
+            Ui.DrawText(g, "战雷涂装管理器", Ui.Title, Ui.TextPrimary,
+                    new Rectangle(tx, titleTop, Ui.S(340), titleLine),
+                    TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.NoPrefix);
+
+            string versionText = BuildInfo.HeaderText;
+            Size titleSize = TextRenderer.MeasureText("战雷涂装管理器", Ui.Title);
+            int versionX = tx + titleSize.Width + Ui.Sp8;
+            int versionLine = Ui.LineHeight(Ui.Small);
+            int versionTop = titleTop + (int)((titleLine - versionLine) * 0.78f);
+            Size versionSize = TextRenderer.MeasureText(versionText, Ui.Small);
+            Rectangle chipBounds = GameChipRect();
+            int versionMaxRight = chipBounds.Left - Ui.Sp12;
+            if (versionX + versionSize.Width <= versionMaxRight)
+            {
+                Rectangle vr = new Rectangle(versionX, versionTop, versionSize.Width + Ui.S(2), versionLine);
+                Ui.DrawText(g, versionText, Ui.Small, Ui.TextWeak, vr,
+                        TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.NoPrefix);
+                _versionRect = vr;
+            }
+            else
+            {
+                _versionRect = Rectangle.Empty;
+            }
+
+            // 第二行：副标题（12px 次要色）+ GitHub 图标（弱化色，不抢焦点）。
             const string subtitle = "War Thunder 自定义涂装 · 识别 / 替换 / 备份";
-            Ui.DrawText(g, subtitle, Ui.Small, Ui.TextDim,
-                    new Rectangle(tx, iy + Ui.S(27), Ui.S(430), Ui.S(18)),
+            int row2Top = Ui.S(Row2Top);
+            int row2H = Ui.S(Row2Height);
+            Ui.DrawText(g, subtitle, Ui.CardSub, Ui.TextSecondary,
+                    new Rectangle(tx, row2Top, Ui.S(430), row2H),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
 
             if (_githubMark == null)
             {
                 _githubMark = LoadGithubMark();
             }
-            Size subtitleSize = TextRenderer.MeasureText(subtitle, Ui.Small);
+            Size subtitleSize = TextRenderer.MeasureText(subtitle, Ui.CardSub);
             int ghSize = Ui.S(18);
-            int ghX = tx + subtitleSize.Width + Ui.S(8);
-            int ghY = iy + Ui.S(27) + (Ui.S(18) - ghSize) / 2;
+            int ghX = tx + subtitleSize.Width + Ui.Sp8;
+            int ghY = row2Top + (row2H - ghSize) / 2;
             if (_githubMark != null)
             {
                 Rectangle gh = new Rectangle(ghX, ghY, ghSize, ghSize);
-                Color ghColor = _githubHover ? Ui.Accent : Ui.TextDim;
-                ImageAttributes attrs = new ImageAttributes();
-                ColorMatrix matrix = new ColorMatrix(new float[][]
-                {
-                    new float[] { ghColor.R / 255f, 0, 0, 0, 0 },
-                    new float[] { 0, ghColor.G / 255f, 0, 0, 0 },
-                    new float[] { 0, 0, ghColor.B / 255f, 0, 0 },
-                    new float[] { 0, 0, 0, 1, 0 },
-                    new float[] { 0, 0, 0, 0, 1 }
-                });
-                attrs.SetColorMatrix(matrix);
-                g.DrawImage(_githubMark, gh, 0, 0, _githubMark.Width, _githubMark.Height, GraphicsUnit.Pixel, attrs);
-                attrs.Dispose();
+                Ui.DrawIconTinted(g, _githubMark, gh, _githubHover ? Ui.TextSecondary : Ui.TextWeak);
                 _githubRect = gh;
             }
             else
@@ -1121,41 +1215,6 @@ namespace WtSkin
                 _githubRect = Rectangle.Empty;
             }
 
-            // 版本号 + 构建时间：紧接标题右侧，同一行，弱化色
-            string versionText = BuildInfo.HeaderText;
-            Size titleSize = TextRenderer.MeasureText("战雷涂装管理器", Ui.Title);
-            int versionX = tx + titleSize.Width + Ui.S(8);
-            Size versionSize = TextRenderer.MeasureText(versionText, Ui.Small);
-            Rectangle versionBound = GameChipRect();
-            int versionMaxRight = versionBound.Width > 0 ? versionBound.Left - Ui.S(12) : _header.Width - Ui.S(24);
-            if (versionX + versionSize.Width <= versionMaxRight)
-            {
-                Ui.DrawText(g, versionText, Ui.Small, Ui.TextFaint,
-                        new Rectangle(versionX, iy, versionSize.Width + Ui.S(2), Ui.S(28)),
-                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
-                _versionRect = new Rectangle(versionX, iy, versionSize.Width + Ui.S(2), Ui.S(28));
-            }
-            else
-            {
-                _versionRect = Rectangle.Empty;
-            }
-
-            Rectangle chip = GameChipRect();
-            if (chip.Width >= Ui.S(180) && _header.Width >= Ui.S(1120))
-            {
-                Ui.FillRound(g, chip, Ui.S(9), Ui.Panel);
-                Ui.DrawRound(g, chip, Ui.S(9), Ui.LineSoft, 1f);
-                using (SolidBrush brush = new SolidBrush(Config.GameDirLooksValid(Config.GameDir) ? Ui.Good : Ui.Bad))
-                {
-                    g.FillEllipse(brush, chip.X + Ui.S(13), chip.Y + chip.Height / 2 - Ui.S(4), Ui.S(8), Ui.S(8));
-                }
-                string dir = Config.GameDir;
-                string label = string.IsNullOrEmpty(dir) ? "未设置游戏目录" : ShortPath(dir);
-                Ui.DrawText(g, label, Ui.Small, Ui.Text, new Rectangle(chip.X + Ui.S(28), chip.Y, chip.Width - Ui.S(74), chip.Height),
-                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
-                Ui.DrawText(g, "更改", Ui.Small, Ui.Accent, new Rectangle(chip.Right - Ui.S(52), chip.Y, Ui.S(44), chip.Height),
-                        TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
-            }
             PaintWindowButtons(g);
         }
 
@@ -1381,8 +1440,12 @@ namespace WtSkin
         private Rectangle GameChipRect()
         {
             int width = Ui.S(300);
-            int height = Ui.S(38);
-            return new Rectangle(_header.Width - width - Ui.S(156), (_header.Height - height) / 2 - Ui.S(2), width, height);
+            int height = Ui.S(ControlHeight38);
+            int winWidth = Ui.S(46) * 3;
+            int right = ClientSize.Width - Ui.S(8);
+            int x = right - winWidth - Ui.Sp16 - width;
+            int y = Ui.S(Row1Top) + (Ui.S(Row1Height) - height) / 2;
+            return new Rectangle(x, y, width, height);
         }
 
         private string ShortPath(string path)
@@ -1411,7 +1474,7 @@ namespace WtSkin
         private void BuildBody()
         {
             _body = new BufferedPanel();
-            _body.BackColor = Ui.Bg;
+            _body.BackColor = Ui.Page;
             _body.Resize += delegate { LayoutBody(); };
             Controls.Add(_body);
 
@@ -1420,10 +1483,11 @@ namespace WtSkin
             _drop.Sub = "支持 .zip 压缩包或已解压的文件夹，可以一次拖入多个";
             _drop.Cursor = Cursors.Hand;
             _drop.Click += delegate { BrowseFiles(); };
+            _drop.ChooseButton.Click += delegate { BrowseFiles(); };
             _body.Controls.Add(_drop);
 
             _detail = new BufferedPanel();
-            _detail.BackColor = Ui.Bg;
+            _detail.BackColor = Ui.Page;
             _detail.Paint += PaintDetail;
             _detail.Resize += delegate { LayoutDetail(); };
             _body.Controls.Add(_detail);
@@ -1433,19 +1497,10 @@ namespace WtSkin
             _listPanel.FlowDirection = FlowDirection.TopDown;
             _listPanel.WrapContents = false;
             _listPanel.AutoScroll = true;
-            _listPanel.BackColor = Ui.Bg;
-            _listPanel.Padding = new Padding(0, Ui.S(14), 0, 0);
+            _listPanel.BackColor = Ui.Page;
+            _listPanel.Padding = new Padding(0);
             _listPanel.Resize += delegate { ResizeCards(); };
             _body.Controls.Add(_listPanel);
-
-            _emptyLabel = new Label();
-            _emptyLabel.ForeColor = Ui.TextFaint;
-            _emptyLabel.Font = Ui.Body;
-            _emptyLabel.AutoSize = false;
-            _emptyLabel.TextAlign = ContentAlignment.MiddleCenter;
-            _emptyLabel.BackColor = Ui.Bg;
-            _emptyLabel.Text = "还没有添加涂装包。\n\n拖入 .zip，或点击上面的区域选择文件。\n程序会自动认出涂装属于哪台载具，并在导入前询问你。";
-            _listPanel.Controls.Add(_emptyLabel);
         }
 
         private void LayoutBody()
@@ -1454,23 +1509,39 @@ namespace WtSkin
             {
                 return;
             }
-            int padX = Ui.S(24);
-            int padTop = Ui.S(16);
-            int gap = Ui.S(18);
+            // 两栏栅格：左侧自适应撑满，右侧固定 400（380~420 区间），容器内边距 24、卡片间距 16。
+            int pad = Ui.Sp24;
+            int gap = Ui.GapCard;
             int width = _body.ClientSize.Width;
             int height = _body.ClientSize.Height;
-            int detailWidth = Math.Min(Ui.S(560), Math.Max(Ui.S(380), width - padX * 2 - gap - Ui.S(320)));
-            int leftWidth = width - padX * 2 - detailWidth - gap;
-            if (leftWidth < Ui.S(300))
+            int rightWidth = Ui.S(Tok.RightColumn);
+            int leftWidth = width - pad * 2 - gap - rightWidth;
+            if (leftWidth < Ui.S(320))
             {
-                leftWidth = Ui.S(300);
-                detailWidth = Math.Max(Ui.S(300), width - padX * 2 - leftWidth - gap);
+                leftWidth = Ui.S(320);
+                rightWidth = Math.Max(Ui.S(380), width - pad * 2 - gap - leftWidth);
             }
-            int dropHeight = Ui.S(92);
-            _drop.SetBounds(padX, padTop, leftWidth, dropHeight);
-            _listPanel.SetBounds(padX, padTop + dropHeight + Ui.S(12), leftWidth,
-                                 Math.Max(Ui.S(80), height - padTop * 2 - dropHeight - Ui.S(12)));
-            _detail.SetBounds(width - padX - detailWidth, Ui.S(2), detailWidth, Math.Max(Ui.S(200), height - Ui.S(6)));
+            int contentTop = pad;
+            int contentHeight = Math.Max(Ui.S(200), height - pad * 2);
+            bool empty = _packages.Count == 0;
+
+            _detail.SetBounds(width - pad - rightWidth, contentTop, rightWidth, contentHeight);
+
+            if (empty)
+            {
+                _drop.Empty = true;
+                _drop.SetBounds(pad, contentTop, leftWidth, contentHeight);
+                _listPanel.Visible = false;
+            }
+            else
+            {
+                _drop.Empty = false;
+                int dropHeight = Ui.S(96);
+                _drop.SetBounds(pad, contentTop, leftWidth, dropHeight);
+                _listPanel.Visible = true;
+                _listPanel.SetBounds(pad, contentTop + dropHeight + gap, leftWidth,
+                                     Math.Max(Ui.S(80), contentHeight - dropHeight - gap));
+            }
             _drop.Invalidate();
             _listPanel.Invalidate();
             _detail.Invalidate();
@@ -1479,26 +1550,6 @@ namespace WtSkin
 
         private void BuildDetail()
         {
-            _detailName = new Label();
-            _detailName.Font = Ui.H1;
-            _detailName.ForeColor = Ui.Text;
-            _detailName.BackColor = Ui.CardBg;
-            _detailName.AutoEllipsis = true;
-            _detail.Controls.Add(_detailName);
-
-            _detailMeta = new Label();
-            _detailMeta.Font = Ui.Small;
-            _detailMeta.ForeColor = Ui.TextDim;
-            _detailMeta.BackColor = Ui.CardBg;
-            _detailMeta.AutoEllipsis = true;
-            _detail.Controls.Add(_detailMeta);
-
-            _detailSection = new Label();
-            _detailSection.Font = Ui.SmallBold;
-            _detailSection.ForeColor = Ui.TextDim;
-            _detailSection.BackColor = Ui.CardBg;
-            _detail.Controls.Add(_detailSection);
-
             _vehPanel = new BufferedPanel();
             _vehPanel.AutoScroll = true;
             _vehPanel.Resize += delegate
@@ -1518,15 +1569,10 @@ namespace WtSkin
             _vehPanel.BackColor = Ui.CardBg;
             _detail.Controls.Add(_vehPanel);
 
-            _detailHint = new Label();
-            _detailHint.Font = Ui.Small;
-            _detailHint.ForeColor = Ui.TextFaint;
-            _detailHint.BackColor = Ui.CardBg;
-            _detail.Controls.Add(_detailHint);
-
             _refreshButton = new FlatButton();
             _refreshButton.Text = "刷新文件夹";
             _refreshButton.BackColor = Ui.CardBg;
+            _refreshButton.Height = Ui.HSecondary;
             _refreshButton.Click += delegate { RefreshFolders(true); };
             _detail.Controls.Add(_refreshButton);
 
@@ -1541,96 +1587,364 @@ namespace WtSkin
 
         private void LayoutDetail()
         {
-            if (_detail == null || _detailName == null)
+            if (_detail == null || _vehPanel == null)
             {
                 return;
             }
             int width = _detail.ClientSize.Width;
             int height = _detail.ClientSize.Height;
-            if (width <= 0)
+            if (width <= 0 || height <= 0)
             {
                 return;
             }
-            _detailName.SetBounds(Ui.S(20), Ui.S(40), width - Ui.S(40), Ui.S(46));
-            _detailMeta.SetBounds(Ui.S(20), Ui.S(90), width - Ui.S(40), Ui.S(42));
-            _detailSection.SetBounds(Ui.S(20), Ui.S(148), width - Ui.S(40), Ui.S(22));
-            int hintTop = height - Ui.S(146);
-            _detailHint.SetBounds(Ui.S(20), hintTop, width - Ui.S(40), Ui.S(52));
-            _refreshButton.SetBounds(Ui.S(20), height - Ui.S(84), Ui.S(132), Ui.S(38));
-            _manualButton.SetBounds(Ui.S(160), height - Ui.S(84), width - Ui.S(180), Ui.S(38));
+            int pad = Ui.Sp24;
+            int buttonY = height - pad - Ui.HPrimary;
+            _refreshButton.SetBounds(pad, buttonY + (Ui.HPrimary - Ui.HSecondary) / 2,
+                                     Ui.S(120), Ui.HSecondary);
+            _manualButton.SetBounds(pad + Ui.S(120) + Ui.Sp12, buttonY,
+                                    Math.Max(Ui.S(120), width - pad * 2 - Ui.S(120) - Ui.Sp12),
+                                    Ui.HPrimary);
+
+            int hintHeight = Ui.S(48);
+            int hintTop = buttonY - Ui.Sp12 - hintHeight;
             int vehTop = Ui.S(176);
-            int vehHeight = Math.Max(Ui.S(60), hintTop - vehTop - Ui.S(10));
-            _vehPanel.SetBounds(Ui.S(10), vehTop, width - Ui.S(20), vehHeight);
+            int vehHeight = Math.Max(Ui.S(60), hintTop - Ui.Sp12 - vehTop);
+            _vehPanel.SetBounds(Ui.S(16), vehTop, width - Ui.S(32), vehHeight);
             if (_scrollCover == null)
             {
                 _scrollCover = new ScrollCover(_vehPanel);
                 _detail.Controls.Add(_scrollCover);
             }
-            _scrollCover.SetBounds(_vehPanel.Right - Ui.S(15), vehTop, Ui.S(15), vehHeight);
+            _scrollCover.SetBounds(_vehPanel.Right - Ui.S(14), vehTop, Ui.S(14), vehHeight);
             _scrollCover.Visible = _vehPanel.VerticalScroll.Visible;
             _scrollCover.BringToFront();
+            ApplyDetailChildren();
         }
 
         private void PaintDetail(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
             Ui.Smooth(g);
-            Rectangle r = new Rectangle(0, Ui.S(12), _detail.Width - 1, _detail.Height - Ui.S(18));
-            Ui.FillRound(g, r, Ui.S(12), Ui.CardBg);
-            Ui.DrawRound(g, r, Ui.S(12), Ui.LineSoft, 1f);
+            Rectangle r = new Rectangle(0, 0, _detail.Width - 1, _detail.Height - 1);
+            Ui.FillRound(g, r, Ui.RCard, Ui.CardBg);
+            Ui.DrawRound(g, r, Ui.RCard, Ui.Stroke, Ui.BorderWidth);
 
-            Ui.DrawText(g, "涂装包详情", Ui.SmallBold, Ui.TextFaint,
-                    new Rectangle(Ui.S(20), r.Y + Ui.S(12), Ui.S(200), Ui.S(20)),
+            // 标题位置在空态/内容态完全一致。
+            Ui.DrawText(g, "涂装包详情", Ui.SmallBold, Ui.TextSecondary,
+                    new Rectangle(Ui.Sp24, Ui.Sp24, Ui.S(200), Ui.S(20)),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+            using (Pen pen = new Pen(Ui.StrokeSoft, Ui.BorderWidth))
+            {
+                g.DrawLine(pen, Ui.Sp24, Ui.S(56), _detail.Width - Ui.Sp24, Ui.S(56));
+            }
 
-            if (_selected == null)
+            if (_guideT > 0.002f)
             {
-                Ui.DrawText(g, "选择左侧的涂装包查看识别结果", Ui.Body, Ui.TextFaint,
-                        new Rectangle(Ui.S(20), r.Y + r.Height / 2 - Ui.S(20), _detail.Width - Ui.S(40), Ui.S(40)),
-                        TextFormatFlags.HorizontalCenter | TextFormatFlags.Top | TextFormatFlags.NoPrefix);
+                DrawGuide(g, _guideT);
             }
-            using (Pen pen = new Pen(Ui.LineSoft, 1f))
+            if (_guideT < 0.998f)
             {
-                g.DrawLine(pen, Ui.S(20), r.Y + Ui.S(128), _detail.Width - Ui.S(20), r.Y + Ui.S(128));
+                DrawDetailText(g, 1f - _guideT);
             }
+        }
+
+        private void DrawTextAlpha(Graphics g, string text, Font font, Color color, Rectangle rect,
+                                   TextFormatFlags flags, float alpha)
+        {
+            if (string.IsNullOrEmpty(text) || alpha <= 0.002f)
+            {
+                return;
+            }
+            if (alpha >= 0.998f)
+            {
+                Ui.DrawText(g, text, font, color, rect, flags);
+                return;
+            }
+            int a = (int)(255 * alpha);
+            StringFormat format = new StringFormat(StringFormat.GenericDefault);
+            format.Trimming = StringTrimming.EllipsisCharacter;
+            format.FormatFlags |= StringFormatFlags.NoWrap;
+            if ((flags & TextFormatFlags.HorizontalCenter) != 0)
+            {
+                format.Alignment = StringAlignment.Center;
+            }
+            else if ((flags & TextFormatFlags.Right) != 0)
+            {
+                format.Alignment = StringAlignment.Far;
+            }
+            float y = rect.Y;
+            if ((flags & TextFormatFlags.VerticalCenter) != 0)
+            {
+                format.LineAlignment = StringAlignment.Center;
+                y = rect.Y;
+            }
+            else if ((flags & TextFormatFlags.Bottom) != 0)
+            {
+                format.LineAlignment = StringAlignment.Far;
+            }
+            else
+            {
+                format.LineAlignment = StringAlignment.Near;
+            }
+            TextRenderingHint oldHint = g.TextRenderingHint;
+            g.TextRenderingHint = TextRenderingHint.AntiAlias;
+            using (SolidBrush brush = new SolidBrush(Color.FromArgb(a, color)))
+            {
+                g.DrawString(text, font, brush, new RectangleF(rect.X, y, rect.Width, rect.Height), format);
+            }
+            g.TextRenderingHint = oldHint;
+            format.Dispose();
+        }
+
+        private void DrawGuide(Graphics g, float alpha)
+        {
+            int width = _detail.ClientSize.Width;
+            int pad = Ui.Sp24;
+            int textWidth = width - pad * 2;
+            Font introFont = Ui.Body;
+            int lineHeight = (int)(Ui.LineHeight(introFont) * 1.6f);
+            string intro = "导入涂装包后，这里会显示文件数、体积和可导入的载具。";
+            List<string> introLines = Ui.WrapLines(intro, introFont, textWidth);
+            Font itemFont = Ui.CardSub;
+            int itemHeight = (int)(Ui.LineHeight(itemFont) * 1.6f);
+
+            int introHeight = introLines.Count * lineHeight;
+            int gap = Ui.Sp24;
+            int itemsHeight = itemHeight * 3 + Ui.Sp8 * 2;
+            int blockHeight = introHeight + gap + itemsHeight;
+            int top = _detail.ClientSize.Height / 3 - blockHeight / 2;
+            if (top < Ui.S(84))
+            {
+                top = Ui.S(84);
+            }
+
+            int y = top;
+            for (int i = 0; i < introLines.Count; i++)
+            {
+                DrawTextAlpha(g, introLines[i], introFont, Ui.TextSecondary,
+                        new Rectangle(pad, y, textWidth, lineHeight), TextFormatFlags.Left | TextFormatFlags.Top, alpha);
+                y += lineHeight;
+            }
+            y += gap;
+
+            string[] items = new string[]
+            {
+                "支持 .zip 压缩包或已解压的文件夹",
+                "可以一次拖入多个涂装包",
+                "识别出的载具需勾选后再导入"
+            };
+            Color itemColor = Ui.TextSecondary;
+            for (int i = 0; i < items.Length; i++)
+            {
+                Rectangle iconRect = new Rectangle(pad, y + (itemHeight - Ui.S(18)) / 2, Ui.S(18), Ui.S(18));
+                DrawGuideIcon(g, i, iconRect, alpha);
+                DrawTextAlpha(g, items[i], itemFont, itemColor,
+                        new Rectangle(pad + Ui.S(30), y, textWidth - Ui.S(30), itemHeight),
+                        TextFormatFlags.Left | TextFormatFlags.Top, alpha);
+                y += itemHeight + Ui.Sp8;
+            }
+        }
+
+        private void DrawGuideIcon(Graphics g, int kind, Rectangle rect, float alpha)
+        {
+            Color color = Ui.TextWeak;
+            if (alpha < 0.998f)
+            {
+                color = Color.FromArgb((int)(255 * alpha), color);
+            }
+            using (Pen pen = new Pen(color, Math.Max(1.2f, Ui.Scale * 1.3f)))
+            {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Round;
+                if (kind == 0)
+                {
+                    int left = rect.X + Ui.S(1);
+                    int right = rect.Right - Ui.S(1);
+                    int top = rect.Y + Ui.S(3);
+                    int bottom = rect.Bottom - Ui.S(2);
+                    g.DrawLines(pen, new Point[] {
+                        new Point(left, bottom), new Point(left, top),
+                        new Point(rect.X + rect.Width / 2 - Ui.S(1), top),
+                        new Point(rect.X + rect.Width / 2 + Ui.S(1), top + Ui.S(3)),
+                        new Point(right, top + Ui.S(3)), new Point(right, bottom),
+                        new Point(left, bottom)
+                    });
+                }
+                else if (kind == 1)
+                {
+                    int left = rect.X + Ui.S(2);
+                    int right = rect.Right - Ui.S(2);
+                    int top = rect.Y + Ui.S(6);
+                    g.DrawRectangle(pen, left, top, right - left, Ui.S(8));
+                    g.DrawRectangle(pen, left, top - Ui.S(4), right - left, Ui.S(8));
+                }
+                else
+                {
+                    Rectangle box = new Rectangle(rect.X + Ui.S(1), rect.Y + Ui.S(2), rect.Width - Ui.S(2), rect.Height - Ui.S(4));
+                    g.DrawRectangle(pen, box);
+                    g.DrawLines(pen, new Point[] {
+                        new Point(box.X + Ui.S(3), box.Y + box.Height / 2),
+                        new Point(box.X + Ui.S(6), box.Y + box.Height / 2 + Ui.S(3)),
+                        new Point(box.Right - Ui.S(3), box.Y + Ui.S(3))
+                    });
+                }
+            }
+        }
+
+        private void DrawDetailText(Graphics g, float alpha)
+        {
+            if (!_detailHasSelection())
+            {
+                return;
+            }
+            int width = _detail.ClientSize.Width;
+            int pad = Ui.Sp24;
+            int textWidth = width - pad * 2;
+            DrawTextAlpha(g, _detailNameText, Ui.H1, Ui.TextPrimary,
+                    new Rectangle(pad, Ui.S(64), textWidth, Ui.S(30)),
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis, alpha);
+
+            string[] metaLines = (_detailMetaText ?? "").Split(new char[] { '\n' });
+            int metaY = Ui.S(100);
+            int metaLine = Ui.S(18);
+            for (int i = 0; i < metaLines.Length && i < 3; i++)
+            {
+                DrawTextAlpha(g, metaLines[i], Ui.Small, _detailMetaColor,
+                        new Rectangle(pad, metaY + i * metaLine, textWidth, metaLine),
+                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis, alpha);
+            }
+
+            DrawTextAlpha(g, _detailSectionText, Ui.SmallBold, Ui.TextSecondary,
+                    new Rectangle(pad, Ui.S(150), textWidth, Ui.S(20)),
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis, alpha);
+
+            int hintHeight = Ui.S(48);
+            int hintTop = _detail.ClientSize.Height - Ui.Sp24 - Ui.HPrimary - Ui.Sp12 - hintHeight;
+            string[] hintLines = (_detailHintText ?? "").Split(new char[] { '\n' });
+            int hintLine = Ui.S(20);
+            for (int i = 0; i < hintLines.Length && i < 2; i++)
+            {
+                DrawTextAlpha(g, hintLines[i], Ui.Small, _detailHintColor,
+                        new Rectangle(pad, hintTop + i * hintLine, textWidth, hintLine),
+                        TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis, alpha);
+            }
+        }
+
+        private bool _detailHasSelection()
+        {
+            return _selected != null;
+        }
+
+        private void ApplyDetailChildren()
+        {
+            if (_vehPanel == null)
+            {
+                return;
+            }
+            bool show = !_detailGuide && !_guideAnimating;
+            _vehPanel.Visible = show;
+            _refreshButton.Visible = show && _detailRefreshVisible;
+            _manualButton.Visible = show && _detailManualVisible;
+        }
+
+        private void SetDetailGuide(bool guide)
+        {
+            if (_detailGuide == guide && !_guideAnimating)
+            {
+                ApplyDetailChildren();
+                return;
+            }
+            if (_detailGuide == guide)
+            {
+                return;
+            }
+            _detailGuide = guide;
+            if (!Ui.Motion || _detail.ClientSize.Width <= 0)
+            {
+                _guideT = guide ? 1f : 0f;
+                _guideAnimating = false;
+                ApplyDetailChildren();
+                _detail.Invalidate();
+                return;
+            }
+            _guideFrom = _guideT;
+            _guideStart = DateTime.UtcNow;
+            _guideAnimating = true;
+            _vehPanel.Visible = false;
+            _refreshButton.Visible = false;
+            _manualButton.Visible = false;
+            if (_guideTimer == null)
+            {
+                _guideTimer = new Timer();
+                _guideTimer.Interval = 16;
+                _guideTimer.Tick += delegate { StepGuideAnimation(); };
+            }
+            _guideTimer.Stop();
+            _guideTimer.Start();
+        }
+
+        private void StepGuideAnimation()
+        {
+            double t = (DateTime.UtcNow - _guideStart).TotalMilliseconds / Tok.PanelMotionMs;
+            float target = _detailGuide ? 1f : 0f;
+            if (t >= 1 || _detail.IsDisposed)
+            {
+                _guideT = target;
+                _guideAnimating = false;
+                if (_guideTimer != null)
+                {
+                    _guideTimer.Stop();
+                }
+                ApplyDetailChildren();
+            }
+            else
+            {
+                double eased = 1 - Math.Pow(1 - t, 3);
+                _guideT = _guideFrom + (target - _guideFrom) * (float)eased;
+            }
+            _detail.Invalidate();
         }
 
         private void BuildFooter()
         {
             _footer = new BufferedPanel();
-            _footer.BackColor = Ui.Bg;
+            _footer.BackColor = Ui.Page;
             _footer.Paint += delegate(object sender, PaintEventArgs e)
             {
-                using (Pen pen = new Pen(Ui.LineSoft, 1f))
+                using (Pen pen = new Pen(Ui.StrokeSoft, Ui.BorderWidth))
                 {
-                    e.Graphics.DrawLine(pen, Ui.S(24), 0, _footer.Width - Ui.S(24), 0);
+                    e.Graphics.DrawLine(pen, 0, 0, _footer.Width, 0);
                 }
             };
             Controls.Add(_footer);
 
             _status = new Label();
             _status.Font = Ui.Small;
-            _status.ForeColor = Ui.TextDim;
-            _status.BackColor = Ui.Bg;
+            _status.ForeColor = Ui.TextWeak;
+            _status.BackColor = Ui.Page;
+            _status.TextAlign = ContentAlignment.MiddleLeft;
             _status.Text = "准备就绪";
             _footer.Controls.Add(_status);
 
+            // 最右：强调色实心主按钮，权重最高。
             _importButton = new FlatButton();
             _importButton.Text = "导入选中";
             _importButton.Primary = true;
-            _importButton.BackColor = Ui.Bg;
+            _importButton.BackColor = Ui.Page;
             _importButton.Click += delegate { StartImport(); };
             _footer.Controls.Add(_importButton);
 
             FlatButton open = new FlatButton();
             open.Text = "打开UserSkins文件夹";
-            open.BackColor = Ui.Bg;
+            open.Font = Ui.Body;
+            open.BackColor = Ui.Page;
             open.Click += delegate { OpenUserSkins(); };
             _footer.Controls.Add(open);
 
             FlatButton clear = new FlatButton();
             clear.Text = "清空列表";
-            clear.BackColor = Ui.Bg;
+            clear.Font = Ui.Body;
+            clear.BackColor = Ui.Page;
             clear.Click += delegate
             {
                 _packages.Clear();
@@ -1648,20 +1962,41 @@ namespace WtSkin
             {
                 return;
             }
+            // 底部动作行：三个按钮同高（36），最右为主操作，左侧状态与按钮组留 32 间距。
             int width = _footer.ClientSize.Width;
-            int top = Ui.S(19);
-            _status.SetBounds(Ui.S(24), Ui.S(22), Math.Max(Ui.S(160), width - Ui.S(850)), Ui.S(32));
-            _importButton.SetBounds(width - Ui.S(190), top, Ui.S(166), Ui.S(40));
+            int pad = Ui.Sp24;
+            int height = Ui.HPrimary;
+            int gap = Ui.Sp12;
+            int top = (_footer.Height - height) / 2;
+            int right = width - pad;
             FlatButton open = FindButton("打开UserSkins文件夹");
+            FlatButton clear = FindButton("清空列表");
+            int openWidth = open == null ? Ui.S(176) : Math.Max(Ui.S(176), ButtonTextWidth(open) + Ui.S(32));
+            int clearWidth = clear == null ? Ui.S(96) : Math.Max(Ui.S(96), ButtonTextWidth(clear) + Ui.S(28));
+            int importWidth = Math.Max(Ui.S(166), ButtonTextWidth(_importButton) + Ui.S(36));
+            _importButton.SetBounds(right - importWidth, top, importWidth, height);
+            int cursor = _importButton.Left;
             if (open != null)
             {
-                open.SetBounds(width - Ui.S(370), top, Ui.S(160), Ui.S(40));
+                cursor -= gap + openWidth;
+                open.SetBounds(cursor, top, openWidth, height);
+                cursor -= gap + clearWidth;
+                if (clear != null)
+                {
+                    clear.SetBounds(cursor, top, clearWidth, height);
+                }
             }
-            FlatButton clear = FindButton("清空列表");
-            if (clear != null)
+            int statusRight = (clear != null ? clear.Left : _importButton.Left) - Ui.Sp32;
+            _status.SetBounds(pad, top, Math.Max(Ui.S(160), statusRight - pad), height);
+        }
+
+        private static int ButtonTextWidth(FlatButton button)
+        {
+            if (button == null)
             {
-                clear.SetBounds(width - Ui.S(570), top, Ui.S(100), Ui.S(40));
+                return 0;
             }
+            return TextRenderer.MeasureText(button.Text, button.Font).Width;
         }
 
         private FlatButton FindButton(string text)
@@ -1796,10 +2131,6 @@ namespace WtSkin
                     card.Width = width;
                 }
             }
-            if (_emptyLabel != null && !_emptyLabel.IsDisposed)
-            {
-                _emptyLabel.Size = new Size(width, Math.Max(Ui.S(160), _listPanel.ClientSize.Height - Ui.S(40)));
-            }
             if (_listPanel.HorizontalScroll.Visible)
             {
                 _listPanel.AutoScroll = false;
@@ -1820,55 +2151,40 @@ namespace WtSkin
                 _listPanel.Controls.Remove(old[i]);
                 old[i].Dispose();
             }
-            _emptyLabel = null;
 
-            if (_packages.Count == 0)
+            for (int i = 0; i < _packages.Count; i++)
             {
-                _emptyLabel = new Label();
-                _emptyLabel.ForeColor = Ui.TextFaint;
-                _emptyLabel.Font = Ui.Body;
-                _emptyLabel.AutoSize = false;
-                _emptyLabel.TextAlign = ContentAlignment.MiddleCenter;
-                _emptyLabel.BackColor = Ui.Bg;
-                _emptyLabel.Margin = new Padding(0);
-                _emptyLabel.Text = "还没有添加涂装包。\n\n拖入 .zip，或点击上面的区域选择文件。\n程序会自动认出涂装属于哪台载具，并在导入前询问你。";
-                _listPanel.Controls.Add(_emptyLabel);
-            }
-            else
-            {
-                for (int i = 0; i < _packages.Count; i++)
+                PackageCard card = new PackageCard();
+                card.Package = _packages[i];
+                card.Selected = _packages[i] == _selected;
+                card.Margin = new Padding(0, 0, 0, Ui.GapCard);
+                SkinPackage captured = _packages[i];
+                card.Click += delegate
                 {
-                    PackageCard card = new PackageCard();
-                    card.Package = _packages[i];
-                    card.Selected = _packages[i] == _selected;
-                    card.Margin = new Padding(0, 0, 0, Ui.S(8));
-                    SkinPackage captured = _packages[i];
-                    card.Click += delegate
+                    _selected = captured;
+                    RefreshList();
+                };
+                card.RemoveClicked += delegate
+                {
+                    _packages.Remove(captured);
+                    if (_selected == captured)
                     {
-                        _selected = captured;
-                        RefreshList();
-                    };
-                    card.RemoveClicked += delegate
+                        _selected = _packages.Count > 0 ? _packages[0] : null;
+                    }
+                    RefreshList();
+                };
+                card.MouseClick += delegate(object sender, MouseEventArgs e)
+                {
+                    if (e.Button == MouseButtons.Right)
                     {
-                        _packages.Remove(captured);
-                        if (_selected == captured)
-                        {
-                            _selected = _packages.Count > 0 ? _packages[0] : null;
-                        }
-                        RefreshList();
-                    };
-                    card.MouseClick += delegate(object sender, MouseEventArgs e)
-                    {
-                        if (e.Button == MouseButtons.Right)
-                        {
-                            ShowCardMenu(captured);
-                        }
-                    };
-                    _listPanel.Controls.Add(card);
-                }
+                        ShowCardMenu(captured);
+                    }
+                };
+                _listPanel.Controls.Add(card);
             }
             _listPanel.ResumeLayout();
             ResizeCards();
+            LayoutBody();
             UpdateDetail();
             UpdateStatus();
         }
@@ -1904,21 +2220,26 @@ namespace WtSkin
 
             if (_selected == null)
             {
-                _detailName.Text = "";
-                _detailMeta.Text = "";
-                _detailSection.Text = "";
-                _detailHint.Text = "";
-                _manualButton.Visible = false;
-                _refreshButton.Visible = false;
+                // 清空后回到右栏引导区，不残留上一份详情。
+                _detailNameText = "";
+                _detailMetaText = "";
+                _detailMetaColor = Ui.TextDim;
+                _detailSectionText = "";
+                _detailHintText = "";
+                _detailHintColor = Ui.TextFaint;
+                _detailRefreshVisible = false;
+                _detailManualVisible = false;
+                SetDetailGuide(true);
                 _detail.Invalidate();
                 return;
             }
 
-            _detailName.Text = _selected.Name;
+            SetDetailGuide(false);
+            _detailNameText = _selected.Name;
             if (_selected.Error.Length > 0)
             {
-                _detailMeta.Text = _selected.Error;
-                _detailMeta.ForeColor = Ui.Bad;
+                _detailMetaText = _selected.Error;
+                _detailMetaColor = Ui.Bad;
             }
             else
             {
@@ -1930,8 +2251,8 @@ namespace WtSkin
                 catch
                 {
                 }
-                _detailMeta.Text = _selected.FilesText + "  ·  " + _selected.SizeText + "\n来源：" + sourceName;
-                _detailMeta.ForeColor = Ui.TextDim;
+                _detailMetaText = _selected.FilesText + "  ·  " + _selected.SizeText + "\n来源：" + sourceName;
+                _detailMetaColor = Ui.TextDim;
             }
 
             List<RowData> rows = new List<RowData>();
@@ -1970,7 +2291,7 @@ namespace WtSkin
                     titleMax = w;
                 }
             }
-            int rowWidth = _vehPanel.ClientSize.Width - Ui.S(26);
+            int rowWidth = _vehPanel.ClientSize.Width - Ui.S(18);
             int titleWidth = Math.Min(titleMax + Ui.S(8), (int)(rowWidth * 0.55));
             if (titleWidth < Ui.S(120))
             {
@@ -1991,7 +2312,7 @@ namespace WtSkin
                 }
 
                 CheckRow row = new CheckRow();
-                row.Width = _vehPanel.ClientSize.Width - Ui.S(26);
+                row.Width = _vehPanel.ClientSize.Width - Ui.S(18);
                 row.Left = Ui.S(8);
                 row.Top = top;
                 row.BackColor = Ui.CardBg;
@@ -2034,7 +2355,7 @@ namespace WtSkin
                 row.MouseEnter += delegate { ShowDetailCard(capturedRow); };
                 row.MouseLeave += delegate { HideDetailCard(); };
                 _vehPanel.Controls.Add(row);
-                top += row.Height + Ui.S(3);
+                top += row.Height + Ui.S(4);
             }
 
             if (_selected.UnknownIds.Count > 0)
@@ -2042,7 +2363,7 @@ namespace WtSkin
                 Label unknown = new Label();
                 unknown.Left = Ui.S(10);
                 unknown.Top = top + Ui.S(4);
-                unknown.Width = _vehPanel.ClientSize.Width - Ui.S(26);
+                unknown.Width = _vehPanel.ClientSize.Width - Ui.S(18);
                 unknown.Height = Ui.S(54);
                 unknown.ForeColor = Ui.Warn;
                 unknown.Font = Ui.Small;
@@ -2060,13 +2381,13 @@ namespace WtSkin
                     selectedHere++;
                 }
             }
-            _detailSection.Text = total == 0
+            _detailSectionText = total == 0
                 ? "该涂装包可导入的载具（0）"
                 : "该涂装包可导入的载具（" + total + "） · 可导入 " + selectedHere + "/" + total;
 
             bool missing = total > 0 && found < total;
-            _manualButton.Visible = total == 0 || _selected.UnknownIds.Count > 0;
-            _refreshButton.Visible = true;
+            _detailManualVisible = total == 0 || _selected.UnknownIds.Count > 0;
+            _detailRefreshVisible = true;
             _vehPanel.PerformLayout();
             if (_scrollCover != null)
             {
@@ -2080,14 +2401,15 @@ namespace WtSkin
 
             if (missing)
             {
-                _detailHint.Text = "黄色行是找到专属文件夹、可以直接导入的；黑色行是未识别，\n需要先在游戏里给该载具创建模板，再点「刷新文件夹」。";
-                _detailHint.ForeColor = Ui.Warn;
+                _detailHintText = "黄色行是找到专属文件夹、可以直接导入的；黑色行是未识别，\n需要先在游戏里给该载具创建模板，再点「刷新文件夹」。";
+                _detailHintColor = Ui.Warn;
             }
             else
             {
-                _detailHint.Text = "黄色行是找到专属文件夹、可以直接导入的；\n导入前会把旧内容备份到安装目录。";
-                _detailHint.ForeColor = Ui.TextFaint;
+                _detailHintText = "黄色行是找到专属文件夹、可以直接导入的；\n导入前会把旧内容备份到安装目录。";
+                _detailHintColor = Ui.TextFaint;
             }
+            ApplyDetailChildren();
             _detail.Invalidate();
         }
 
@@ -2219,7 +2541,7 @@ namespace WtSkin
                     _status.Text += " · " + missing + " 个还没建文件夹";
                 }
             }
-            if (_selected != null && _detailSection != null)
+            if (_selected != null)
             {
                 int curTotal = _selected.Units.Count;
                 int curSelected = 0;
@@ -2230,12 +2552,17 @@ namespace WtSkin
                         curSelected++;
                     }
                 }
-                _detailSection.Text = curTotal == 0
+                _detailSectionText = curTotal == 0
                     ? "该涂装包可导入的载具（0）"
                     : "该涂装包可导入的载具（" + curTotal + "） · 可导入 " + curSelected + "/" + curTotal;
+                _detail.Invalidate();
             }
             _importButton.Text = selectedCount > 0 ? "导入选中（" + selectedCount + "）" : "导入选中";
             _importButton.Enabled = selectedCount > 0;
+            if (_footer != null && _footer.Width > 0)
+            {
+                LayoutFooter();
+            }
         }
 
         private void RefreshFolders(bool notify)
@@ -2492,6 +2819,7 @@ namespace WtSkin
                 if (result == DialogResult.OK)
                 {
                     _header.Invalidate();
+                    RefreshPathChip();
                     UpdateDetail();
                     UpdateStatus();
                     if (settings.NeedRestart)
