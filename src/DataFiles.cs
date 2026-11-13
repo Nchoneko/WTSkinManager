@@ -145,6 +145,34 @@ namespace WtSkin
             return sb.ToString();
         }
 
+        /// <summary>把安装目录里旧版/损坏的外部清单重命名归档，成功返回 true（不再弹窗打扰用户）。</summary>
+        private static bool QuarantineExternal(string path, string label, DataCheck check)
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(path);
+                string name = Path.GetFileNameWithoutExtension(path);
+                string target = Path.Combine(dir, name + ".legacy-" +
+                                            DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".json");
+                int n = 2;
+                while (File.Exists(target))
+                {
+                    target = Path.Combine(dir, name + ".legacy-" +
+                                          DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) +
+                                          "_" + n.ToString(CultureInfo.InvariantCulture) + ".json");
+                    n++;
+                }
+                File.Move(path, target);
+                check.Lines.Add("外部数据：已归档旧版 manifest.json → " + Path.GetFileName(target) + "（" + label + "）");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                check.Lines.Add("外部数据：归档旧版 manifest.json 失败：" + ex.Message);
+                return false;
+            }
+        }
+
         /// <summary>校验内置清单的 schemaVersion，并检查安装目录里遗留的外部数据。</summary>
         public static DataCheck Check()
         {
@@ -183,8 +211,15 @@ namespace WtSkin
                     Dictionary<string, object> obj = Json.Parse(text) as Dictionary<string, object>;
                     if (obj == null)
                     {
-                        check.ExternalIgnored = true;
-                        check.Lines.Add("外部数据：manifest.json 格式不正确，已改用内置数据");
+                        if (QuarantineExternal(ext, "格式不正确", check))
+                        {
+                            check.Lines.Add("外部数据：manifest.json 格式不正确，已重命名并改用内置数据");
+                        }
+                        else
+                        {
+                            check.ExternalIgnored = true;
+                            check.Lines.Add("外部数据：manifest.json 格式不正确，已改用内置数据");
+                        }
                     }
                     else
                     {
@@ -195,11 +230,18 @@ namespace WtSkin
                         {
                             ExternalManifestIgnored = true;
                             check.ExternalIgnored = true;
-                            check.Lines.Add("外部数据：manifest.json " + label + " 与程序不一致，已忽略并改用内置数据");
-                            if (check.Warning.Length == 0)
+                            if (QuarantineExternal(ext, label, check))
                             {
-                                check.Warning = "安装目录里的图标清单版本与程序不一致（" + label +
-                                                "），本次已忽略该文件并改用内置数据。文件不会被自动覆盖，可手动删除 " + ext + "。";
+                                check.Lines.Add("外部数据：manifest.json " + label + " 与程序不一致，已重命名并改用内置数据");
+                            }
+                            else
+                            {
+                                check.Lines.Add("外部数据：manifest.json " + label + " 与程序不一致，已忽略并改用内置数据");
+                                if (check.Warning.Length == 0)
+                                {
+                                    check.Warning = "安装目录里的图标清单版本与程序不一致（" + label +
+                                                    "），本次已忽略该文件并改用内置数据。文件不会被自动覆盖，可手动删除 " + ext + "。";
+                                }
                             }
                         }
                         else if (extData.Length > 0 && _dataVersion.Length > 0)

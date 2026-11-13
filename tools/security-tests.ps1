@@ -136,6 +136,25 @@ try {
 Remove-Item -Recurse -Force $tmpGame,$outside -ErrorAction SilentlyContinue
 $gameField.SetValue($null, $oldGame)
 
+
+# ---- 旧版外部清单：自动归档且不再弹窗 ----
+$installField2 = $config.GetField('InstallDir', [Reflection.BindingFlags]'Public,Static')
+$oldInstall2 = $installField2.GetValue($null)
+$tmpInstall2 = Join-Path $env:TEMP ('wtsm-data-' + [Guid]::NewGuid().ToString('N'))
+$vehDir = Join-Path $tmpInstall2 'assets\vehicles'
+New-Item -ItemType Directory -Force $vehDir | Out-Null
+[IO.File]::WriteAllText((Join-Path $vehDir 'manifest.json'), '{"dataVersion":"2026.11.08.1"}')
+$installField2.SetValue($null, $tmpInstall2)
+$dataType = $asm.GetType('WtSkin.DataFiles')
+$checkMethod = $dataType.GetMethod('Check', [Reflection.BindingFlags]'Public,Static')
+$result = $checkMethod.Invoke($null, $null)
+$legacy = Get-ChildItem $vehDir -Filter 'manifest.legacy-*.json'
+Expect ($null -eq (Get-Item (Join-Path $vehDir 'manifest.json') -ErrorAction SilentlyContinue)) $true 'legacy manifest renamed'
+Expect ($legacy.Count -ge 1) $true 'legacy backup exists'
+Expect ([string]::IsNullOrEmpty($result.Warning)) $true 'no warning popup needed'
+$installField2.SetValue($null, $oldInstall2)
+Remove-Item -Recurse -Force $tmpInstall2 -ErrorAction SilentlyContinue
+
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 if ($fail -gt 0) { Write-Host ("SECURITY TESTS FAILED: " + $fail); exit 1 }
 Write-Host 'SECURITY TESTS OK'
