@@ -645,6 +645,22 @@ namespace WtSkin
 
         [DllImport("user32.dll")]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmFlush();
+        [DllImport("user32.dll")]
+        private static extern bool RedrawWindow(IntPtr hWnd, IntPtr rect, IntPtr region, uint flags);
+
+        /// <summary>等待 DWM 完成一次合成，避免缩放时窗口尺寸已变、画面还没跟上。</summary>
+        public static void FlushComposition()
+        {
+            try
+            {
+                DwmFlush();
+            }
+            catch
+            {
+            }
+        }
         [DllImport("user32.dll")]
         private static extern int GetWindowLong(IntPtr hWnd, int index);
         [DllImport("user32.dll")]
@@ -664,8 +680,11 @@ namespace WtSkin
             }
             try
             {
+                // SWP_NOREDRAW：先把尺寸改完，再一次性擦除并重绘整窗（含子控件），
+                // 避免系统在尺寸未定稿时逐块复制旧像素，留下条状拖影。
                 SetWindowPos(form.Handle, IntPtr.Zero, bounds.X, bounds.Y, bounds.Width, bounds.Height,
-                             0x0004 | 0x0010 | 0x0100);
+                             0x0004 | 0x0010);
+                RedrawWindow(form.Handle, IntPtr.Zero, IntPtr.Zero, 0x0001 | 0x0004 | 0x0080 | 0x0100 | 0x0200);
             }
             catch
             {

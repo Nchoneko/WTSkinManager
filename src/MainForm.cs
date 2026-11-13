@@ -380,6 +380,9 @@ namespace WtSkin
             {
                 CreateParams cp = base.CreateParams;
                 cp.ClassStyle |= 0x00020000; // CS_DROPSHADOW
+                // 把子控件合成后再呈现：无边框窗口拖动边角缩放时，
+                // 子控件异步重绘会在旧画面上留下条状残影（桌面透出来）。
+                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED：子控件合成后呈现，消除缩放拖影
                 return cp;
             }
         }
@@ -555,7 +558,7 @@ namespace WtSkin
                 b.Width = Math.Max(minW, b.Width + dx);
                 b.Height = Math.Max(minH, b.Height + dy);
             }
-            Native.ResizeWindowNoCopy(this, b);
+            Bounds = b;
         }
 
         private void LayoutResizeEdges()
