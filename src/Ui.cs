@@ -788,6 +788,45 @@ namespace WtSkin
             {
             }
         }
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int Left, Top, Right, Bottom;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+        [DllImport("user32.dll")]
+        private static extern bool GetMonitorInfo(IntPtr monitor, ref MONITORINFO info);
+
+        /// <summary>取窗口所在显示器的物理工作区（绕开 WinForms 在混合 DPI 下的虚拟化）。</summary>
+        public static Rectangle GetMonitorWorkArea(IntPtr hwnd)
+        {
+            try
+            {
+                IntPtr monitor = MonitorFromWindow(hwnd, 2); // MONITOR_DEFAULTTONEAREST
+                MONITORINFO info = new MONITORINFO();
+                info.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+                if (monitor != IntPtr.Zero && GetMonitorInfo(monitor, ref info))
+                {
+                    return Rectangle.FromLTRB(info.rcWork.Left, info.rcWork.Top, info.rcWork.Right, info.rcWork.Bottom);
+                }
+            }
+            catch
+            {
+            }
+            return Screen.FromHandle(hwnd).WorkingArea;
+        }
+
         [DllImport("user32.dll")]
         public static extern int GetWindowLong(IntPtr hWnd, int index);
         [DllImport("user32.dll")]

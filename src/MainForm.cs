@@ -422,11 +422,26 @@ namespace WtSkin
             {
                 CreateParams cp = base.CreateParams;
                 cp.ClassStyle |= 0x00020000; // CS_DROPSHADOW
-                // 合成整个窗口后再呈现：拖动边角连续缩放时，子控件异步重绘
-                // 会在旧画面上留下条状残影。恢复最小化后需要重建合成表面。
-                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
                 return cp;
             }
+        }
+
+        private bool _layoutScheduled;
+
+        /// <summary>把布局推迟到消息队列空闲：缩放/最大化时先让窗口尺寸定稿，再按最终 ClientSize 重排。</summary>
+        private void ScheduleLayout()
+        {
+            if (_layoutScheduled)
+            {
+                return;
+            }
+            _layoutScheduled = true;
+            BeginInvoke((MethodInvoker)delegate
+            {
+                _layoutScheduled = false;
+                LayoutChrome();
+                Invalidate(true);
+            });
         }
 
         protected override void OnResize(EventArgs e)
@@ -461,8 +476,7 @@ namespace WtSkin
                         _wasMinimized = false;
                         ResetComposition();
                     }
-                    LayoutChrome();
-                    Invalidate(true);
+                    ScheduleLayout();
                 }
             }
             else if (m.Msg == 0x0047) // WM_WINDOWPOSCHANGED
@@ -488,20 +502,70 @@ namespace WtSkin
                                 LogLayout("REAPPLY_MAXIMIZED");
                             }
                         }
-                        LayoutChrome();
-                        Invalidate(true);
+                        ScheduleLayout();
                     });
                 }
             }
         }
 
         /// <summary>最小化恢复后重建 WS_EX_COMPOSITED 合成表面，避免窗口尺寸已变、画面仍停留在旧尺寸。</summary>
+        /// <summary>移除整窗合成；返回之前是否处于合成状态。</summary>
+        private bool RemoveComposited()
+        {
+            try
+            {
+                int ex = Native.GetWindowLong(Handle, -20);
+                if ((ex & 0x02000000) == 0)
+                {
+                    return false;
+                }
+                Native.SetWindowLong(Handle, -20, ex & ~0x02000000);
+                Native.SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0,
+                                    0x0001 | 0x0002 | 0x0004 | 0x0020 | 0x0010);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private void AddComposited()
+        {
+            try
+            {
+                int ex = Native.GetWindowLong(Handle, -20);
+                Native.SetWindowLong(Handle, -20, ex | 0x02000000);
+                Native.SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0,
+                                    0x0001 | 0x0002 | 0x0004 | 0x0020 | 0x0010);
+                Invalidate(true);
+            }
+            catch
+            {
+            }
+        }
+
+        private bool _resettingComposition;
+
         private void ResetComposition()
         {
-            if (!IsHandleCreated)
+            if (!IsHandleCreated || _resettingComposition)
             {
                 return;
             }
+            _resettingComposition = true;
+            try
+            {
+                ResetCompositionCore();
+            }
+            finally
+            {
+                _resettingComposition = false;
+            }
+        }
+
+        private void ResetCompositionCore()
+        {
             try
             {
                 int ex = Native.GetWindowLong(Handle, -20);
@@ -599,6 +663,8 @@ namespace WtSkin
             {
                 _edgeMode = -1;
                 panel.Capture = false;
+                RemoveComposited();
+                ScheduleLayout();
             };
             return panel;
         }
@@ -621,6 +687,8 @@ namespace WtSkin
             {
                 _edgeMode = -1;
                 panel.Capture = false;
+                RemoveComposited();
+                ScheduleLayout();
             };
             return panel;
         }
@@ -636,6 +704,8 @@ namespace WtSkin
                 return;
             }
             _edgeMode = mode;
+            // 只在拖拽缩放期间启用整窗合成：平时关闭，避免最大化/恢复时合成表面停在旧尺寸。
+            AddComposited();
             _edgeStartBounds = Bounds;
             _edgeStartMouse = Cursor.Position;
             if (source != null)
@@ -844,6 +914,7 @@ namespace WtSkin
 
         private void ToggleMaximize()
         {
+            RemoveComposited();
             if (_maximizedByUser)
             {
                 _maximizedByUser = false;
@@ -851,16 +922,12 @@ namespace WtSkin
                 {
                     Bounds = _normalBounds;
                 }
-                else
-                {
-                    WindowState = FormWindowState.Normal;
-                }
             }
             else
             {
                 _normalBounds = Bounds;
-                Rectangle area = Screen.FromHandle(Handle).WorkingArea;
-                Bounds = area;
+                // 用原生监视器工作区：WinForms 的 WorkingArea 在 150% DPI/多屏下可能是虚拟坐标。
+                Bounds = Native.GetMonitorWorkArea(Handle);
                 _maximizedByUser = true;
             }
             LogLayout("ToggleMaximize");
