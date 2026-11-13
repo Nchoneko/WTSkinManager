@@ -422,16 +422,82 @@ namespace WtSkin
             {
                 CreateParams cp = base.CreateParams;
                 cp.ClassStyle |= 0x00020000; // CS_DROPSHADOW
-                // 把子控件合成后再呈现：无边框窗口拖动边角缩放时，
-                // 子控件异步重绘会在旧画面上留下条状残影（桌面透出来）。
-                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED：子控件合成后呈现，消除缩放拖影
                 return cp;
             }
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (WindowState == FormWindowState.Minimized)
+            {
+                return;
+            }
+            LayoutChrome();
+            Invalidate(true);
         }
 
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
+            // 尺寸/状态变化统一走同一条同步链：先记日志，再重排并整窗重绘。
+            // 最小化恢复不一定会触发常规 Resize，因此 WM_SIZE / WM_ACTIVATE 都要补一次。
+            if (m.Msg == 0x0005) // WM_SIZE
+            {
+                LogLayout("WM_SIZE");
+                if (WindowState != FormWindowState.Minimized)
+                {
+                    LayoutChrome();
+                    Invalidate(true);
+                }
+            }
+            else if (m.Msg == 0x0047) // WM_WINDOWPOSCHANGED
+            {
+                LogLayout("WM_WINDOWPOSCHANGED");
+            }
+            else if (m.Msg == 0x0006) // WM_ACTIVATE
+            {
+                int active = m.WParam.ToInt32() & 0xFFFF;
+                if (active != 0)
+                {
+                    LogLayout("WM_ACTIVATE");
+                    BeginInvoke((MethodInvoker)delegate
+                    {
+                        // 自定义最大化没有走 WindowState，最小化恢复后窗口可能回到普通尺寸，
+                        // 但 _maximizedByUser 仍为 true；这里把两者重新对齐。
+                        if (_maximizedByUser)
+                        {
+                            Rectangle area = Screen.FromHandle(Handle).WorkingArea;
+                            if (Bounds != area)
+                            {
+                                Bounds = area;
+                                LogLayout("REAPPLY_MAXIMIZED");
+                            }
+                        }
+                        LayoutChrome();
+                        Invalidate(true);
+                    });
+                }
+            }
+        }
+
+        private void LogLayout(string ev)
+        {
+            if (!Config.DebugLayout)
+            {
+                return;
+            }
+            try
+            {
+                Config.Log("LAYOUT " + ev +
+                           " state=" + WindowState +
+                           " client=" + ClientSize.Width + "x" + ClientSize.Height +
+                           " bounds=" + Bounds.Width + "x" + Bounds.Height +
+                           " dpi=" + Ui.Scale.ToString("0.00", CultureInfo.InvariantCulture));
+            }
+            catch
+            {
+            }
         }
 
         // ---------------- 自绘窗口按钮 / 拖动 / 缩放 ----------------
@@ -760,7 +826,9 @@ namespace WtSkin
                 Bounds = area;
                 _maximizedByUser = true;
             }
+            LogLayout("ToggleMaximize");
             LayoutChrome();
+            Invalidate(true);
             _header.Invalidate();
         }
 
@@ -904,7 +972,7 @@ namespace WtSkin
 
         private void LayoutChrome()
         {
-            if (_header == null)
+            if (_header == null || _footer == null || _body == null)
             {
                 return;
             }

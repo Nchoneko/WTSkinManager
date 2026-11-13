@@ -15,6 +15,8 @@ namespace WtSkin
         public static int ThemeIndex = 0;
         public static int ZoomPercent = 100;
         public static bool Animations = false;
+        /// <summary>开发模式：把窗口尺寸/状态变化写入日志，用于排查缩放与恢复问题。</summary>
+        public static bool DebugLayout = false;
         public static string AllowedExt = ".dds,.blk,.tga";
         public static string WarnExt = ".txt,.md,.pdf,.jpg,.ini,.url,.rtf";
         public static string IllegalExt = ".png,.exe,.bat,.cmd,.dll,.js,.ps1,.vbs,.msi,.scr,.com";
@@ -188,6 +190,9 @@ namespace WtSkin
                         case "animations":
                             Animations = value != "0";
                             break;
+                        case "debuglayout":
+                            DebugLayout = value == "1";
+                            break;
                         case "allowedext":
                             AllowedExt = value;
                             break;
@@ -259,6 +264,7 @@ namespace WtSkin
                 sb.AppendLine("Theme=" + ThemeIndex);
                 sb.AppendLine("Zoom=" + ZoomPercent);
                 sb.AppendLine("Animations=" + (Animations ? "1" : "0"));
+            sb.AppendLine("DebugLayout=" + (DebugLayout ? "1" : "0"));
                 sb.AppendLine("AllowedExt=" + AllowedExt);
                 sb.AppendLine("WarnExt=" + WarnExt);
                 sb.AppendLine("IllegalExt=" + IllegalExt);

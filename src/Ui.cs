@@ -1250,8 +1250,12 @@ namespace WtSkin
             int tx = pad;
             if (Icon != null)
             {
+                // 站点图标保留原始配色：这是品牌标识，不参与强调色/状态色体系。
                 Rectangle ir = new Rectangle(pad, (Height - icon) / 2, icon, icon);
-                Ui.DrawIconTinted(g, Icon, ir, Ui.Mix(Ui.TextWeak, Ui.TextSecondary, t));
+                System.Drawing.Drawing2D.InterpolationMode oldMode = g.InterpolationMode;
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.DrawImage(Icon, ir);
+                g.InterpolationMode = oldMode;
                 tx += icon + Ui.Sp8;
             }
             Ui.DrawText(g, Text, Font, text,
