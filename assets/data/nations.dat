@@ -1,7 +1,7 @@
 # 战雷涂装管理器 · 载具国家表（slug<TAB>国家代码）
 # schemaVersion=1
-# dataVersion=2026.11.11.1
-# count=3350
+# dataVersion=2026.11.11.2
+# count=3372
 a_109_eoa2	italy
 a_10a_early	usa
 a_10a_late	usa
@@ -3352,3 +3352,25 @@ z_19e	china
 z_9w	china
 z_9wa	china
 zeppelin	germany
+us_stingray_2	usa
+germ_leopard_2a8	germany
+ussr_btr_90_2004	ussr
+uk_olifant_optimering	britain
+jp_bmp_3f	japan
+cn_zbd_04	china
+it_v_4_straussler	italy
+it_lancia_flak38	italy
+fr_prtl	france
+sw_leopard_2a8no	sweden
+sw_pv_m39	sweden
+f_15ex	usa
+fa_18d_late	usa
+su_15tm	ussr
+fulmar_mk2	britain
+firefly_mk1_thailand	japan
+b_33_indonesia	japan
+q_5d	china
+saab_jas39_pre_serie	sweden
+f_15ia	israel
+aw_249_pre_serie	italy
+germ_schutzenpanzer_puma_vjft	germany

@@ -1,7 +1,7 @@
 # 战雷涂装管理器 · 载具名称表（slug<TAB>中文名<TAB>英文名）
 # schemaVersion=1
-# dataVersion=2026.11.11.1
-# count=3704
+# dataVersion=2026.11.11.2
+# count=3705
 Destroyer_USSR_Type7	驱逐舰	Destroyer
 Ki_84	四式战	Ki-84
 TribalDestroyer	部族级驱逐舰	Tribal Destroyer
@@ -3706,3 +3706,4 @@ q_5d	强-5D	Q-5D
 saab_jas39_pre_serie	JAS39-5	JAS39-5
 f_15ia	F-15IA 雷霆 II	F-15IA Ra'am II
 aw_249_pre_serie	AW249 凤凰	AW249 Fenice
+germ_schutzenpanzer_puma_vjft	步兵战车 美洲狮 (VJTF 标准)	Schützenpanzer Puma VJTF
