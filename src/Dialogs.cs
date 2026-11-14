@@ -443,6 +443,10 @@ namespace WtSkin
         private int _theme;
         private int _zoom;
         private int _keepValue;
+        private int _missingPolicy;
+        private FlatButton _policyAsk;
+        private FlatButton _policyAuto;
+        private FlatButton _policyOff;
 
         public bool NeedRestart;
 
@@ -458,6 +462,7 @@ namespace WtSkin
             _theme = Config.ThemeIndex;
             _zoom = Config.ZoomPercent;
             _keepValue = Config.KeepBackups;
+            _missingPolicy = Config.MissingFolderPolicy;
 
             int pageWidth = 608;
             int pageHeight = 512;
@@ -779,6 +784,35 @@ namespace WtSkin
                     form.ShowDialog(this);
                 }
             };
+
+            PageLabel(_pagePrefs, "缺少涂装目录时", 8, 406, 180, 20, Ui.SmallBold, Ui.TextDim);
+            _policyAsk = PageButton(_pagePrefs, "每次询问", 8, 428, 124, false);
+            _policyAsk.Click += delegate { SetMissingPolicy(0); };
+            _policyAuto = PageButton(_pagePrefs, "自动创建", 140, 428, 124, false);
+            _policyAuto.Click += delegate { SetMissingPolicy(1); };
+            _policyOff = PageButton(_pagePrefs, "关闭", 272, 428, 90, false);
+            _policyOff.Click += delegate { SetMissingPolicy(2); };
+            RefreshPolicyButtons();
+        }
+
+        private void SetMissingPolicy(int policy)
+        {
+            _missingPolicy = Math.Max(0, Math.Min(2, policy));
+            RefreshPolicyButtons();
+        }
+
+        private void RefreshPolicyButtons()
+        {
+            if (_policyAsk == null)
+            {
+                return;
+            }
+            _policyAsk.Primary = _missingPolicy == 0;
+            _policyAuto.Primary = _missingPolicy == 1;
+            _policyOff.Primary = _missingPolicy == 2;
+            _policyAsk.Invalidate();
+            _policyAuto.Invalidate();
+            _policyOff.Invalidate();
         }
 
         /// <summary>
@@ -1192,6 +1226,7 @@ namespace WtSkin
             Config.GameDir = dir;
             Config.Backup = _backupRow.Checked;
             Config.KeepBackups = _keepValue;
+            Config.MissingFolderPolicy = _missingPolicy;
             Config.ThemeIndex = _theme;
             Config.ZoomPercent = _zoom;
             Config.Animations = false;
@@ -1488,6 +1523,123 @@ namespace WtSkin
             {
                 _list.Items.Add(_missing[i]);
             }
+        }
+    }
+
+    /// <summary>缺少 template_&lt;代号&gt; 目录时的创建确认窗口。</summary>
+    internal class CreateFoldersForm : ModalForm
+    {
+        public bool Created;
+        private readonly List<DetectedUnit> _units;
+        private readonly bool _simple;
+        private readonly ListBox _list;
+        private readonly Label _hint;
+        private readonly FlatButton _expand;
+        private readonly Label _bottomHint;
+        private FlatButton _cancel;
+        private FlatButton _create;
+
+        public CreateFoldersForm(List<DetectedUnit> units, bool simple)
+            : base("创建涂装目录", 640, 500)
+        {
+            _units = new List<DetectedUnit>(units);
+            _simple = simple;
+
+            string path = Config.UserSkinsDir;
+            string first = _units.Count > 0 ? _units[0].Title : "";
+            _hint = MakeLabel(simple
+                    ? "载具「" + first + "」缺少涂装目录，是否创建？"
+                    : "检测到 " + _units.Count + " 台载具缺少涂装目录，是否创建？",
+                24, 14, 592, 26, Ui.Body, Ui.Text);
+            MakeLabel(simple
+                    ? "只会创建一个空目录，不写任何文件；取消不会改动 UserSkins。"
+                    : "将创建以下空目录（与现有涂装同级），不会覆盖或删除任何已有内容。",
+                24, 42, 592, 22, Ui.Small, Ui.TextDim);
+
+            int listTop = 72;
+            if (!simple)
+            {
+                MakeLabel("目标位置：" + path, 24, 66, 592, 22, Ui.Small, Ui.TextFaint);
+                listTop = 94;
+            }
+
+            _list = new ListBox();
+            _list.Left = Ui.S(24);
+            _list.Top = Ui.S(listTop);
+            _list.Width = Ui.S(592);
+            _list.Height = Ui.S(258);
+            _list.BackColor = Ui.BgSoft;
+            _list.ForeColor = Ui.Text;
+            _list.BorderStyle = BorderStyle.None;
+            _list.DrawMode = DrawMode.OwnerDrawFixed;
+            _list.ItemHeight = Ui.S(40);
+            _list.Font = Ui.Body;
+            _list.IntegralHeight = false;
+            _list.DrawItem += delegate(object sender, DrawItemEventArgs e)
+            {
+                if (e.Index < 0 || e.Index >= _list.Items.Count)
+                {
+                    return;
+                }
+                DetectedUnit unit = (DetectedUnit)_list.Items[e.Index];
+                Ui.Smooth(e.Graphics);
+                Rectangle r = new Rectangle(e.Bounds.X + Ui.S(10), e.Bounds.Y, e.Bounds.Width - Ui.S(20), e.Bounds.Height);
+                Ui.DrawText(e.Graphics, unit.Title, Ui.BodyBold, Ui.Text,
+                        new Rectangle(r.X, r.Y + Ui.S(3), r.Width, Ui.S(19)),
+                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+                string dir = TemplateFolders.TargetName(unit.UnitId);
+                Ui.DrawText(e.Graphics, dir, Ui.Small, Ui.TextFaint,
+                        new Rectangle(r.X, r.Y + Ui.S(20), r.Width, Ui.S(17)),
+                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+            };
+            Content.Controls.Add(_list);
+
+            _expand = MakeButton("展开全部", 24, listTop + 266, 110, false);
+            _expand.Click += delegate
+            {
+                for (int i = _list.Items.Count; i < _units.Count; i++)
+                {
+                    _list.Items.Add(_units[i]);
+                }
+                _expand.Visible = false;
+            };
+            for (int i = 0; i < _units.Count && i < 10; i++)
+            {
+                _list.Items.Add(_units[i]);
+            }
+            _expand.Visible = _units.Count > 10;
+
+            _bottomHint = MakeLabel("创建目录后，需要在游戏内重新打开该载具的涂装界面才会出现。",
+                      24, 372, 592, 20, Ui.Small, Ui.TextDim);
+
+            FlatButton cancel = MakeButton("取消", 398, 394, 96, false);
+            _cancel = cancel;
+            cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
+            FlatButton create = MakeButton("创建", 504, 394, 112, true);
+            _create = create;
+            create.Click += delegate
+            {
+                Created = true;
+                DialogResult = DialogResult.OK;
+                Close();
+            };
+            Shown += delegate
+            {
+                Native.ThemeScrollbars(this);
+                // 底部控件按 Content 实际高度倒排，避免 DPI/缩放后按钮被裁切或互相重叠。
+                int buttonH = Ui.S(38);
+                int buttonY = Math.Max(Ui.S(220), Content.Height - Ui.S(18) - buttonH);
+                _create.SetBounds(Content.Width - Ui.S(24) - Ui.S(112), buttonY, Ui.S(112), buttonH);
+                _cancel.SetBounds(_create.Left - Ui.S(12) - Ui.S(96), buttonY, Ui.S(96), buttonH);
+                _bottomHint.Top = buttonY - Ui.S(26);
+                _bottomHint.Left = Ui.S(24);
+                _bottomHint.Width = Math.Max(Ui.S(120), Content.Width - Ui.S(48));
+                int expandY = _bottomHint.Top - Ui.S(40);
+                _expand.Top = expandY;
+                int listH = Math.Max(Ui.S(80), expandY - _list.Top - Ui.S(8));
+                _list.Height = listH;
+                cancel.Focus();
+            };
         }
     }
 

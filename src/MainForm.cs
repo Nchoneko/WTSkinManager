@@ -2759,12 +2759,128 @@ namespace WtSkin
             }
         }
 
+        /// <summary>按设置处理缺失的 template_ 目录：询问/自动创建/关闭。返回是否全部可识别。</summary>
+        private bool EnsureTemplateFolders(List<DetectedUnit> missing)
+        {
+            List<DetectedUnit> valid = new List<DetectedUnit>();
+            for (int i = 0; i < missing.Count; i++)
+            {
+                if (TemplateFolders.IsValidUnitId(missing[i] != null ? missing[i].UnitId : ""))
+                {
+                    valid.Add(missing[i]);
+                }
+                else if (missing[i] != null)
+                {
+                    Config.Log("创建涂装目录 跳过：机型代号无效 " + missing[i].UnitId);
+                }
+            }
+            if (valid.Count == 0)
+            {
+                return false;
+            }
+            if (Config.MissingFolderPolicy == 2)
+            {
+                return false;
+            }
+            if (Config.MissingFolderPolicy == 0)
+            {
+                using (CreateFoldersForm form = new CreateFoldersForm(valid, valid.Count == 1))
+                {
+                    if (form.ShowDialog(this) != DialogResult.OK)
+                    {
+                        for (int i = 0; i < valid.Count; i++)
+                        {
+                            Config.Log("创建涂装目录 用户取消：" + valid[i].UnitId +
+                                       " → " + TemplateFolders.TargetName(valid[i].UnitId));
+                        }
+                        return false;
+                    }
+                }
+            }
+
+            List<FolderCreateOutcome> outcomes = TemplateFolders.CreateMany(valid);
+            int created = 0;
+            int existed = 0;
+            int failed = 0;
+            string detail = "";
+            for (int i = 0; i < outcomes.Count; i++)
+            {
+                FolderCreateOutcome o = outcomes[i];
+                if (o.Result == FolderCreateResult.Created)
+                {
+                    created++;
+                }
+                else if (o.Result == FolderCreateResult.Existed)
+                {
+                    existed++;
+                }
+                else if (o.Result == FolderCreateResult.Failed)
+                {
+                    failed++;
+                    if (detail.Length < 240 && o.Unit != null)
+                    {
+                        detail += "· " + o.Unit.UnitId + "：" + o.Error + "\n";
+                    }
+                }
+            }
+            if (created > 0 || failed > 0)
+            {
+                string msg = "已创建 " + created + " 个涂装目录";
+                if (existed > 0)
+                {
+                    msg += "，已存在 " + existed + " 个";
+                }
+                if (failed > 0)
+                {
+                    msg += "，失败 " + failed + " 个";
+                }
+                msg += "。";
+                if (detail.Length > 0)
+                {
+                    msg += "\n\n" + detail;
+                }
+                msg += "\n\n创建完成后，需要在游戏内重新打开该载具的涂装界面才会出现。";
+                MessageBox.Show(this, msg, "创建涂装目录", MessageBoxButtons.OK,
+                                failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+            }
+            RefreshFolders(false);
+            for (int i = 0; i < valid.Count; i++)
+            {
+                if (Importer.FindExistingFolder(Config.UserSkinsDir, valid[i].UnitId) == null)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         private void RefreshFolders(bool notify)
         {
             UpdateDetail();
             UpdateStatus();
             if (notify)
             {
+                List<DetectedUnit> missing = new List<DetectedUnit>();
+                HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < _packages.Count; i++)
+                {
+                    List<DetectedUnit> units = _packages[i].SelectedUnits();
+                    for (int u = 0; u < units.Count; u++)
+                    {
+                        DetectedUnit unit = units[u];
+                        if (seen.Add(unit.UnitId) &&
+                            Importer.FindExistingFolder(Config.UserSkinsDir, unit.UnitId) == null)
+                        {
+                            missing.Add(unit);
+                        }
+                    }
+                }
+                if (missing.Count > 0)
+                {
+                    EnsureTemplateFolders(missing);
+                    UpdateDetail();
+                    UpdateStatus();
+                }
                 int found = 0;
                 int total = 0;
                 for (int i = 0; i < _packages.Count; i++)
@@ -2866,20 +2982,13 @@ namespace WtSkin
             List<DetectedUnit> missing = CollectMissing(selected);
             if (missing.Count > 0)
             {
-                using (MissingFoldersForm form = new MissingFoldersForm(missing))
-                {
-                    form.ShowDialog(this);
-                    if (!form.AllFound)
-                    {
-                        UpdateDetail();
-                        UpdateStatus();
-                        return;
-                    }
-                }
+                bool allFound = EnsureTemplateFolders(missing);
                 RefreshFolders(false);
                 missing = CollectMissing(selected);
-                if (missing.Count > 0)
+                if (!allFound || missing.Count > 0)
                 {
+                    UpdateDetail();
+                    UpdateStatus();
                     return;
                 }
             }

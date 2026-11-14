@@ -12,6 +12,8 @@ namespace WtSkin
         public static string GameDir = "";
         public static bool Backup = true;
         public static int KeepBackups = 8;
+        /// <summary>缺少 template_ 目录时：0=每次询问，1=自动创建，2=关闭。</summary>
+        public static int MissingFolderPolicy = 0;
         public static int ThemeIndex = 0;
         public static int ZoomPercent = 100;
         public static bool Animations = false;
@@ -166,6 +168,13 @@ namespace WtSkin
                         case "backup":
                             Backup = value != "0";
                             break;
+                        case "missingfolderpolicy":
+                            int missingPolicy;
+                            if (int.TryParse(value, out missingPolicy) && missingPolicy >= 0 && missingPolicy <= 2)
+                            {
+                                MissingFolderPolicy = missingPolicy;
+                            }
+                            break;
                         case "keepbackups":
                             int keep;
                             if (int.TryParse(value, out keep) && keep >= 1 && keep <= 50)
@@ -261,6 +270,7 @@ namespace WtSkin
                 sb.AppendLine("DataVersion=" + AppInfo.DataVersion);
                 sb.AppendLine("Backup=" + (Backup ? "1" : "0"));
                 sb.AppendLine("KeepBackups=" + KeepBackups);
+                sb.AppendLine("MissingFolderPolicy=" + MissingFolderPolicy);
                 sb.AppendLine("Theme=" + ThemeIndex);
                 sb.AppendLine("Zoom=" + ZoomPercent);
                 sb.AppendLine("Animations=" + (Animations ? "1" : "0"));
@@ -344,7 +354,9 @@ namespace WtSkin
             HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             AddSteamLibraries(found, seen);
+            AddLauncherRegistry(found, seen);
             AddKnownPaths(found, seen);
+            AddShortcuts(found, seen);
             AddRunningProcess(found, seen);
 
             List<string> valid = new List<string>();
@@ -480,7 +492,12 @@ namespace WtSkin
             suffixes.Add(Path.Combine("Steam", "steamapps", "common", "War Thunder"));
             suffixes.Add(Path.Combine("Games", "SteamLibrary", "steamapps", "common", "War Thunder"));
             suffixes.Add("War Thunder");
+            suffixes.Add("WarThunder");
             suffixes.Add(Path.Combine("Games", "War Thunder"));
+            suffixes.Add(Path.Combine("Games", "WarThunder"));
+            suffixes.Add(Path.Combine("Program Files", "WarThunder"));
+            suffixes.Add(Path.Combine("Program Files (x86)", "WarThunder"));
+            suffixes.Add(Path.Combine("WarThunder", "War Thunder"));
             suffixes.Add(Path.Combine("Program Files (x86)", "Steam", "steamapps", "common", "War Thunder"));
             suffixes.Add(Path.Combine("Program Files", "Steam", "steamapps", "common", "War Thunder"));
 
@@ -516,6 +533,140 @@ namespace WtSkin
                         Add(candidate, found, seen);
                     }
                 }
+            }
+        }
+
+        /// <summary>官方启动器的安装路径通常写在 Gaijin 注册表键里。</summary>
+        private static void AddLauncherRegistry(List<string> found, HashSet<string> seen)
+        {
+            string[] keys = new string[]
+            {
+                @"HKEY_CURRENT_USER\Software\Gaijin Entertainment\War Thunder",
+                @"HKEY_CURRENT_USER\Software\Gaijin\War Thunder",
+                @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Gaijin Entertainment\War Thunder",
+                @"HKEY_LOCAL_MACHINE\SOFTWARE\Gaijin Entertainment\War Thunder"
+            };
+            string[] names = new string[] { "InstallPath", "InstallDir", "Path", "GamePath", "Location", "" };
+            for (int k = 0; k < keys.Length; k++)
+            {
+                for (int n = 0; n < names.Length; n++)
+                {
+                    string value = ReadRegistry(keys[k], names[n]);
+                    AddInstallPath(value, found, seen);
+                }
+            }
+        }
+
+        /// <summary>桌面/开始菜单里的官方启动器快捷方式也指向游戏目录（例如 E:\WarThunder）。</summary>
+        private static void AddShortcuts(List<string> found, HashSet<string> seen)
+        {
+            string[] roots = new string[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory),
+                Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu)
+            };
+            object shell = null;
+            try
+            {
+                Type type = Type.GetTypeFromProgID("WScript.Shell");
+                if (type != null)
+                {
+                    shell = Activator.CreateInstance(type);
+                }
+            }
+            catch
+            {
+                shell = null;
+            }
+            for (int i = 0; i < roots.Length; i++)
+            {
+                ScanShortcuts(roots[i], shell, 0, found, seen);
+            }
+        }
+
+        private static void ScanShortcuts(string dir, object shell, int depth, List<string> found, HashSet<string> seen)
+        {
+            if (shell == null || depth > 2 || string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
+            {
+                return;
+            }
+            try
+            {
+                string[] files = Directory.GetFiles(dir, "*.lnk");
+                for (int i = 0; i < files.Length; i++)
+                {
+                    string target = ResolveShortcut(shell, files[i]);
+                    if (string.IsNullOrEmpty(target))
+                    {
+                        continue;
+                    }
+                    string name = Path.GetFileNameWithoutExtension(files[i]);
+                    string exe = Path.GetFileName(target);
+                    if (name.IndexOf("War Thunder", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        name.IndexOf("WarThunder", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        exe.IndexOf("launcher", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        exe.IndexOf("aces", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        exe.IndexOf("warthunder", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        AddInstallPath(target, found, seen);
+                    }
+                }
+                string[] subdirs = Directory.GetDirectories(dir);
+                for (int i = 0; i < subdirs.Length; i++)
+                {
+                    ScanShortcuts(subdirs[i], shell, depth + 1, found, seen);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private static string ResolveShortcut(object shell, string path)
+        {
+            try
+            {
+                object shortcut = shell.GetType().InvokeMember("CreateShortcut",
+                    System.Reflection.BindingFlags.InvokeMethod, null, shell, new object[] { path });
+                object target = shortcut.GetType().InvokeMember("TargetPath",
+                    System.Reflection.BindingFlags.GetProperty, null, shortcut, null);
+                return target as string;
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        /// <summary>注册表/快捷方式给的是 exe 或安装目录，统一换算成目录再交给 FindAll 校验。</summary>
+        private static void AddInstallPath(string value, List<string> found, HashSet<string> seen)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return;
+            }
+            string path = value.Trim().Trim('"');
+            try
+            {
+                if (File.Exists(path))
+                {
+                    path = Path.GetDirectoryName(path);
+                }
+                if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
+                {
+                    return;
+                }
+                Add(path, found, seen);
+                string parent = Path.GetDirectoryName(path.TrimEnd('\\'));
+                if (!string.IsNullOrEmpty(parent))
+                {
+                    Add(parent, found, seen);
+                }
+            }
+            catch
+            {
             }
         }
 
