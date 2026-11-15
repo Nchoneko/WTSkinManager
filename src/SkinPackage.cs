@@ -82,6 +82,13 @@ namespace WtSkin
         public string SourcePath;
         public bool IsZip;
         public string Name = "";
+        /// <summary>
+        /// 导入时「涂装文件夹名」的默认值，取自包内容本身：
+        /// 压缩包内唯一顶层目录名 → 压缩包文件名（去扩展名）→ 空（由用户填写）。
+        /// 文件夹来源直接用它自己的文件夹名。保留原始写法，不在推导时清洗，
+        /// 这样导入对话框能对非法默认名给出明确提示。
+        /// </summary>
+        public string TopFolderName = "";
         public List<PackageEntry> Files = new List<PackageEntry>();
         public long TotalBytes;
         public string Fingerprint = "";
@@ -227,6 +234,7 @@ namespace WtSkin
 
                 string zipName = Path.GetFileNameWithoutExtension(path);
                 Name = Util.SanitizeName(root.Length > 0 ? root : zipName);
+                TopFolderName = root.Length > 0 ? root : zipName;
             }
         }
 
@@ -279,6 +287,7 @@ namespace WtSkin
                 TotalBytes += pe.Length;
             }
             Name = Util.SanitizeName(Path.GetFileName(basePath));
+            TopFolderName = Path.GetFileName(basePath);
         }
 
         private static string NormalizeRel(string rel)
@@ -585,6 +594,75 @@ namespace WtSkin
                 }
             }
             return "";
+        }
+    }
+
+    /// <summary>
+    /// 「涂装文件夹名」规则：用于界面实时校验，也用于写入前再次校验（安全兜底）。
+    /// 只允许一层普通文件夹名：非空、≤64 字符、不含 Windows 非法字符、不以空格/句点结尾、
+    /// 不是 Windows 保留名、不包含「..」。
+    /// </summary>
+    internal static class SkinNameRules
+    {
+        public const int MaxLength = 64;
+
+        private static readonly string[] ReservedNames = new string[]
+        {
+            "CON", "PRN", "AUX", "NUL",
+            "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+            "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+        };
+
+        /// <summary>返回空字符串表示合法，否则返回给界面显示的原因。</summary>
+        public static string Validate(string name)
+        {
+            if (string.IsNullOrEmpty(name) || name.Trim().Length == 0)
+            {
+                return "请填写涂装文件夹名";
+            }
+            if (name.Length > MaxLength)
+            {
+                return "涂装文件夹名不能超过 " + MaxLength.ToString() + " 个字符";
+            }
+            for (int i = 0; i < name.Length; i++)
+            {
+                char c = name[i];
+                if (c < ' ' || c == '\\' || c == '/' || c == ':' || c == '*' || c == '?' ||
+                    c == '"' || c == '<' || c == '>' || c == '|')
+                {
+                    return "不能包含 \\ / : * ? \" < > | 或控制字符";
+                }
+            }
+            char last = name[name.Length - 1];
+            if (last == ' ' || last == '.')
+            {
+                return "名称结尾不能是空格或句点";
+            }
+            if (name.IndexOf("..", StringComparison.Ordinal) >= 0)
+            {
+                return "名称不能包含「..」";
+            }
+            // Windows 把「CON」「CON.txt」都当作保留名；保留名比较取第一个点之前的部分。
+            string stem = name;
+            int dot = stem.IndexOf('.');
+            if (dot >= 0)
+            {
+                stem = stem.Substring(0, dot);
+            }
+            stem = stem.TrimEnd(' ');
+            for (int i = 0; i < ReservedNames.Length; i++)
+            {
+                if (string.Equals(stem, ReservedNames[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    return "不能使用 Windows 保留名（CON、PRN、AUX、NUL、COM1-9、LPT1-9）";
+                }
+            }
+            return "";
+        }
+
+        public static bool IsValid(string name)
+        {
+            return Validate(name).Length == 0;
         }
     }
 }

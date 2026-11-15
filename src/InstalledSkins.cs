@@ -113,12 +113,12 @@ namespace WtSkin
                 {
                     continue;
                 }
-                bool disabled = name.EndsWith(BanSuffix, StringComparison.OrdinalIgnoreCase);
-                string baseName = disabled ? name.Substring(0, name.Length - BanSuffix.Length) : name;
+                // 不再读写 .BAN：后缀目录按普通涂装处理，名称保持原样。
+                string baseName = name;
                 InstalledSkin skin = new InstalledSkin();
                 skin.Folder = name;
                 skin.Path = dirs[i];
-                skin.Disabled = disabled;
+                skin.Disabled = false;
                 skin.UnitId = ParseUnit(baseName);
                 if (skin.UnitId.Length > 0)
                 {

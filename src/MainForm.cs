@@ -3026,25 +3026,11 @@ namespace WtSkin
                 return;
             }
 
-            // 只记录真正成功的目标，取消/失败的不写入导入记录。
-            HashSet<string> doneDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < result.Done.Count; i++)
+            // 只记录真正成功的目标，取消/跳过/失败的不写入导入记录。
+            for (int i = 0; i < result.DoneTargets.Count; i++)
             {
-                int arrow = result.Done[i].LastIndexOf(" → ", StringComparison.Ordinal);
-                if (arrow > 0)
-                {
-                    doneDirs.Add(result.Done[i].Substring(arrow + 3).Trim());
-                }
-            }
-            for (int i = 0; i < plan.Targets.Count; i++)
-            {
-                if (!doneDirs.Contains(Path.GetFileName(plan.Targets[i].Folder)))
-                {
-                    continue;
-                }
-                ImportHistory.Record(plan.Targets[i].Package.Fingerprint,
-                                     plan.Targets[i].Unit.UnitId,
-                                     plan.Targets[i].Folder);
+                ImportTarget done = result.DoneTargets[i];
+                ImportHistory.Record(done.Package.Fingerprint, done.Unit.UnitId, done.TargetDir);
             }
             Config.Log("导入 " + plan.Targets.Count + " 个载具，成功 " + result.Done.Count +
                        "，失败 " + result.Failed.Count);
@@ -3058,7 +3044,7 @@ namespace WtSkin
             }
 
             string subtitle = result.Failed.Count == 0
-                ? "已导入 " + result.Done.Count + " 个载具文件夹"
+                ? "已导入 " + result.Done.Count + " 个涂装"
                 : "完成 " + result.Done.Count + " 个，失败 " + result.Failed.Count + " 个";
             using (ResultForm done = new ResultForm(result, "导入完成", subtitle))
             {

@@ -10,8 +10,9 @@ using System.Windows.Forms;
 namespace WtSkin
 {
     /// <summary>
-    /// 涂装管理器：左侧国家筛选 + 顶部工具条 + 三列卡片网格 + 底部操作。
-    /// 只枚举 UserSkins 顶层目录名；除禁用/启用重命名外不碰目录内容。
+    /// 涂装管理器：左侧国家筛选与涂装库统计 + 顶部工具条 + 载具卡片网格 + 右栏涂装列表。
+    /// 只枚举 UserSkins 下的载具目录与涂装子目录；本页不提供目录改名，也不读写 .BAN，
+    /// 已有的 .BAN 目录按普通涂装原样显示。
     /// </summary>
     internal class ManagerForm : ModalForm
     {
@@ -24,23 +25,46 @@ namespace WtSkin
         private BufferedPanel _nationPanel;
         private BufferedPanel _grid;
         private TextBox _search;
+        private BufferedPanel _searchPanel;
         private FlatButton _sortButton;
         private FlatButton _selectAll;
         private FlatButton _clearButton;
         private FlatButton _openButton;
         private FlatButton _backupButton;
-        private FlatButton _toggleButton;
         private FlatButton _restoreButton;
         private FlatButton _refreshButton;
         private FlatButton _updateButton;
         private FlatButton _updateAllButton;
         private Label _stats;
         private Label _metaLabel;
+        private Label _libStats;
         private string _nationFilter = "";
         private int _sortMode;
         private bool _rebuilding;
         private bool _updating;
         private int _lastGridWidth;
+
+        // ---- 右栏：当前载具的已安装涂装列表 ----
+        private BufferedPanel _detail;
+        private BufferedPanel _detailList;
+        private FlatButton _detailSelectAll;
+        private FlatButton _detailBackup;
+        private FlatButton _detailDelete;
+        private FlatButton _detailRename;
+        private FlatButton _detailClose;
+        private FlatButton _detailSort;
+        private FlatButton _detailRecalc;
+        private Label _detailCount;
+        private Label _detailEmpty;
+        private bool _detailOpen;
+        private string _detailFolder = "";
+        private ManagerVehicleEntry _detailVehicle;
+        private readonly List<ManagerSkinRow> _detailRows = new List<ManagerSkinRow>();
+        private ManagerLibrary _library;
+        private int _detailSortMode;
+        private int _measureGeneration = -1;
+        private System.Windows.Forms.Timer _visibilityTimer;
+        private bool _wasHidden;
 
         public ManagerForm()
             : base("涂装管理", 1320, 860)
@@ -49,9 +73,57 @@ namespace WtSkin
             BuildSidebar();
             BuildToolbar();
             BuildGrid();
+            BuildDetailPanel();
             Shown += delegate { Reload(); };
             Resize += delegate { LayoutManager(); };
+            _visibilityTimer = new System.Windows.Forms.Timer();
+            _visibilityTimer.Interval = 1500;
+            _visibilityTimer.Tick += delegate { CheckVisibilityRefresh(); };
+            _visibilityTimer.Start();
             LayoutManager();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && _visibilityTimer != null)
+            {
+                _visibilityTimer.Stop();
+                _visibilityTimer.Dispose();
+                _visibilityTimer = null;
+            }
+            base.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// 嵌入主窗口时，切回管理页（父容器重新可见）就重扫一次：
+        /// 导入完成后回到管理页会立即看到新涂装，并重新统计占用。
+        /// 管理页可见期间不自动刷新，避免打断用户的勾选。
+        /// </summary>
+        private void CheckVisibilityRefresh()
+        {
+            if (_detail == null || IsDisposed)
+            {
+                return;
+            }
+            bool visible;
+            try
+            {
+                visible = Visible;
+            }
+            catch
+            {
+                return;
+            }
+            if (!visible)
+            {
+                _wasHidden = true;
+                return;
+            }
+            if (_wasHidden)
+            {
+                _wasHidden = false;
+                Reload();
+            }
         }
 
         /// <summary>嵌入主窗口作为分页时调用：去掉自己的标题栏。</summary>
@@ -91,13 +163,24 @@ namespace WtSkin
             brand.SetBounds(Ui.S(20), Ui.S(16), Ui.S(150), Ui.S(26));
             _side.Controls.Add(brand);
 
+            _libStats = new Label();
+            _libStats.Text = "已安装 0 个涂装 · 占用 计算中…";
+            _libStats.Font = Ui.Small;
+            _libStats.ForeColor = Ui.TextFaint;
+            _libStats.BackColor = Ui.BgSoft;
+            _libStats.AutoSize = false;
+            _libStats.AutoEllipsis = true;
+            _libStats.TextAlign = ContentAlignment.MiddleLeft;
+            _libStats.SetBounds(Ui.S(20), Ui.S(44), Ui.S(160), Ui.S(18));
+            _side.Controls.Add(_libStats);
+
             Label tip = new Label();
             tip.Text = "按国家筛选";
             tip.Font = Ui.Small;
             tip.ForeColor = Ui.TextFaint;
             tip.BackColor = Ui.BgSoft;
             tip.AutoSize = false;
-            tip.SetBounds(Ui.S(20), Ui.S(44), Ui.S(150), Ui.S(18));
+            tip.SetBounds(Ui.S(20), Ui.S(72), Ui.S(150), Ui.S(18));
             _side.Controls.Add(tip);
 
             _nationPanel = new BufferedPanel();
@@ -118,20 +201,39 @@ namespace WtSkin
 
         private void BuildToolbar()
         {
+            _searchPanel = new BufferedPanel();
+            _searchPanel.BackColor = Ui.Bg;
+            _searchPanel.Paint += delegate(object sender, PaintEventArgs e)
+            {
+                Ui.Smooth(e.Graphics);
+                Rectangle r = new Rectangle(0, 0, _searchPanel.Width - 1, _searchPanel.Height - 1);
+                Ui.FillRound(e.Graphics, r, Ui.S(9), Ui.Panel);
+                bool focus = _search != null && _search.Focused;
+                Ui.DrawRound(e.Graphics, r, Ui.S(9), focus ? Ui.Accent : Ui.Stroke,
+                             focus ? Math.Max(Ui.BorderWidth, (int)Math.Round(Ui.SF(1.4f))) : Ui.BorderWidth);
+            };
             _search = new TextBox();
-            _search.BorderStyle = BorderStyle.FixedSingle;
+            _search.BorderStyle = BorderStyle.None;
             _search.BackColor = Ui.Panel;
             _search.ForeColor = Ui.Text;
             _search.Font = Ui.Body;
             Native.SetCue(_search, "搜索涂装 / 载具 / 文件夹");
             _search.TextChanged += delegate { RebuildGrid(); UpdateButtons(); };
-            Content.Controls.Add(_search);
+            _search.GotFocus += delegate { _searchPanel.Invalidate(); };
+            _search.LostFocus += delegate { _searchPanel.Invalidate(); };
+            _searchPanel.Controls.Add(_search);
+            _searchPanel.Resize += delegate
+            {
+                _search.SetBounds(Ui.S(12), Ui.S(7),
+                                  Math.Max(Ui.S(40), _searchPanel.Width - Ui.S(24)), Ui.S(20));
+            };
+            Content.Controls.Add(_searchPanel);
 
             _sortButton = ToolButton("排序：文件夹", false);
             _sortButton.Click += delegate
             {
-                _sortMode = (_sortMode + 1) % 3;
-                _sortButton.Text = _sortMode == 0 ? "排序：文件夹" : (_sortMode == 1 ? "排序：载具" : "排序：状态");
+                _sortMode = (_sortMode + 1) % 2;
+                _sortButton.Text = _sortMode == 0 ? "排序：文件夹" : "排序：载具";
                 RebuildGrid();
                 UpdateButtons();
             };
@@ -145,8 +247,6 @@ namespace WtSkin
             _openButton.Click += delegate { OpenSelected(); };
             _backupButton = ToolButton("备份", false);
             _backupButton.Click += delegate { BackupClicked(); };
-            _toggleButton = ToolButton("禁用 / 启用", false);
-            _toggleButton.Click += delegate { ToggleSelected(); };
             _restoreButton = ToolButton("还原备份", false);
             _restoreButton.Click += delegate { RestoreBackup(); };
             _refreshButton = ToolButton("刷新", false);
@@ -195,6 +295,107 @@ namespace WtSkin
             Content.Controls.Add(_grid);
         }
 
+        /// <summary>右栏详情：当前载具的已安装涂装列表（与主窗口「涂装包详情」同一张卡片样式）。</summary>
+        private void BuildDetailPanel()
+        {
+            _detail = new BufferedPanel();
+            // 圆角外的四角要透出页面底色；若用 CardBg 会填满矩形，圆角看起来是断的/发黑。
+            _detail.BackColor = Ui.Bg;
+            _detail.Visible = false;
+            _detail.Paint += delegate(object sender, PaintEventArgs e) { PaintDetail(e.Graphics); };
+            Content.Controls.Add(_detail);
+
+            _detailList = new BufferedPanel();
+            _detailList.BackColor = Ui.CardBg;
+            _detailList.AutoScroll = true;
+            _detailList.Visible = false;
+            _detailList.Resize += delegate { LayoutDetailRows(); };
+            _detail.Controls.Add(_detailList);
+
+            _detailSelectAll = new FlatButton();
+            _detailSelectAll.Text = "全选";
+            _detailSelectAll.Font = Ui.SmallBold;
+            _detailSelectAll.Click += delegate { DetailSelectAll(); };
+            _detail.Controls.Add(_detailSelectAll);
+
+            _detailBackup = new FlatButton();
+            _detailBackup.Text = "备份所选";
+            _detailBackup.Font = Ui.SmallBold;
+            _detailBackup.Click += delegate { DetailBackupClicked(); };
+            _detail.Controls.Add(_detailBackup);
+
+            _detailDelete = new FlatButton();
+            _detailDelete.Text = "删除所选";
+            _detailDelete.Font = Ui.SmallBold;
+            _detailDelete.Danger = true;
+            _detailDelete.Click += delegate { DetailDeleteClicked(); };
+            _detail.Controls.Add(_detailDelete);
+
+            _detailRename = new FlatButton();
+            _detailRename.Text = "重命名";
+            _detailRename.Font = Ui.SmallBold;
+            _detailRename.Click += delegate { DetailRenameClicked(); };
+            _detail.Controls.Add(_detailRename);
+
+            _detailClose = new FlatButton();
+            _detailClose.Text = "×";
+            _detailClose.Font = Ui.H1;
+            _detailClose.Click += delegate { CloseDetailPanel(); };
+            _detail.Controls.Add(_detailClose);
+
+            _detailSort = new FlatButton();
+            _detailSort.Text = "排序：名称";
+            _detailSort.Font = Ui.SmallBold;
+            _detailSort.Click += delegate
+            {
+                _detailSortMode = (_detailSortMode + 1) % 2;
+                RebuildDetailList();
+            };
+            _detail.Controls.Add(_detailSort);
+
+            _detailRecalc = new FlatButton();
+            _detailRecalc.Text = "重新计算占用";
+            _detailRecalc.Font = Ui.SmallBold;
+            _detailRecalc.Click += delegate { RecalculateOccupancy(); };
+            _detail.Controls.Add(_detailRecalc);
+
+            _detailCount = new Label();
+            _detailCount.Text = "已选 0 个";
+            _detailCount.Font = Ui.Small;
+            _detailCount.ForeColor = Ui.TextDim;
+            _detailCount.BackColor = Ui.CardBg;
+            _detailCount.AutoSize = false;
+            _detailCount.TextAlign = ContentAlignment.MiddleRight;
+            _detailCount.AutoEllipsis = true;
+            _detail.Controls.Add(_detailCount);
+
+            _detailEmpty = new Label();
+            _detailEmpty.Text = "";
+            _detailEmpty.Font = Ui.Body;
+            _detailEmpty.ForeColor = Ui.TextFaint;
+            _detailEmpty.BackColor = Ui.CardBg;
+            _detailEmpty.AutoSize = false;
+            _detailEmpty.TextAlign = ContentAlignment.MiddleCenter;
+            _detailEmpty.Visible = false;
+            _detail.Controls.Add(_detailEmpty);
+
+            // FlatButton 会继承父容器背景（详情卡现在是页面底色），
+            // 圆角外的四角必须显式用卡片色，否则每个按钮四角都会发黑。
+            FlatButton[] detailButtons = new FlatButton[]
+            {
+                _detailSelectAll, _detailBackup, _detailDelete, _detailRename,
+                _detailSort, _detailRecalc, _detailClose
+            };
+            for (int i = 0; i < detailButtons.Length; i++)
+            {
+                if (detailButtons[i] != null)
+                {
+                    detailButtons[i].BackColor = Ui.CardBg;
+                }
+            }
+            UpdateDetailButtons();
+        }
+
         private void LayoutManager()
         {
             if (Content == null || _side == null || _grid == null)
@@ -203,9 +404,14 @@ namespace WtSkin
             }
             int width = Content.Width;
             int height = Content.Height;
-            int sideW = Ui.S(196);
+            // 侧栏要放得下「已安装 N 个涂装 · 占用 X」这一整行（约 207px）。
+            int sideW = Ui.S(242);
             _side.SetBounds(0, 0, sideW, height);
-            _nationPanel.SetBounds(0, Ui.S(72), sideW, Math.Max(Ui.S(100), height - Ui.S(72)));
+            _nationPanel.SetBounds(0, Ui.S(94), sideW, Math.Max(Ui.S(100), height - Ui.S(94)));
+            if (_libStats != null)
+            {
+                _libStats.SetBounds(Ui.S(20), Ui.S(44), Math.Max(Ui.S(110), sideW - Ui.S(30)), Ui.S(18));
+            }
 
             int mainLeft = sideW;
             int mainW = Math.Max(Ui.S(360), width - sideW);
@@ -224,7 +430,8 @@ namespace WtSkin
                 searchW = Ui.S(340);
             }
             int x = mainLeft + pad;
-            _search.SetBounds(x, Ui.S(13), searchW, Ui.S(30));
+            _searchPanel.SetBounds(x, Ui.S(12), searchW, Ui.S(34));
+            _search.SetBounds(Ui.S(12), Ui.S(7), Math.Max(Ui.S(40), searchW - Ui.S(24)), Ui.S(20));
             x += searchW + gap;
             _sortButton.SetBounds(x, Ui.S(12), sortW, Ui.S(34));
             x += sortW + gap;
@@ -237,7 +444,6 @@ namespace WtSkin
             int bwClear = Ui.S(104);
             int bwOpen = Ui.S(104);
             int bwBackup = Ui.S(84);
-            int bwToggle = Ui.S(92);
             int bwRestore = Ui.S(104);
             int bwRefresh = Ui.S(72);
             int bwData = Ui.S(92);
@@ -249,8 +455,6 @@ namespace WtSkin
             bx += bwOpen + bgap;
             _backupButton.SetBounds(bx, y2, bwBackup, Ui.S(33));
             bx += bwBackup + bgap;
-            _toggleButton.SetBounds(bx, y2, bwToggle, Ui.S(33));
-            bx += bwToggle + bgap;
             _restoreButton.SetBounds(bx, y2, bwRestore, Ui.S(33));
             bx += bwRestore + bgap;
             _refreshButton.SetBounds(bx, y2, bwRefresh, Ui.S(33));
@@ -261,11 +465,175 @@ namespace WtSkin
             bx += bwDataAll + bgap;
             _metaLabel.SetBounds(bx, y2, Math.Max(Ui.S(80), mainLeft + mainW - pad - bx), Ui.S(33));
 
-            _grid.SetBounds(mainLeft + Ui.S(12), Ui.S(96),
-                            Math.Max(Ui.S(240), mainW - Ui.S(24)),
-                            Math.Max(Ui.S(120), height - Ui.S(96) - Ui.S(10)));
+            int contentTop = Ui.S(96);
+            int contentHeight = Math.Max(Ui.S(120), height - contentTop - Ui.S(10));
+            int detailW = 0;
+            if (_detailOpen && _detail != null)
+            {
+                // 右栏详情：约占主区 36%，保证列表行放得下勾选框/名称/大小/按钮。
+                detailW = (int)Math.Round(mainW * 0.36);
+                if (detailW < Ui.S(360))
+                {
+                    detailW = Ui.S(360);
+                }
+                if (detailW > Ui.S(430))
+                {
+                    detailW = Ui.S(430);
+                }
+                // 小窗口下先保证卡片网格至少 240，避免右栏压到卡片。
+                int maxDetail = mainW - Ui.S(24) - Ui.S(240) - Ui.S(12);
+                if (maxDetail < Ui.S(260))
+                {
+                    maxDetail = Ui.S(260);
+                }
+                if (detailW > maxDetail)
+                {
+                    detailW = maxDetail;
+                }
+            }
+            int gridW = mainW - Ui.S(24) - (detailW > 0 ? detailW + Ui.S(12) : 0);
+            _grid.SetBounds(mainLeft + Ui.S(12), contentTop,
+                            Math.Max(Ui.S(240), gridW), contentHeight);
+            if (_detail != null)
+            {
+                _detail.Visible = detailW > 0;
+                if (detailW > 0)
+                {
+                    _detail.SetBounds(mainLeft + mainW - pad - detailW, contentTop, detailW, contentHeight);
+                }
+            }
+            LayoutDetail();
             LayoutNationItems();
             _lastGridWidth = _grid.ClientSize.Width;
+        }
+
+        private void LayoutDetail()
+        {
+            if (_detail == null)
+            {
+                return;
+            }
+            bool show = _detailOpen;
+            _detailList.Visible = show;
+            _detailSelectAll.Visible = show;
+            _detailBackup.Visible = show;
+            _detailDelete.Visible = show;
+            _detailRename.Visible = show;
+            _detailClose.Visible = show;
+            _detailSort.Visible = show;
+            _detailRecalc.Visible = show;
+            _detailCount.Visible = show;
+            _detailEmpty.Visible = show && _detailVehicle != null && _detailVehicle.Items.Count == 0;
+            if (!show)
+            {
+                return;
+            }
+            int w = _detail.ClientSize.Width;
+            int h = _detail.ClientSize.Height;
+            if (w <= 0 || h <= 0)
+            {
+                return;
+            }
+            int pad = Ui.S(14);
+            int btnH = Ui.S(28);
+            int bx = pad;
+            int top = Ui.S(52);
+            int wAll = Math.Max(Ui.S(58), TextRenderer.MeasureText("取消勾选", Ui.SmallBold).Width + Ui.S(16));
+            _detailSelectAll.SetBounds(bx, top, wAll, btnH);
+            bx += wAll + Ui.S(6);
+            int wBackup = Math.Max(Ui.S(76), TextRenderer.MeasureText("备份所选", Ui.SmallBold).Width + Ui.S(16));
+            _detailBackup.SetBounds(bx, top, wBackup, btnH);
+            bx += wBackup + Ui.S(6);
+            int wDelete = Math.Max(Ui.S(76), TextRenderer.MeasureText("删除所选", Ui.SmallBold).Width + Ui.S(16));
+            _detailDelete.SetBounds(bx, top, wDelete, btnH);
+            bx += wDelete + Ui.S(6);
+            int wRename = Math.Max(Ui.S(64), TextRenderer.MeasureText("重命名", Ui.SmallBold).Width + Ui.S(16));
+            _detailRename.SetBounds(bx, top, wRename, btnH);
+            _detailClose.SetBounds(w - pad - Ui.S(26), Ui.S(12), Ui.S(26), Ui.S(26));
+            int countW = Math.Max(Ui.S(64), TextRenderer.MeasureText("已选 99 个", Ui.SmallBold).Width + Ui.S(10));
+
+            int rowTop = top + btnH + Ui.S(8);
+            int wSort = Math.Max(Ui.S(84), TextRenderer.MeasureText("排序：名称", Ui.SmallBold).Width + Ui.S(16));
+            int wRecalc = Math.Max(Ui.S(96), TextRenderer.MeasureText("重新计算占用", Ui.SmallBold).Width + Ui.S(16));
+            bool narrow = w < Ui.S(348);
+            if (narrow)
+            {
+                // 窄右栏：勾选/备份/删除只占第一行，「已选 N 个」挪到第二行右侧，避免压住按钮。
+                int recalcX = Math.Max(pad + wSort + Ui.S(6), w - pad - wRecalc);
+                _detailRecalc.SetBounds(recalcX, rowTop, wRecalc, Ui.S(26));
+                int countX = Math.Max(pad + wSort + Ui.S(6), recalcX - Ui.S(6) - countW);
+                _detailCount.SetBounds(countX, rowTop, countW, Ui.S(26));
+            }
+            else
+            {
+                _detailCount.SetBounds(w - pad - countW, top, countW, btnH);
+                _detailRecalc.SetBounds(w - pad - wRecalc, rowTop, wRecalc, Ui.S(26));
+            }
+            _detailSort.SetBounds(pad, rowTop, wSort, Ui.S(26));
+
+            int listTop = rowTop + Ui.S(26) + Ui.S(8);
+            int listH = Math.Max(Ui.S(60), h - listTop - Ui.S(10));
+            _detailList.SetBounds(pad, listTop, Math.Max(Ui.S(80), w - pad * 2), listH);
+            int emptyH = Ui.S(56);
+            _detailEmpty.SetBounds(pad, listTop + Math.Max(0, (listH - emptyH) / 2),
+                                   Math.Max(Ui.S(80), w - pad * 2), emptyH);
+            LayoutDetailRows();
+        }
+
+        /// <summary>重新按列表宽度摆放每一行（列表宽度变化时调用）。</summary>
+        private void LayoutDetailRows()
+        {
+            if (_detailList == null)
+            {
+                return;
+            }
+            int reserve = SystemInformation.VerticalScrollBarWidth + Ui.S(4);
+            int rowW = Math.Max(Ui.S(160), _detailList.ClientSize.Width - reserve);
+            int top = 0;
+            int gap = Ui.S(2);
+            for (int i = 0; i < _detailRows.Count; i++)
+            {
+                ManagerSkinRow row = _detailRows[i];
+                row.SetBounds(0, top, rowW, RowHeight(row));
+                top += row.Height + gap;
+            }
+            try
+            {
+                _detailList.AutoScrollMinSize = new Size(0, top + Ui.S(4));
+            }
+            catch
+            {
+            }
+        }
+
+        private static int RowHeight(ManagerSkinRow row)
+        {
+            return row != null && row.Item != null && row.Item.Legacy ? Ui.S(50) : Ui.S(42);
+        }
+
+        private void PaintDetail(Graphics g)
+        {
+            if (_detail == null)
+            {
+                return;
+            }
+            Ui.Smooth(g);
+            Rectangle r = new Rectangle(0, 0, _detail.Width - 1, _detail.Height - 1);
+            Ui.FillRound(g, r, Ui.RCard, Ui.CardBg);
+            Ui.DrawRound(g, r, Ui.RCard, Ui.Stroke, Ui.BorderWidth);
+            string title = "涂装列表";
+            if (_detailVehicle != null && !string.IsNullOrEmpty(_detailVehicle.Title))
+            {
+                title = "涂装列表 · " + _detailVehicle.Title;
+            }
+            Ui.DrawText(g, title, Ui.SmallBold, Ui.TextSecondary,
+                    new Rectangle(Ui.S(14), Ui.S(14), Math.Max(Ui.S(60), _detail.Width - Ui.S(28)), Ui.S(20)),
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix |
+                    TextFormatFlags.EndEllipsis);
+            using (Pen pen = new Pen(Ui.LineSoft, Ui.BorderWidth))
+            {
+                g.DrawLine(pen, Ui.S(14), Ui.S(44), _detail.Width - Ui.S(14), Ui.S(44));
+            }
         }
 
         private void LayoutNationItems()
@@ -285,6 +653,7 @@ namespace WtSkin
 
         private void Reload()
         {
+            string keepDetail = _detailOpen ? _detailFolder : "";
             _all.Clear();
             _all.AddRange(InstalledSkins.Scan(Config.UserSkinsDir));
             NameMap.ApplyUniqueTitles(_all);
@@ -292,7 +661,7 @@ namespace WtSkin
             HashSet<string> stillSelected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < _all.Count; i++)
             {
-                string key = BaseFolder(_all[i].Folder);
+                string key = _all[i].Folder;
                 if (_selectedBases.Contains(key))
                 {
                     _all[i].Selected = true;
@@ -301,22 +670,30 @@ namespace WtSkin
             }
             _selectedBases = stillSelected;
 
+            // 刷新/导入/删除后都重算占用：清空缓存，重新在后台统计。
+            ManagerSkins.ClearSizeCache();
+            _library = ManagerSkins.BuildLibrary(_all);
+
+            _detailVehicle = null;
+            _detailFolder = "";
+            _detailOpen = false;
+            if (keepDetail.Length > 0)
+            {
+                ManagerVehicleEntry entry = _library.Find(keepDetail);
+                if (entry != null)
+                {
+                    _detailVehicle = entry;
+                    _detailFolder = entry.Folder;
+                    _detailOpen = true;
+                }
+            }
+
             BuildNationItems();
             RebuildGrid();
+            RebuildDetailList();
             UpdateButtons();
-        }
-
-        private static string BaseFolder(string folder)
-        {
-            if (folder == null)
-            {
-                return "";
-            }
-            if (folder.EndsWith(InstalledSkins.BanSuffix, StringComparison.OrdinalIgnoreCase))
-            {
-                return folder.Substring(0, folder.Length - InstalledSkins.BanSuffix.Length);
-            }
-            return folder;
+            UpdateLibraryStats();
+            StartMeasure();
         }
 
         private void BuildNationItems()
@@ -459,14 +836,6 @@ namespace WtSkin
                         return r;
                     }
                 }
-                else if (_sortMode == 2)
-                {
-                    int r = a.Disabled.CompareTo(b.Disabled);
-                    if (r != 0)
-                    {
-                        return r;
-                    }
-                }
                 return string.Compare(a.Folder, b.Folder, StringComparison.OrdinalIgnoreCase);
             });
             return list;
@@ -551,6 +920,8 @@ namespace WtSkin
                 {
                     SkinCard card = row[c];
                     card.SetBounds(pad + c * (cardW + gap), top, cardW, rowH);
+                    card.DetailOpen = _detailOpen &&
+                        string.Equals(card.Skin.Folder, _detailFolder, StringComparison.OrdinalIgnoreCase);
                     InstalledSkin capturedSkin = card.Skin;
                     SkinCard capturedCard = card;
                     card.SelectionChanged += delegate
@@ -558,14 +929,15 @@ namespace WtSkin
                         capturedSkin.Selected = capturedCard.Selected;
                         if (capturedCard.Selected)
                         {
-                            _selectedBases.Add(BaseFolder(capturedSkin.Folder));
+                            _selectedBases.Add(capturedSkin.Folder);
                         }
                         else
                         {
-                            _selectedBases.Remove(BaseFolder(capturedSkin.Folder));
+                            _selectedBases.Remove(capturedSkin.Folder);
                         }
                         UpdateButtons();
                     };
+                    card.DetailsRequested += delegate { ToggleVehicleDetail(capturedSkin); };
                     _grid.Controls.Add(card);
                     _cards.Add(card);
                 }
@@ -587,17 +959,32 @@ namespace WtSkin
                 _grid.Controls.Add(empty);
             }
 
-            int contentHeight = Math.Max(0, top + Ui.S(4));
+            // 以实际子控件底边为准，防止逐行累加误差把滚动范围越撑越大（无限下滑）。
+            int maxBottom = 0;
+            for (int i = 0; i < _grid.Controls.Count; i++)
+            {
+                Control child = _grid.Controls[i];
+                if (child != null && child.Visible)
+                {
+                    maxBottom = Math.Max(maxBottom, child.Bottom);
+                }
+            }
+            int contentHeight = Math.Max(0, Math.Max(top, maxBottom) + Ui.S(4));
+            // 再按行数夹一次上限，任何异常行高都不会产生超大空白滚动区。
+            int rows = list.Count == 0 ? 1 : (list.Count + Math.Max(1, columns) - 1) / Math.Max(1, columns);
+            int cap = rows * Ui.S(260) + Ui.S(400);
+            if (contentHeight > cap)
+            {
+                contentHeight = cap;
+            }
             _grid.AutoScrollMinSize = new Size(0, contentHeight);
             _grid.ResumeLayout();
             _rebuilding = false;
             try
             {
-                if (keepScroll > 0)
-                {
-                    int maxScroll = Math.Max(0, contentHeight - _grid.ClientSize.Height);
-                    _grid.AutoScrollPosition = new Point(0, Math.Min(keepScroll, maxScroll));
-                }
+                int maxScroll = Math.Max(0, contentHeight - _grid.ClientSize.Height);
+                int target = Math.Max(0, Math.Min(keepScroll, maxScroll));
+                _grid.AutoScrollPosition = new Point(0, target);
             }
             catch
             {
@@ -656,11 +1043,11 @@ namespace WtSkin
                 visible[i].Selected = !all;
                 if (!all)
                 {
-                    _selectedBases.Add(BaseFolder(visible[i].Folder));
+                    _selectedBases.Add(visible[i].Folder);
                 }
                 else
                 {
-                    _selectedBases.Remove(BaseFolder(visible[i].Folder));
+                    _selectedBases.Remove(visible[i].Folder);
                 }
             }
             for (int i = 0; i < _cards.Count; i++)
@@ -694,37 +1081,10 @@ namespace WtSkin
             bool any = selected > 0;
             _clearButton.Enabled = any;
             _openButton.Enabled = any;
-            _toggleButton.Enabled = any;
             _restoreButton.Enabled = true;
             _backupButton.Enabled = _all.Count > 0;
             _updateButton.Enabled = !_updating;
             _updateAllButton.Enabled = !_updating;
-
-            if (any)
-            {
-                bool allDisabled = true;
-                bool allEnabled = true;
-                for (int i = 0; i < _all.Count; i++)
-                {
-                    if (!_all[i].Selected)
-                    {
-                        continue;
-                    }
-                    if (_all[i].Disabled)
-                    {
-                        allEnabled = false;
-                    }
-                    else
-                    {
-                        allDisabled = false;
-                    }
-                }
-                _toggleButton.Text = allDisabled ? "启用" : (allEnabled ? "禁用" : "禁用 / 启用");
-            }
-            else
-            {
-                _toggleButton.Text = "禁用 / 启用";
-            }
             if (Content != null && Content.Width < Ui.S(1000))
             {
                 _stats.Text = "共" + _all.Count + " · 筛" + visible.Count + " · 选" + selected;
@@ -981,7 +1341,7 @@ namespace WtSkin
             }
             for (int i = 0; i < selected.Count; i++)
             {
-                _selectedBases.Remove(BaseFolder(selected[i].Folder));
+                _selectedBases.Remove(selected[i].Folder);
             }
             Config.Log("清空涂装 " + selected.Count + " 个");
             Reload();
@@ -1318,111 +1678,501 @@ namespace WtSkin
             }
         }
 
-        private void ToggleSelected()
-        {
-            List<InstalledSkin> selected = SelectedSkins();
-            if (selected.Count == 0)
-            {
-                return;
-            }
-            string list = "";
-            for (int i = 0; i < selected.Count; i++)
-            {
-                string target = selected[i].Disabled
-                    ? selected[i].Path.Substring(0, selected[i].Path.Length - InstalledSkins.BanSuffix.Length)
-                    : selected[i].Path + InstalledSkins.BanSuffix;
-                list += "· " + selected[i].Path + "\r\n  → " + target + "\r\n";
-            }
-            string text = "将对 " + selected.Count + " 个涂装切换禁用/启用：" +
-                          "\r\n\r\n" + list +
-                          "\r\n只重命名文件夹（追加/去掉 " + InstalledSkins.BanSuffix + "），不改目录内容。";
-            if (MessageBox.Show(this, text, "禁用 / 启用", MessageBoxButtons.OKCancel,
-                                MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.OK)
-            {
-                return;
-            }
+        // ---------------- 右栏涂装列表：加载、选择与排序 ----------------
 
-            List<InstalledSkin> done = new List<InstalledSkin>();
-            List<bool> doneWasDisabled = new List<bool>();
-            string error = null;
-            for (int i = 0; i < selected.Count; i++)
+        /// <summary>点载具卡片（勾选框以外区域）：显示该载具的涂装列表；再点一次收起。</summary>
+        private void ToggleVehicleDetail(InstalledSkin skin)
+        {
+            if (skin == null)
             {
-                bool wasDisabled = selected[i].Disabled;
-                string message;
-                bool ok = wasDisabled
-                    ? InstalledSkins.Enable(selected[i], out message)
-                    : InstalledSkins.Disable(selected[i], out message);
-                if (!ok)
-                {
-                    error = selected[i].Folder + "：" + message;
-                    break;
-                }
-                ApplyToggleState(selected[i], !wasDisabled);
-                done.Add(selected[i]);
-                doneWasDisabled.Add(wasDisabled);
+                return;
             }
-            if (error != null)
+            if (_detailOpen && string.Equals(skin.Folder, _detailFolder, StringComparison.OrdinalIgnoreCase))
             {
-                string rollbackError = null;
-                for (int i = done.Count - 1; i >= 0; i--)
-                {
-                    string message;
-                    bool ok = doneWasDisabled[i]
-                        ? InstalledSkins.Disable(done[i], out message)
-                        : InstalledSkins.Enable(done[i], out message);
-                    if (ok)
-                    {
-                        ApplyToggleState(done[i], doneWasDisabled[i]);
-                    }
-                    else if (rollbackError == null)
-                    {
-                        rollbackError = done[i].Folder + "：" + message;
-                    }
-                }
-                string note = "操作失败，已回滚：" + error;
-                if (rollbackError != null)
-                {
-                    note += "\r\n回滚时又遇到问题：" + rollbackError;
-                }
-                MessageBox.Show(this, note, "涂装状态", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                _detailOpen = false;
+                _detailFolder = "";
+                _detailVehicle = null;
+                RebuildDetailList();
+                UpdateCardDetailFlags();
+                ScheduleLayout();
+                return;
             }
-            else
-            {
-                Config.Log("切换禁用/启用 " + done.Count + " 个");
-            }
-            Reload();
+            ManagerVehicleEntry entry = _library == null ? null : _library.Find(skin.Folder);
+            _detailOpen = true;
+            _detailFolder = skin.Folder;
+            _detailVehicle = entry;
+            RebuildDetailList();
+            UpdateCardDetailFlags();
+            ScheduleLayout();
         }
 
-        /// <summary>重命名成功后同步对象状态，回滚时按真实状态反向操作。</summary>
-        private static void ApplyToggleState(InstalledSkin skin, bool disabled)
+        /// <summary>
+        /// 展开/收起右栏会改变卡片网格宽度，需要重排并重建卡片。
+        /// 这个动作由卡片点击触发，直接重排会在卡片自己的事件里把它 Dispose 掉，所以推迟到消息循环下一拍。
+        /// </summary>
+        private void ScheduleLayout()
         {
-            string path = skin.Path;
-            string folder = skin.Folder;
-            if (disabled)
+            try
             {
-                if (!path.EndsWith(InstalledSkins.BanSuffix, StringComparison.OrdinalIgnoreCase))
+                if (IsHandleCreated)
                 {
-                    path += InstalledSkins.BanSuffix;
+                    BeginInvoke((MethodInvoker)delegate
+                    {
+                        if (!IsDisposed)
+                        {
+                            LayoutManager();
+                        }
+                    });
+                    return;
                 }
-                if (!folder.EndsWith(InstalledSkins.BanSuffix, StringComparison.OrdinalIgnoreCase))
-                {
-                    folder += InstalledSkins.BanSuffix;
-                }
+            }
+            catch
+            {
+            }
+            LayoutManager();
+        }
+
+        private void UpdateCardDetailFlags()
+        {
+            for (int i = 0; i < _cards.Count; i++)
+            {
+                _cards[i].DetailOpen = _detailOpen &&
+                    string.Equals(_cards[i].Skin.Folder, _detailFolder, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private void RebuildDetailList()
+        {
+            if (_detail == null || _detailList == null)
+            {
+                return;
+            }
+            _detailList.SuspendLayout();
+            for (int i = _detailList.Controls.Count - 1; i >= 0; i--)
+            {
+                _detailList.Controls[i].Dispose();
+            }
+            _detailList.Controls.Clear();
+            _detailRows.Clear();
+            try
+            {
+                _detailList.AutoScrollPosition = new Point(0, 0);
+            }
+            catch
+            {
+            }
+
+            if (!_detailOpen || _detailVehicle == null)
+            {
+                _detailEmpty.Text = "";
+                _detailList.ResumeLayout();
+                LayoutDetail();
+                _detail.Invalidate();
+                UpdateDetailButtons();
+                return;
+            }
+
+            List<ManagerSkinItem> items = new List<ManagerSkinItem>(_detailVehicle.Items);
+            items.Sort(CompareDetailItems);
+            for (int i = 0; i < items.Count; i++)
+            {
+                ManagerSkinRow row = new ManagerSkinRow();
+                row.Item = items[i];
+                row.Height = RowHeight(row);
+                row.SelectionChanged += delegate { UpdateDetailButtons(); };
+                _detailList.Controls.Add(row);
+                _detailRows.Add(row);
+            }
+            if (_detailVehicle.Unreadable)
+            {
+                _detailEmpty.Text = "无法读取这个载具目录（可能没有访问权限）。";
+            }
+            else if (items.Count == 0)
+            {
+                _detailEmpty.Text = "这个载具还没有涂装。\r\n在游戏里为该载具创建涂装示例后，涂装会显示在这里。";
             }
             else
             {
-                if (path.EndsWith(InstalledSkins.BanSuffix, StringComparison.OrdinalIgnoreCase))
+                _detailEmpty.Text = "";
+            }
+            _detailList.ResumeLayout();
+            LayoutDetailRows();
+            LayoutDetail();
+            _detail.Invalidate();
+            UpdateDetailButtons();
+        }
+
+        /// <summary>排序：名称升序（默认）；大小降序，计算中的条目排在末尾。</summary>
+        private int CompareDetailItems(ManagerSkinItem a, ManagerSkinItem b)
+        {
+            if (_detailSortMode == 1)
+            {
+                bool ka = a.Size >= 0;
+                bool kb = b.Size >= 0;
+                if (ka != kb)
                 {
-                    path = path.Substring(0, path.Length - InstalledSkins.BanSuffix.Length);
+                    return ka ? -1 : 1;
                 }
-                if (folder.EndsWith(InstalledSkins.BanSuffix, StringComparison.OrdinalIgnoreCase))
+                if (ka && a.Size != b.Size)
                 {
-                    folder = folder.Substring(0, folder.Length - InstalledSkins.BanSuffix.Length);
+                    return b.Size.CompareTo(a.Size);
                 }
             }
-            skin.Path = path;
-            skin.Folder = folder;
-            skin.Disabled = disabled;
+            return string.Compare(a.Name, b.Name, StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        private List<ManagerSkinItem> SelectedDetailItems()
+        {
+            List<ManagerSkinItem> list = new List<ManagerSkinItem>();
+            if (_detailVehicle == null)
+            {
+                return list;
+            }
+            for (int i = 0; i < _detailVehicle.Items.Count; i++)
+            {
+                ManagerSkinItem item = _detailVehicle.Items[i];
+                if (item.CanSelect && item.Selected)
+                {
+                    list.Add(item);
+                }
+            }
+            return list;
+        }
+
+        private void UpdateDetailButtons()
+        {
+            if (_detailSelectAll == null)
+            {
+                return;
+            }
+            int selectable = 0;
+            int selected = 0;
+            if (_detailVehicle != null)
+            {
+                for (int i = 0; i < _detailVehicle.Items.Count; i++)
+                {
+                    ManagerSkinItem item = _detailVehicle.Items[i];
+                    if (!item.CanSelect)
+                    {
+                        continue;
+                    }
+                    selectable++;
+                    if (item.Selected)
+                    {
+                        selected++;
+                    }
+                }
+            }
+            bool all = selectable > 0 && selected == selectable;
+            bool open = _detailOpen && _detailVehicle != null;
+            _detailSelectAll.Text = all ? "取消勾选" : "全选";
+            _detailSelectAll.Primary = all;
+            _detailSelectAll.Enabled = open && selectable > 0;
+            _detailBackup.Enabled = open && selected > 0;
+            _detailDelete.Enabled = open && selected > 0;
+            _detailRename.Enabled = open && selected == 1;
+            _detailSort.Enabled = open;
+            _detailRecalc.Enabled = open;
+            _detailCount.Text = "已选 " + selected + " 个";
+            _detailSort.Text = _detailSortMode == 0 ? "排序：名称" : "排序：大小";
+        }
+
+        private void DetailSelectAll()
+        {
+            if (_detailVehicle == null)
+            {
+                return;
+            }
+            int selectable = 0;
+            int selected = 0;
+            for (int i = 0; i < _detailVehicle.Items.Count; i++)
+            {
+                ManagerSkinItem item = _detailVehicle.Items[i];
+                if (!item.CanSelect)
+                {
+                    continue;
+                }
+                selectable++;
+                if (item.Selected)
+                {
+                    selected++;
+                }
+            }
+            bool all = selectable > 0 && selected == selectable;
+            for (int i = 0; i < _detailVehicle.Items.Count; i++)
+            {
+                ManagerSkinItem item = _detailVehicle.Items[i];
+                if (item.CanSelect)
+                {
+                    item.Selected = !all;
+                }
+            }
+            for (int i = 0; i < _detailRows.Count; i++)
+            {
+                _detailRows[i].Invalidate();
+            }
+            UpdateDetailButtons();
+        }
+
+        /// <summary>关闭右栏展开列表（不影响载具勾选状态）。</summary>
+        private void CloseDetailPanel()
+        {
+            _detailOpen = false;
+            _detailFolder = "";
+            _detailVehicle = null;
+            RebuildDetailList();
+            UpdateCardDetailFlags();
+            ScheduleLayout();
+        }
+
+        private void DetailRenameClicked()
+        {
+            List<ManagerSkinItem> selected = SelectedDetailItems();
+            if (selected.Count != 1 || _detailVehicle == null)
+            {
+                return;
+            }
+            ManagerSkinItem item = selected[0];
+            if (item.Legacy)
+            {
+                MessageBox.Show(this, "这是载具目录本身，不能重命名。", "重命名",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            using (RenameSkinForm form = new RenameSkinForm(item.FolderName))
+            {
+                if (form.ShowDialog(this) != DialogResult.OK)
+                {
+                    return;
+                }
+                string name = form.Value;
+                string error = SkinNameRules.Validate(name);
+                if (error.Length > 0)
+                {
+                    MessageBox.Show(this, error, "重命名", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (string.Equals(name, item.FolderName, StringComparison.Ordinal))
+                {
+                    return;
+                }
+                string parent = Path.GetDirectoryName(item.Path);
+                string target = Path.Combine(parent, name);
+                if (Directory.Exists(target))
+                {
+                    MessageBox.Show(this, "目标文件夹已存在：\r\n\r\n" + target, "重命名",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (File.Exists(target))
+                {
+                    MessageBox.Show(this, "目标同名文件已存在，不能重命名：\r\n\r\n" + target, "重命名",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                try
+                {
+                    Directory.Move(item.Path, target);
+                    Config.Log("重命名涂装：" + item.Path + " → " + target);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "重命名失败：\r\n\r\n" + ex.Message, "重命名",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+            string keepFolder = _detailFolder;
+            bool keepOpen = _detailOpen;
+            Reload();
+            if (keepOpen && _library != null)
+            {
+                ManagerVehicleEntry entry = _library.Find(keepFolder);
+                _detailOpen = entry != null;
+                _detailFolder = entry != null ? keepFolder : "";
+                _detailVehicle = entry;
+                RebuildDetailList();
+                UpdateCardDetailFlags();
+                ScheduleLayout();
+            }
+        }
+
+        // ---------------- 右栏涂装列表：备份与删除 ----------------
+
+        private void DetailBackupClicked()
+        {
+            List<ManagerSkinItem> selected = SelectedDetailItems();
+            if (selected.Count == 0 || _detailVehicle == null)
+            {
+                return;
+            }
+            string root;
+            int copied;
+            string error;
+            if (!ManagerSkins.BackupItems(selected, _detailVehicle.Folder, out root, out copied, out error))
+            {
+                MessageBox.Show(this, "备份失败：\r\n\r\n" + error, "备份所选",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            Config.Log("备份涂装 " + copied + " 个 -> " + root + "（载具 " + _detailVehicle.Folder + "）");
+            MessageBox.Show(this, "已备份 " + copied + " 个涂装到：\r\n\r\n" + root +
+                            "\r\n\r\n原目录未做改动。", "备份完成",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void DetailDeleteClicked()
+        {
+            List<ManagerSkinItem> selected = SelectedDetailItems();
+            if (selected.Count == 0 || _detailVehicle == null)
+            {
+                return;
+            }
+            using (DeleteSkinsConfirmForm form = new DeleteSkinsConfirmForm(_detailVehicle, selected))
+            {
+                if (form.ShowDialog(this) != DialogResult.OK)
+                {
+                    return;
+                }
+                if (form.BackupFirst)
+                {
+                    string root;
+                    int copied;
+                    string error;
+                    if (!ManagerSkins.BackupItems(selected, _detailVehicle.Folder, out root, out copied, out error))
+                    {
+                        MessageBox.Show(this, "备份失败，未执行删除：\r\n\r\n" + error, "删除所选",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                }
+            }
+            List<string> deleted = new List<string>();
+            List<string> skipped = new List<string>();
+            string vehicleFolder = _detailVehicle.Folder;
+            string vehiclePath = _detailVehicle.Path;
+            ManagerSkins.DeleteItems(selected, vehiclePath, deleted, skipped);
+            Config.Log("删除涂装 " + deleted.Count + " 个，跳过 " + skipped.Count + " 个（载具 " + vehicleFolder + "）");
+            // 刷新列表与左栏总占用；载具目录本身保留，全部删完时右栏显示空态。
+            Reload();
+            string text = "已删除 " + deleted.Count + " 个涂装。";
+            if (skipped.Count > 0)
+            {
+                text += "\r\n跳过 " + skipped.Count + " 个（可能被占用或无权限）：\r\n" +
+                        string.Join("\r\n", skipped.ToArray());
+            }
+            text += "\r\n\r\n载具目录本身已保留。";
+            MessageBox.Show(this, text, "删除所选", MessageBoxButtons.OK,
+                            skipped.Count > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+        }
+
+        // ---------------- 空间统计（后台线程 + 内存缓存） ----------------
+
+        private void StartMeasure()
+        {
+            if (_library == null)
+            {
+                return;
+            }
+            int generation = ManagerSkins.CacheGeneration;
+            _measureGeneration = generation;
+            if (!_library.HasPendingSizes())
+            {
+                UpdateLibraryStats();
+                return;
+            }
+            ManagerLibrary lib = _library;
+            ManagerSkins.MeasureAsync(lib, generation,
+                delegate(ManagerVehicleEntry entry) { PostMeasureVehicle(generation, entry); },
+                delegate { PostMeasureDone(generation); });
+        }
+
+        private void PostMeasureVehicle(int generation, ManagerVehicleEntry entry)
+        {
+            try
+            {
+                BeginInvoke((MethodInvoker)delegate
+                {
+                    if (IsDisposed || generation != _measureGeneration)
+                    {
+                        return;
+                    }
+                    if (_detailVehicle != null && entry != null &&
+                        string.Equals(_detailVehicle.Folder, entry.Folder, StringComparison.OrdinalIgnoreCase))
+                    {
+                        for (int i = 0; i < _detailRows.Count; i++)
+                        {
+                            _detailRows[i].Invalidate();
+                        }
+                    }
+                });
+            }
+            catch
+            {
+            }
+        }
+
+        private void PostMeasureDone(int generation)
+        {
+            try
+            {
+                BeginInvoke((MethodInvoker)delegate
+                {
+                    if (IsDisposed || generation != _measureGeneration)
+                    {
+                        return;
+                    }
+                    UpdateLibraryStats();
+                    if (_detailOpen && _detailSortMode == 1)
+                    {
+                        // 按大小排序时，尺寸陆续到位后顺序会变，统计完成后重排一次。
+                        RebuildDetailList();
+                    }
+                    else
+                    {
+                        for (int i = 0; i < _detailRows.Count; i++)
+                        {
+                            _detailRows[i].Invalidate();
+                        }
+                    }
+                    UpdateDetailButtons();
+                });
+            }
+            catch
+            {
+            }
+        }
+
+        private void RecalculateOccupancy()
+        {
+            if (_library == null)
+            {
+                return;
+            }
+            ManagerSkins.ClearSizeCache();
+            _library.ResetSizes();
+            UpdateLibraryStats();
+            for (int i = 0; i < _detailRows.Count; i++)
+            {
+                _detailRows[i].Invalidate();
+            }
+            UpdateDetailButtons();
+            StartMeasure();
+        }
+
+        private void UpdateLibraryStats()
+        {
+            if (_libStats == null)
+            {
+                return;
+            }
+            if (_library == null)
+            {
+                _libStats.Text = "已安装 0 个涂装 · 占用 计算中…";
+                return;
+            }
+            _libStats.Text = "已安装 " + _library.SkinCount + " 个涂装 · 占用 " +
+                             ManagerSkins.FormatSize(_library.TotalBytes);
         }
 
         private static void CopyDirectory(string source, string target)
@@ -1528,7 +2278,10 @@ namespace WtSkin
         }
     }
 
-    /// <summary>管理卡片：左图右文，标题两行，四行键值（国家/等级·权重/机型代号/文件夹），状态标签，右上角圆形勾选框。</summary>
+    /// <summary>
+    /// 管理卡片：左图右文，标题两行，四行键值（国家/等级·权重/机型代号/文件夹），右上角圆形勾选框。
+    /// 勾选框只切换载具选中；卡片其余区域负责打开右栏涂装列表（再点收起）。
+    /// </summary>
     internal class SkinCard : Control
     {
         private const int Pad = 11;
@@ -1546,9 +2299,12 @@ namespace WtSkin
         private bool _selected;
         private bool _hover;
         private bool _checkHot;
+        private bool _detailOpen;
         public InstalledSkin Skin;
 
         public event EventHandler SelectionChanged;
+        /// <summary>点了勾选框以外的区域：请求在右栏展开该载具的涂装列表。</summary>
+        public event EventHandler DetailsRequested;
 
         public SkinCard()
         {
@@ -1558,6 +2314,21 @@ namespace WtSkin
             BackColor = Ui.Bg;
             Cursor = Cursors.Hand;
             TabStop = true;
+        }
+
+        /// <summary>右栏当前是否正在显示这个载具的涂装列表（只影响描边，与勾选无关）。</summary>
+        public bool DetailOpen
+        {
+            get { return _detailOpen; }
+            set
+            {
+                if (_detailOpen == value)
+                {
+                    return;
+                }
+                _detailOpen = value;
+                Invalidate();
+            }
         }
 
         public bool Selected
@@ -1635,15 +2406,14 @@ namespace WtSkin
             int titleH = Ui.S(TitleLineH) + FullLines() * Ui.S(FullLineH);
             int rows = Ui.S(RowH) * 2 + Math.Max(Ui.S(RowH), ModelLines() * Ui.S(FullLineH)) +
                        Math.Max(Ui.S(RowH), FolderLines() * Ui.S(FullLineH));
-            int statusH = Ui.S(20) + Ui.S(4);
-            int total = Ui.S(Pad) * 2 + Ui.S(BandH) + Ui.S(10) + titleH + Ui.S(8) + rows + statusH;
-            if (total < Ui.S(250))
+            int total = Ui.S(Pad) * 2 + Ui.S(BandH) + Ui.S(10) + titleH + Ui.S(8) + rows;
+            if (total < Ui.S(230))
             {
-                total = Ui.S(250);
+                total = Ui.S(230);
             }
-            if (total > Ui.S(340))
+            if (total > Ui.S(330))
             {
-                total = Ui.S(340);
+                total = Ui.S(330);
             }
             return total;
         }
@@ -1684,9 +2454,17 @@ namespace WtSkin
         {
             if (e.Button == MouseButtons.Left)
             {
-                // 卡片任意位置（含右上角勾选框）只在这一次点击里切换一次。
                 Focus();
-                Selected = !Selected;
+                // 只有右上角勾选框切换载具选中；其余区域打开/收起右栏涂装列表。
+                if (CheckHitRect().Contains(e.Location))
+                {
+                    Selected = !Selected;
+                    return;
+                }
+                if (DetailsRequested != null)
+                {
+                    DetailsRequested(this, EventArgs.Empty);
+                }
                 return;
             }
             base.OnMouseDown(e);
@@ -1744,7 +2522,6 @@ namespace WtSkin
         {
             Graphics g = e.Graphics;
             Ui.Smooth(g);
-            bool disabled = Skin != null && Skin.Disabled;
 
             Rectangle shadow = new Rectangle(Ui.S(2), Ui.S(3), Width - Ui.S(5), Height - Ui.S(5));
             Ui.FillRound(g, shadow, Ui.S(10), Color.FromArgb(18, 0, 0, 0));
@@ -1798,21 +2575,13 @@ namespace WtSkin
             DrawKeyValue(g, "机型代号", Skin == null ? "" : Skin.UnitId, "", textX, textW, ref y, false);
             DrawFolder(g, textX, textW, ref y);
 
-            if (disabled)
-            {
-                Ui.FillRound(g, r, Ui.S(10), Color.FromArgb(72, Ui.Bg));
-            }
-
-            Color statusColor = disabled ? Ui.Bad : Ui.Good;
-            Color statusFill = disabled ? Ui.BadBg : Ui.GoodBg;
-            string statusText = disabled ? "已禁用" : "已启用";
-            int statusW = TextRenderer.MeasureText(statusText, Ui.SmallBold).Width + Ui.S(14);
-            Rectangle pill = new Rectangle(textX, Math.Min(y + Ui.S(3), Height - Ui.S(26)), statusW, Ui.S(20));
-            Ui.FillRound(g, pill, Ui.S(10), statusFill);
-            Ui.DrawRound(g, pill, Ui.S(10), statusColor, 1f);
-            Ui.DrawText(g, statusText, Ui.SmallBold, statusColor, pill, Ui.Center);
-
             Ui.DrawRound(g, r, Ui.S(10), _selected ? Ui.Accent : Ui.LineSoft, _selected ? 1.6f : 1f);
+            if (_detailOpen)
+            {
+                // 右栏正在显示这个载具：左侧加一道强调色，便于和勾选框区分开。
+                Ui.FillRound(g, new Rectangle(0, Ui.S(14), Math.Max(2, Ui.S(3)), Height - Ui.S(28)),
+                             Ui.S(2), Ui.Accent);
+            }
             if (Focused && !_selected)
             {
                 Ui.DrawRound(g, new Rectangle(Ui.S(2), Ui.S(2), Width - Ui.S(7), Height - Ui.S(7)),
@@ -1935,7 +2704,7 @@ namespace WtSkin
             : base("清空文件夹", 660, 520)
         {
             MakeLabel("将删除 " + skins.Count + " 个涂装", 24, 12, 600, 26, Ui.H1, Ui.Bad);
-            MakeLabel("作用范围仅限当前勾选的涂装；已禁用的涂装也会一并删除。", 24, 40, 610, 20, Ui.Small, Ui.TextDim);
+            MakeLabel("作用范围仅限当前勾选的载具目录；载具目录里的涂装子目录会一并删除。", 24, 40, 610, 20, Ui.Small, Ui.TextDim);
 
             ListBox list = new ListBox();
             list.Left = Ui.S(24);
@@ -1972,6 +2741,154 @@ namespace WtSkin
             FlatButton cancel = MakeButton("取消", 426, 418, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
             FlatButton ok = MakeButton("删除", 530, 418, 96, false);
+            ok.Danger = true;
+            ok.Click += delegate { DialogResult = DialogResult.OK; Close(); };
+            AcceptButton = null;
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.Enter)
+            {
+                DialogResult = DialogResult.Cancel;
+                Close();
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+    }
+
+    /// <summary>
+    /// 删除勾选涂装的二次确认：列出名称、大小、数量；提示载具目录本身会保留；
+    /// 「先备份再删除」默认勾选；默认按钮为取消（Enter / Esc 都执行取消）。
+    /// </summary>
+    /// <summary>重命名涂装子目录：实时校验名称，默认焦点在取消上。</summary>
+    internal class RenameSkinForm : ModalForm
+    {
+        public string Value = "";
+        private readonly TextBox _box;
+        private readonly Label _error;
+        private FlatButton _ok;
+
+        public RenameSkinForm(string current)
+            : base("重命名涂装", 540, 300)
+        {
+            MakeLabel("涂装文件夹名", 24, 18, 200, 22, Ui.SmallBold, Ui.TextDim);
+            _box = new TextBox();
+            _box.Left = Ui.S(24);
+            _box.Top = Ui.S(44);
+            _box.Width = Ui.S(492);
+            _box.Font = Ui.Body;
+            _box.BackColor = Ui.BgSoft;
+            _box.ForeColor = Ui.Text;
+            _box.BorderStyle = BorderStyle.FixedSingle;
+            _box.Text = current;
+            Content.Controls.Add(_box);
+            _error = MakeLabel("", 24, 84, 492, 36, Ui.Small, Ui.Bad);
+            MakeLabel("只改第二级涂装文件夹名，载具 template_ 目录本身不变。", 24, 124, 492, 22, Ui.Small, Ui.TextDim);
+
+            FlatButton cancel = MakeButton("取消", 340, 210, 96, false);
+            cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
+            _ok = MakeButton("确定", 448, 210, 96, true);
+            _ok.Click += delegate
+            {
+                Value = _box.Text.Trim();
+                DialogResult = DialogResult.OK;
+                Close();
+            };
+            _box.TextChanged += delegate { ValidateName(); };
+            ValidateName();
+            Shown += delegate
+            {
+                Native.ThemeScrollbars(this);
+                int y = Content.Height - Ui.S(18) - Ui.S(38);
+                _ok.SetBounds(Content.Width - Ui.S(24) - Ui.S(96), y, Ui.S(96), Ui.S(38));
+                cancel.SetBounds(_ok.Left - Ui.S(12) - Ui.S(96), y, Ui.S(96), Ui.S(38));
+                cancel.Focus();
+                _box.SelectAll();
+            };
+        }
+
+        private void ValidateName()
+        {
+            string error = SkinNameRules.Validate(_box.Text);
+            _error.Text = error;
+            _ok.Enabled = error.Length == 0;
+        }
+    }
+
+    internal class DeleteSkinsConfirmForm : ModalForm
+    {
+        public bool BackupFirst;
+
+        public DeleteSkinsConfirmForm(ManagerVehicleEntry vehicle, List<ManagerSkinItem> items)
+            : base("删除涂装", 660, 540)
+        {
+            long total = 0;
+            int unknown = 0;
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i].Size >= 0)
+                {
+                    total += items[i].Size;
+                }
+                else if (items[i].Size == -1)
+                {
+                    unknown++;
+                }
+            }
+            string sizeText = ManagerSkins.FormatSize(total);
+            if (unknown > 0)
+            {
+                sizeText += "（另有 " + unknown + " 个计算中）";
+            }
+            MakeLabel("将删除 " + items.Count + " 个涂装（共 " + sizeText + "）", 24, 12, 600, 26, Ui.H1, Ui.Bad);
+            string vehicleName = "";
+            if (vehicle != null)
+            {
+                vehicleName = string.IsNullOrEmpty(vehicle.Title)
+                    ? vehicle.Folder
+                    : vehicle.Title + " · " + vehicle.Folder;
+            }
+            MakeLabel("所属载具：" + vehicleName, 24, 40, 610, 20, Ui.Small, Ui.TextDim);
+
+            ListBox list = new ListBox();
+            list.Left = Ui.S(24);
+            list.Top = Ui.S(66);
+            list.Width = Ui.S(612);
+            list.Height = Ui.S(250);
+            list.BackColor = Ui.BgSoft;
+            list.ForeColor = Ui.Text;
+            list.BorderStyle = BorderStyle.None;
+            list.Font = Ui.Mono;
+            for (int i = 0; i < items.Count; i++)
+            {
+                list.Items.Add(items[i].Name + "    " + ManagerSkins.FormatSize(items[i].Size));
+            }
+            Content.Controls.Add(list);
+
+            MakeLabel("只删除勾选的涂装子目录；载具目录本身会保留。", 24, 326, 600, 20, Ui.Small, Ui.TextDim);
+
+            CheckBox backup = new CheckBox();
+            backup.Text = "先备份再删除";
+            backup.Left = Ui.S(24);
+            backup.Top = Ui.S(354);
+            backup.Width = Ui.S(240);
+            backup.Height = Ui.S(26);
+            backup.ForeColor = Ui.Text;
+            backup.BackColor = Ui.Panel;
+            backup.FlatStyle = FlatStyle.Flat;
+            backup.Checked = true;
+            Content.Controls.Add(backup);
+            BackupFirst = true;
+            backup.CheckedChanged += delegate { BackupFirst = backup.Checked; };
+
+            MakeLabel("删除后无法撤销（除非勾选了备份）。按 Enter 或 Esc 都执行「取消」。",
+                      24, 386, 600, 40, Ui.Small, Ui.TextFaint);
+
+            FlatButton cancel = MakeButton("取消", 426, 438, 96, false);
+            cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
+            FlatButton ok = MakeButton("删除", 530, 438, 96, false);
             ok.Danger = true;
             ok.Click += delegate { DialogResult = DialogResult.OK; Close(); };
             AcceptButton = null;

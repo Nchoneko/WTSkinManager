@@ -1645,51 +1645,91 @@ namespace WtSkin
 
     internal class ImportPlanForm : ModalForm
     {
+        private readonly ImportPlan _plan;
         private readonly CheckRow _backupRow;
         private readonly ListBox _list;
+        private readonly TextBox _nameBox;
+        private readonly Label _errorLabel;
+        private readonly Label _pathLabel;
+        private readonly Label _conflictStatus;
+        private readonly FlatButton _ok;
+        private readonly FlatButton _resetName;
+        private readonly FlatButton _choiceRename;
+        private readonly FlatButton _choiceOverwrite;
+        private readonly FlatButton _choiceSkip;
+        private readonly Dictionary<ImportTarget, string> _effective = new Dictionary<ImportTarget, string>();
+        private readonly string _defaultName = "";
+        private SkinConflictPolicy _policy = SkinConflictPolicy.Rename;
+        private bool _updating;
         public bool Confirmed;
 
         public ImportPlanForm(ImportPlan plan)
-            : base("确认导入", 760, 520)
+            : base("确认导入", 760, 700)
         {
-            long bytes = 0;
-            int folders = 0;
-            HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            _plan = plan;
+
+            string defaultName = "";
+            if (plan.Targets.Count > 0 && plan.Targets[0].Package != null &&
+                plan.Targets[0].Package.TopFolderName != null)
+            {
+                defaultName = plan.Targets[0].Package.TopFolderName;
+            }
+            _defaultName = defaultName;
             for (int i = 0; i < plan.Targets.Count; i++)
             {
-                if (seen.Add(plan.Targets[i].Folder))
-                {
-                    bytes += plan.Targets[i].Package.TotalBytes;
-                    folders++;
-                }
+                plan.Targets[i].SkinName = defaultName;
             }
 
             string warnings = "";
             for (int i = 0; i < plan.Warnings.Count && i < 3; i++)
             {
-                warnings += "· " + plan.Warnings[i] + "\n";
+                warnings += "· " + plan.Warnings[i] + Environment.NewLine;
             }
             if (plan.Warnings.Count > 3)
             {
                 warnings += "· 还有 " + (plan.Warnings.Count - 3) + " 条提示";
             }
 
-            int listHeight = Math.Min(280, Math.Max(56, plan.Targets.Count * 52));
-            int optionsTop = 64 + listHeight + 12;
-            int warnTop = optionsTop + 52;
-            int warnHeight = warnings.Length > 0 ? 66 : 0;
-            int buttonsTop = warnTop + warnHeight + 14;
+            int listHeight = Math.Min(240, Math.Max(56, plan.Targets.Count * 52));
+            int listTop = 228;
+            int optionsTop = listTop + listHeight + 10;
+            int warnTop = optionsTop + 50;
+            int warnHeight = warnings.Length > 0 ? 72 : 0;
+            int buttonsTop = warnTop + warnHeight + 10;
             ResizeToDesign(760, 58 + buttonsTop + 38 + 20);
 
-            MakeLabel(plan.Targets.Count.ToString(CultureInfo.InvariantCulture) + " 个载具 · " + folders +
-                      " 个文件夹 · 约 " + Util.HumanSize(bytes),
+            MakeLabel(plan.Targets.Count.ToString(CultureInfo.InvariantCulture) + " 个载具 · 写入 " +
+                      plan.Targets.Count.ToString(CultureInfo.InvariantCulture) + " 个涂装子文件夹 · 约 " +
+                      Util.HumanSize(plan.TotalBytes),
                       24, 10, 500, 24, Ui.H1, Ui.Text);
-            MakeLabel("会写进游戏已经生成的载具文件夹，先把旧内容备份到安装目录，再清空复制。",
-                      24, 36, 660, 20, Ui.Small, Ui.TextDim);
+            MakeLabel("新涂装会写进 UserSkins 下对应载具的 template 文件夹里的子文件夹，不会清空模板文件夹里已有的内容。",
+                      24, 36, 712, 20, Ui.Small, Ui.TextDim);
+
+            MakeLabel("涂装文件夹名", 24, 62, 200, 20, Ui.SmallBold, Ui.TextDim);
+            TextBox nameBox;
+            MakeField(24, 84, 400, 34, out nameBox);
+            _nameBox = nameBox;
+            _nameBox.Text = defaultName;
+
+            _resetName = MakeButton("使用原文件夹名", 432, 84, 132, false);
+            _resetName.Height = Ui.S(34);
+            _resetName.Font = Ui.SmallBold;
+
+            _errorLabel = MakeLabel("", 24, 120, 712, 18, Ui.Small, Ui.TextFaint);
+            _errorLabel.AutoEllipsis = true;
+            _pathLabel = MakeLabel("", 24, 140, 712, 20, Ui.Small, Ui.TextFaint);
+            _pathLabel.AutoEllipsis = true;
+
+            MakeLabel("同名涂装文件夹已存在时：", 24, 166, 280, 20, Ui.SmallBold, Ui.TextDim);
+            _choiceRename = MakeChoice("改名", 24, 188);
+            _choiceOverwrite = MakeChoice("覆盖", 114, 188);
+            _choiceSkip = MakeChoice("跳过", 204, 188);
+            _conflictStatus = MakeLabel("", 306, 190, 430, 20, Ui.Small, Ui.TextFaint);
+            _conflictStatus.AutoEllipsis = true;
 
             _list = new ListBox();
             _list.Left = Ui.S(24);
-            _list.Top = Ui.S(64);
+            _list.Top = Ui.S(listTop);
             _list.Width = Ui.S(712);
             _list.Height = Ui.S(listHeight);
             _list.BackColor = Ui.BgSoft;
@@ -1705,11 +1745,10 @@ namespace WtSkin
             {
                 _list.Items.Add(plan.Targets[i]);
             }
-            Shown += delegate { Native.ThemeScrollbars(this); };
 
             _backupRow = new CheckRow();
-            _backupRow.Title = "备份旧文件夹";
-            _backupRow.Subtitle = "移到安装目录的 backups，可随时找回";
+            _backupRow.Title = "覆盖前备份旧涂装";
+            _backupRow.Subtitle = "复制到安装目录 backups 下，按 载具文件夹 / 涂装名 保留两级结构";
             _backupRow.Checked = Config.Backup;
             _backupRow.Left = Ui.S(20);
             _backupRow.Top = Ui.S(optionsTop);
@@ -1725,15 +1764,249 @@ namespace WtSkin
 
             FlatButton cancel = MakeButton("取消", 520, buttonsTop, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton ok = MakeButton("开始导入", 626, buttonsTop, 110, true);
-            ok.Click += delegate
+            _ok = MakeButton("开始导入", 626, buttonsTop, 110, true);
+
+            _nameBox.TextChanged += delegate
             {
-                Config.Backup = _backupRow.Checked;
-                Config.Save();
-                Confirmed = true;
-                DialogResult = DialogResult.OK;
-                Close();
+                if (_updating)
+                {
+                    return;
+                }
+                ApplyName(_nameBox.Text);
+                RefreshState();
             };
+            _resetName.Click += delegate
+            {
+                _updating = true;
+                _nameBox.Text = _defaultName;
+                _updating = false;
+                ApplyName(_defaultName);
+                RefreshState();
+                _nameBox.Focus();
+                _nameBox.SelectAll();
+            };
+            _choiceRename.Click += delegate { SelectPolicy(SkinConflictPolicy.Rename); };
+            _choiceOverwrite.Click += delegate { SelectPolicy(SkinConflictPolicy.Overwrite); };
+            _choiceSkip.Click += delegate { SelectPolicy(SkinConflictPolicy.Skip); };
+            _backupRow.Click += delegate
+            {
+                UpdateChoiceAvailability();
+                RefreshState();
+            };
+            _ok.Click += delegate { Confirm(); };
+
+            UpdateChoiceAvailability();
+            ApplyName(defaultName);
+            RefreshState();
+
+            Shown += delegate
+            {
+                Native.ThemeScrollbars(this);
+                _nameBox.Focus();
+                _nameBox.SelectAll();
+            };
+        }
+
+        private FlatButton MakeChoice(string text, int x, int y)
+        {
+            FlatButton button = MakeButton(text, x, y, 82, false);
+            button.Height = Ui.S(32);
+            button.Font = Ui.SmallBold;
+            return button;
+        }
+
+        private void ApplyName(string name)
+        {
+            for (int i = 0; i < _plan.Targets.Count; i++)
+            {
+                _plan.Targets[i].SkinName = name != null ? name : "";
+            }
+        }
+
+        private void SelectPolicy(SkinConflictPolicy policy)
+        {
+            if (policy == SkinConflictPolicy.Overwrite && !_backupRow.Checked)
+            {
+                return;
+            }
+            _policy = policy;
+            StyleChoices();
+            RefreshState();
+        }
+
+        private void UpdateChoiceAvailability()
+        {
+            _choiceOverwrite.Enabled = _backupRow.Checked;
+            if (!_backupRow.Checked && _policy == SkinConflictPolicy.Overwrite)
+            {
+                _policy = SkinConflictPolicy.Rename;
+            }
+            StyleChoices();
+        }
+
+        private void StyleChoices()
+        {
+            _choiceRename.Primary = _policy == SkinConflictPolicy.Rename;
+            _choiceOverwrite.Primary = _policy == SkinConflictPolicy.Overwrite;
+            _choiceSkip.Primary = _policy == SkinConflictPolicy.Skip;
+        }
+
+        private void RefreshState()
+        {
+            if (_updating)
+            {
+                return;
+            }
+            string error = SkinNameRules.Validate(_nameBox.Text);
+            _effective.Clear();
+            int conflicts = 0;
+            if (error.Length == 0)
+            {
+                Dictionary<string, HashSet<string>> usedByTemplate =
+                    new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < _plan.Targets.Count; i++)
+                {
+                    ImportTarget target = _plan.Targets[i];
+                    string dir;
+                    if (!Importer.TryTargetDir(target, out dir))
+                    {
+                        if (error.Length == 0)
+                        {
+                            error = "目标路径不安全，请检查载具文件夹和涂装文件夹名";
+                        }
+                        _effective[target] = target.SkinName;
+                        continue;
+                    }
+                    bool exists = Directory.Exists(dir) || File.Exists(dir);
+                    string effective = target.SkinName;
+                    HashSet<string> used;
+                    if (!usedByTemplate.TryGetValue(target.Folder, out used))
+                    {
+                        used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        usedByTemplate[target.Folder] = used;
+                    }
+                    if (exists)
+                    {
+                        conflicts++;
+                        if (_policy == SkinConflictPolicy.Rename)
+                        {
+                            effective = Importer.UniqueSkinName(target.Folder, target.SkinName, used);
+                        }
+                    }
+                    used.Add(effective);
+                    _effective[target] = effective;
+                }
+            }
+
+            if (error.Length > 0)
+            {
+                _errorLabel.Text = "✗ " + error;
+                _errorLabel.ForeColor = Ui.Bad;
+            }
+            else
+            {
+                _errorLabel.Text = "✓ 名称可用，会直接作为子文件夹名。";
+                _errorLabel.ForeColor = Ui.TextFaint;
+            }
+            _ok.Enabled = error.Length == 0;
+
+            _pathLabel.Text = BuildPathPreview(error.Length == 0);
+            UpdateConflictStatus(conflicts);
+            _list.Invalidate();
+        }
+
+        private string BuildPathPreview(bool valid)
+        {
+            if (_plan.Targets.Count == 0)
+            {
+                return "";
+            }
+            ImportTarget first = _plan.Targets[0];
+            string templateName;
+            try
+            {
+                templateName = Path.GetFileName(first.Folder.TrimEnd(Path.DirectorySeparatorChar));
+            }
+            catch
+            {
+                templateName = "template_<载具ID>";
+            }
+            string name = _nameBox.Text;
+            string effective;
+            if (_effective.TryGetValue(first, out effective) && effective.Length > 0)
+            {
+                name = effective;
+            }
+            string sep = Path.DirectorySeparatorChar.ToString();
+            string path = "UserSkins" + sep + templateName + sep +
+                          (valid && name.Length > 0 ? name : "<涂装文件夹名>");
+            string text = "写入预览：" + path;
+            if (_plan.Targets.Count > 1)
+            {
+                text += "     （其余 " + (_plan.Targets.Count - 1) + " 个载具写入各自的 template 文件夹）";
+            }
+            return text;
+        }
+
+        private void UpdateConflictStatus(int conflicts)
+        {
+            if (conflicts == 0)
+            {
+                _conflictStatus.Text = "当前没有同名涂装文件夹。";
+                _conflictStatus.ForeColor = Ui.TextFaint;
+                return;
+            }
+            string rule;
+            if (_policy == SkinConflictPolicy.Rename)
+            {
+                rule = "自动改名后写入";
+            }
+            else if (_policy == SkinConflictPolicy.Overwrite)
+            {
+                rule = "先备份旧涂装再覆盖";
+            }
+            else
+            {
+                rule = "跳过，不改动";
+            }
+            _conflictStatus.Text = "有 " + conflicts.ToString(CultureInfo.InvariantCulture) +
+                                   " 个同名涂装文件夹：" + rule + "。";
+            _conflictStatus.ForeColor = Ui.Warn;
+        }
+
+        private void Confirm()
+        {
+            string error = SkinNameRules.Validate(_nameBox.Text);
+            if (error.Length > 0)
+            {
+                RefreshState();
+                _nameBox.Focus();
+                return;
+            }
+            for (int i = 0; i < _plan.Targets.Count; i++)
+            {
+                ImportTarget target = _plan.Targets[i];
+                string effective;
+                if (_effective.TryGetValue(target, out effective) && effective.Length > 0)
+                {
+                    target.SkinName = effective;
+                }
+                string nameError = SkinNameRules.Validate(target.SkinName);
+                if (nameError.Length > 0)
+                {
+                    _errorLabel.Text = "✗ " + nameError;
+                    _errorLabel.ForeColor = Ui.Bad;
+                    _ok.Enabled = false;
+                    return;
+                }
+            }
+            _plan.Conflict = _policy;
+            Config.Backup = _backupRow.Checked;
+            Config.Save();
+            _plan.TotalBytes = Importer.EstimateBytes(_plan);
+            Confirmed = true;
+            DialogResult = DialogResult.OK;
+            Close();
         }
 
         private void DrawTargetItem(object sender, DrawItemEventArgs e)
@@ -1761,7 +2034,22 @@ namespace WtSkin
             Ui.DrawText(g, "← " + target.Package.Name, Ui.Small, Ui.TextFaint,
                     new Rectangle(r.X + r.Width / 2, r.Y + Ui.S(4), r.Width / 2 - Ui.S(10), Ui.S(22)),
                     TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
-            Ui.DrawText(g, "写入  " + Path.GetFileName(target.Folder), Ui.Small, Ui.Good,
+
+            string templateName = Path.GetFileName(target.Folder.TrimEnd(Path.DirectorySeparatorChar));
+            string effective;
+            if (!_effective.TryGetValue(target, out effective) || effective.Length == 0)
+            {
+                effective = _nameBox.Text;
+            }
+            bool conflict = false;
+            string dir;
+            if (effective.Length > 0 && Importer.TryTargetDir(target, out dir))
+            {
+                conflict = Directory.Exists(dir) || File.Exists(dir);
+            }
+            string sep = Path.DirectorySeparatorChar.ToString();
+            string line = "→ " + templateName + sep + (effective.Length > 0 ? effective : "<涂装文件夹名>");
+            Ui.DrawText(g, line, Ui.Small, conflict ? Ui.Warn : Ui.Good,
                     new Rectangle(r.X + Ui.S(10), r.Y + Ui.S(25), r.Width - Ui.S(20), Ui.S(18)),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
             using (Pen pen = new Pen(Ui.LineSoft, 1f))
