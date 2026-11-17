@@ -26,7 +26,7 @@ namespace WtSkin
         private string _header = "";
         private string _subHeader = "";
         private bool _sameVersion;
-        private string _sameVersionText = "当前已是最新版本";
+        private string _sameVersionText = Lang.T("当前已是最新版本", "You are up to date");
         private bool _downgrade;
         private string _downgradeText = "";
         private bool _truncatedOlder;
@@ -180,14 +180,14 @@ namespace WtSkin
                 y += Ui.S(8);
 
                 int groupCount = 0;
-                y = Group("新增", note.Added, Ui.Good, x, y, contentWidth, ref groupCount);
-                y = Group("修复", note.Fixed, Ui.Accent, x, y, contentWidth, ref groupCount);
-                y = Group("改进", note.Improved, Ui.TextDim, x, y, contentWidth, ref groupCount);
-                y = Group("移除", note.Removed, Ui.TextDim, x, y, contentWidth, ref groupCount);
-                y = Group("数据变更", note.DataChanges, Ui.Warn, x, y, contentWidth, ref groupCount);
+                y = Group(Lang.T("新增", "Added"), note.Added, Ui.Good, x, y, contentWidth, ref groupCount);
+                y = Group(Lang.T("修复", "Fixed"), note.Fixed, Ui.Accent, x, y, contentWidth, ref groupCount);
+                y = Group(Lang.T("改进", "Improved"), note.Improved, Ui.TextDim, x, y, contentWidth, ref groupCount);
+                y = Group(Lang.T("移除", "Removed"), note.Removed, Ui.TextDim, x, y, contentWidth, ref groupCount);
+                y = Group(Lang.T("数据变更", "Data changes"), note.DataChanges, Ui.Warn, x, y, contentWidth, ref groupCount);
                 if (groupCount == 0)
                 {
-                    string empty = "这个版本没有记录变更";
+                    string empty = Lang.T("这个版本没有记录变更", "No changes recorded for this version");
                     int h = Measure(empty, Ui.Small, contentWidth, Wrap);
                     _lines.Add(Block(empty, Ui.Small, Ui.TextFaint, x, y, contentWidth, h, Wrap));
                     y += h + Ui.S(4);
@@ -196,7 +196,7 @@ namespace WtSkin
 
             if (_truncatedOlder)
             {
-                string text = "更早版本的变更未收录";
+                string text = Lang.T("更早版本的变更未收录", "Changes from older versions are not included");
                 int h = Measure(text, Ui.Small, contentWidth, Wrap);
                 _lines.Add(Block(text, Ui.Small, Ui.TextFaint, x, y + Ui.S(8), contentWidth, h, Wrap));
                 y += h + Ui.S(12);
@@ -324,9 +324,9 @@ namespace WtSkin
             _scroll.Controls.Add(_view);
             _view.SetContent(_viewHeader, _viewSub, VisibleNotes(), sameVersion, downgrade, _downgradeText, truncatedOlder);
 
-            _hint = MakeLabel("可滚动查看全部变更", 22, 492, 300, 20, Ui.Small, Ui.TextFaint);
+            _hint = MakeLabel(Lang.T("可滚动查看全部变更", "Scroll to view all changes"), 22, 492, 300, 20, Ui.Small, Ui.TextFaint);
 
-            _expand = MakeButton("展开更早的版本", 22, 516, 190, false);
+            _expand = MakeButton(Lang.T("展开更早的版本", "Show older versions"), 22, 516, 190, false);
             _expand.Click += delegate
             {
                 _expanded = _notes.Count;
@@ -335,12 +335,12 @@ namespace WtSkin
 
             if (_history)
             {
-                FlatButton close = MakeButton("关闭", 758, 516, 104, true);
+                FlatButton close = MakeButton(Lang.T("关闭", "Close"), 758, 516, 104, true);
                 close.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
             }
             else
             {
-                FlatButton all = MakeButton("查看历史版本", 596, 516, 142, false);
+                FlatButton all = MakeButton(Lang.T("查看历史版本", "View version history"), 596, 516, 142, false);
                 all.Click += delegate
                 {
                     using (UpdateNotesForm form = History())
@@ -348,7 +348,7 @@ namespace WtSkin
                         form.ShowDialog(this);
                     }
                 };
-                FlatButton start = MakeButton("开始使用", 748, 516, 114, true);
+                FlatButton start = MakeButton(Lang.T("开始使用", "Get started"), 748, 516, 114, true);
                 start.Click += delegate { DialogResult = DialogResult.OK; Close(); };
             }
             UpdateExpandButton();
@@ -387,7 +387,7 @@ namespace WtSkin
             else
             {
                 _expand.Visible = true;
-                _expand.Text = "展开更早的 " + remaining + " 个版本";
+                _expand.Text = Lang.T("展开更早的 ", "Show older ") + remaining + Lang.T(" 个版本", " versions");
                 _expand.Width = Ui.S(190);
             }
         }
@@ -404,13 +404,13 @@ namespace WtSkin
             string target = "v" + (to == null ? AppInfo.VersionText : to.ToDisplay());
             if (fresh || !fromKnown)
             {
-                return (fresh ? "安装完成 · " : "更新完成 · ") + target;
+                return (fresh ? Lang.T("安装完成 · ", "Installation complete · ") : Lang.T("更新完成 · ", "Update complete · ")) + target;
             }
             if (from.IsSame(to))
             {
-                return "更新完成 · " + target;
+                return Lang.T("更新完成 · ", "Update complete · ") + target;
             }
-            return "更新完成 · v" + from.ToDisplay() + " → " + target;
+            return Lang.T("更新完成 · v", "Update complete · v") + from.ToDisplay() + " → " + target;
         }
 
         /// <summary>启动时调用：有 update-pending.ini 就返回一个待展示窗口，并标记已读、删除待展示文件。</summary>
@@ -435,15 +435,15 @@ namespace WtSkin
             bool truncated;
             List<ReleaseNote> notes = ReleaseLog.Range(fromKnown ? from : null, to, out truncated);
             string title = TitleFor(fresh, from, to, fromKnown);
-            string header = "当前版本 v" + to.ToDisplay();
+            string header = Lang.T("当前版本 v", "Current version v") + to.ToDisplay();
             ReleaseNote current = ReleaseLog.Find(to);
             if (current != null && current.Date.Length > 0)
             {
                 header += "  ·  " + current.Date;
             }
-            string sub = "数据版本 " + AppInfo.DataVersionText + "（schema " + DataFiles.SchemaVersion + "）";
+            string sub = Lang.T("数据版本 ", "Data version ") + AppInfo.DataVersionText + "（schema " + DataFiles.SchemaVersion + "）";
             string downgradeText = downgrade
-                ? "这是降级安装：从 v" + from.ToDisplay() + " 降到 v" + to.ToDisplay() + "。新版本的功能与修复不会出现在旧版本里。"
+                ? Lang.T("这是降级安装：从 v", "This is a downgrade: from v") + from.ToDisplay() + Lang.T(" 降到 v", ". Downgraded to v") + to.ToDisplay() + Lang.T("。新版本的功能与修复不会出现在旧版本里。", ". New features and fixes are not available in the older version.")
                 : "";
             UpdateNotesForm form = new UpdateNotesForm(title, notes, header, sub, same, downgrade,
                                                       downgradeText, truncated, false);
@@ -459,14 +459,14 @@ namespace WtSkin
         {
             List<ReleaseNote> notes = ReleaseLog.All;
             SemVer current = AppInfo.AppVersion;
-            string header = "当前版本 v" + current.ToDisplay();
+            string header = Lang.T("当前版本 v", "Current version v") + current.ToDisplay();
             ReleaseNote latest = ReleaseLog.Latest;
             if (latest != null && latest.Date.Length > 0)
             {
                 header += "  ·  " + latest.Date;
             }
-            string sub = "数据版本 " + AppInfo.DataVersionText + "（schema " + DataFiles.SchemaVersion + "）";
-            UpdateNotesForm form = new UpdateNotesForm("历史版本", notes, header, sub, false, false, "", false, true);
+            string sub = Lang.T("数据版本 ", "Data version ") + AppInfo.DataVersionText + "（schema " + DataFiles.SchemaVersion + "）";
+            UpdateNotesForm form = new UpdateNotesForm(Lang.T("历史版本", "Version history"), notes, header, sub, false, false, "", false, true);
             return form;
         }
 

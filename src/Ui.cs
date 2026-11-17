@@ -68,7 +68,7 @@ namespace WtSkin
         private static Palette Amber()
         {
             Palette p = new Palette();
-            p.Name = "暗夜琥珀";
+            p.Name = Lang.T("暗夜琥珀", "Amber Night");
             p.Dark = true;
             // 与 Tok 中的三层表面/描边/三级文字对齐：页面底 #0d0f12、面板 #14171c、卡片 #1a1e24。
             p.Bg = Tok.Page;
@@ -115,7 +115,7 @@ namespace WtSkin
         private static Palette Military()
         {
             Palette p = new Palette();
-            p.Name = "军绿战术";
+            p.Name = Lang.T("军绿战术", "Military Green");
             p.Dark = true;
             p.Bg = C(16, 18, 14);
             p.BgSoft = C(21, 24, 18);
@@ -161,7 +161,7 @@ namespace WtSkin
         private static Palette Ocean()
         {
             Palette p = new Palette();
-            p.Name = "冷蓝夜航";
+            p.Name = Lang.T("冷蓝夜航", "Cold Blue");
             p.Dark = true;
             p.Bg = C(11, 15, 21);
             p.BgSoft = C(16, 21, 29);
@@ -207,7 +207,7 @@ namespace WtSkin
         private static Palette Paper()
         {
             Palette p = new Palette();
-            p.Name = "纸白";
+            p.Name = Lang.T("纸白", "Paper White");
             p.Dark = false;
             // 亮色主题同样保持 页面底 / 面板 / 卡片 三层可区分（配合 1px 描边）。
             p.Bg = C(238, 241, 246);
@@ -1420,7 +1420,7 @@ namespace WtSkin
             {
                 g.FillEllipse(dot, Ui.Sp12, (Height - Ui.S(8)) / 2, Ui.S(8), Ui.S(8));
             }
-            string action = "更改";
+            string action = Lang.T("更改", "Change");
             Size actionSize = TextRenderer.MeasureText(action, Font);
             int actionX = Width - Ui.Sp12 - actionSize.Width;
             Ui.DrawText(g, PathText, Font, Ui.Mix(Ui.TextSecondary, Ui.TextPrimary, t),
@@ -2339,9 +2339,9 @@ namespace WtSkin
                 g.DrawLine(pen, TextLeft(), y - Ui.S(4), ClientSize.Width - Ui.S(Pad), y - Ui.S(4));
             }
 
-            DrawField(g, "国家", _info.Country, string.IsNullOrEmpty(_info.Country), ref y);
+            DrawField(g, Lang.T("国家", "Nation"), _info.Country, string.IsNullOrEmpty(_info.Country), ref y);
             DrawLevelWeight(g, ref y);
-            DrawField(g, "机型代号", _info.Model, string.IsNullOrEmpty(_info.Model), ref y);
+            DrawField(g, Lang.T("机型代号", "Vehicle ID"), _info.Model, string.IsNullOrEmpty(_info.Model), ref y);
             DrawFolderField(g, ref y);
         }
 
@@ -2350,7 +2350,7 @@ namespace WtSkin
         {
             bool missing = string.IsNullOrEmpty(_info.LevelWeight);
             string shown = missing ? "—" : _info.LevelWeight;
-            Ui.DrawText(g, "等级 / 权重", Ui.CardLabel, Ui.TextFaint,
+            Ui.DrawText(g, Lang.T("等级 / 权重", "Rank / BR"), Ui.CardLabel, Ui.TextFaint,
                     new Rectangle(TextLeft(), y, LabelWidth(), Ui.S(RowH)),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
             Ui.DrawText(g, shown, Ui.CardValue, missing ? Ui.TextFaint : Ui.Text,
@@ -2401,8 +2401,8 @@ namespace WtSkin
                     new Rectangle(TextLeft(), y, LabelWidth(), Ui.S(RowH)),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
             int valueX = ValueLeft();
-            string shown = string.IsNullOrEmpty(value) ? "未知" : value;
-            if (string.Equals(label, "国家", StringComparison.Ordinal) && !string.IsNullOrEmpty(_info.NationCode))
+            string shown = string.IsNullOrEmpty(value) ? Lang.T("未知", "Unknown") : value;
+            if (string.Equals(label, Lang.T("国家", "Nation"), StringComparison.Ordinal) && !string.IsNullOrEmpty(_info.NationCode))
             {
                 int flagW = Ui.S(19);
                 int flagH = Ui.S(13);
@@ -2419,9 +2419,9 @@ namespace WtSkin
         private void DrawFolderField(Graphics g, ref int y)
         {
             bool fallback = string.IsNullOrEmpty(_info.Folder);
-            string value = fallback ? "未知" : _info.Folder;
+            string value = fallback ? Lang.T("未知", "Unknown") : _info.Folder;
 
-            Ui.DrawText(g, "文件夹", Ui.CardLabel, Ui.TextFaint,
+            Ui.DrawText(g, Lang.T("文件夹", "Folder"), Ui.CardLabel, Ui.TextFaint,
                     new Rectangle(TextLeft(), y, LabelWidth(), Ui.S(RowH)),
                     TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.NoPrefix);
 
@@ -2442,6 +2442,98 @@ namespace WtSkin
     /// 拖放区：有内容时是顶部紧凑条，空列表时是整栏空态（图标 + 主文案 + 说明 + 选择文件）。
     /// 默认虚线描边，悬停实线提亮，拖拽经过变 Accent 并微亮背景。
     /// </summary>
+    /// <summary>
+    /// 语言切换按钮：整块可点；文案「语言 / Language：中文 English」，
+    /// 当前语言用主题色圆角高亮（底色 = 主题色低透明，文字 = 主题色）。
+    /// </summary>
+    internal class LanguageToggle : Control
+    {
+        public event EventHandler Toggled;
+        private bool _hover;
+        private bool _down;
+
+        public LanguageToggle()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            BackColor = Ui.Page;
+            Cursor = Cursors.Hand;
+            Height = Ui.S(34);
+        }
+
+        public int PreferredWidth()
+        {
+            int pad = Ui.S(12);
+            string prefix = Lang.T("语言 / Language：", "Language / 语言：");
+            int w = pad + TextRenderer.MeasureText(prefix, Ui.Small).Width;
+            w += TextRenderer.MeasureText("中文", Lang.English ? Ui.Small : Ui.SmallBold).Width + Ui.S(14);
+            w += TextRenderer.MeasureText(" / ", Ui.Small).Width;
+            w += TextRenderer.MeasureText("English", Lang.English ? Ui.SmallBold : Ui.Small).Width + Ui.S(14);
+            return w + pad;
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { _hover = false; _down = false; Invalidate(); base.OnMouseLeave(e); }
+        protected override void OnMouseDown(MouseEventArgs e) { _down = true; Invalidate(); base.OnMouseDown(e); }
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            _down = false;
+            Invalidate();
+            if (e.Button == MouseButtons.Left && ClientRectangle.Contains(e.Location) && Toggled != null)
+            {
+                Toggled(this, EventArgs.Empty);
+            }
+            base.OnMouseUp(e);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Ui.Smooth(g);
+            Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
+            Color fill = _down ? Ui.PanelActive : (_hover ? Ui.PanelHover : Ui.Panel);
+            Ui.FillRound(g, r, Ui.S(10), fill);
+            Ui.DrawRound(g, r, Ui.S(10), _hover ? Ui.Accent : Ui.Stroke, Ui.BorderWidth);
+
+            bool en = Lang.English;
+            int pad = Ui.S(12);
+            int y = 0;
+            int h = Height;
+            string prefix = Lang.T("语言 / Language：", "Language / 语言：");
+            Size prefixSize = TextRenderer.MeasureText(prefix, Ui.Small);
+            Ui.DrawText(g, prefix, Ui.Small, Ui.TextDim,
+                    new Rectangle(pad, y, prefixSize.Width + Ui.S(2), h),
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+
+            int x = pad + prefixSize.Width;
+            Color activeFill = Ui.Mix(Ui.Panel, Ui.Accent, 0.20f);
+            x = DrawSegment(g, x, "中文", "中文", !en, activeFill);
+            Size slash = TextRenderer.MeasureText(" / ", Ui.Small);
+            Ui.DrawText(g, " / ", Ui.Small, Ui.TextFaint,
+                    new Rectangle(x, y, slash.Width, h),
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+            x += slash.Width;
+            DrawSegment(g, x, "English", "English", en, activeFill);
+        }
+
+        private int DrawSegment(Graphics g, int x, string zh, string en, bool active, Color activeFill)
+        {
+            string text = Lang.T(zh, en);
+            Font font = active ? Ui.SmallBold : Ui.Small;
+            Size size = TextRenderer.MeasureText(text, font);
+            int w = size.Width + Ui.S(14);
+            int h = Math.Max(Ui.S(22), size.Height + Ui.S(6));
+            Rectangle pill = new Rectangle(x, (Height - h) / 2, w, h);
+            if (active)
+            {
+                Ui.FillRound(g, pill, Ui.S(9), activeFill);
+            }
+            Ui.DrawText(g, text, font, active ? Ui.Accent : Ui.TextDim, pill,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+            return x + w;
+        }
+    }
+
     internal class DropZone : Control
     {
         private bool _hot;
@@ -2463,7 +2555,7 @@ namespace WtSkin
             _hoverT = new Tween(this, 0f);
 
             _choose = new FlatButton();
-            _choose.Text = "选择文件";
+            _choose.Text = Lang.T("选择文件", "Choose file");
             _choose.Primary = true;
             _choose.Font = Ui.BodyBold;
             _choose.Visible = false;

@@ -6,7 +6,9 @@
 [![Latest Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2B-0078D6.svg)](#运行要求)
 
-> 当前版本 **v3.9.29**（程序内版本 `3.9.29.0`）。
+> 当前版本 **v3.9.30**（程序内版本 `3.9.30.0`）。
+>
+> 使用前请阅读 [用户协议](USER_AGREEMENT.md)；首次启动会要求同意协议。
 
 ---
 
@@ -90,7 +92,9 @@ A small Windows tool for *War Thunder* third-party custom skins: drag skin packa
 [![Latest Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2B-0078D6.svg)](#requirements)
 
-> Current version **v3.9.29** (internal version `3.9.29.0`).
+> Current version **v3.9.30** (internal version `3.9.30.0`).
+>
+> Please read the [User Agreement](USER_AGREEMENT.md); you must accept it on first launch.
 
 ## Features
 

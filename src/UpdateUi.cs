@@ -192,7 +192,7 @@ namespace WtSkin
             {
                 g.DrawLine(pen, 0, Height - 1, Width, Height - 1);
             }
-            string text = "发现新版本 " + _versionText;
+            string text = Lang.T("发现新版本 ", "New version ") + _versionText;
             Ui.DrawText(g, text, Ui.BodyBold, Ui.Text,
                     new Rectangle(Ui.S(22), 0, Math.Max(Ui.S(80), Width - Ui.S(180)), Height),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix |
@@ -200,7 +200,7 @@ namespace WtSkin
 
             Rectangle view = ViewRect();
             Color viewColor = _hoverView ? Ui.AccentDeep : Ui.Accent;
-            Ui.DrawText(g, "查看", Ui.BodyBold, viewColor, view,
+            Ui.DrawText(g, Lang.T("查看", "View"), Ui.BodyBold, viewColor, view,
                     TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
             if (_hoverView)
             {
@@ -383,7 +383,7 @@ namespace WtSkin
 
             if (_notes.Count == 0 || _count == 0)
             {
-                string empty = "暂无更新记录";
+                string empty = Lang.T("暂无更新记录", "No update records");
                 int h = Measure(empty, Ui.Small, contentWidth, Wrap);
                 _lines.Add(Block(empty, Ui.Small, Ui.TextFaint, x, y + Ui.S(8), contentWidth, h, Wrap));
                 return y + h + Ui.S(20);
@@ -405,7 +405,7 @@ namespace WtSkin
             int headHeight = Measure(header, Ui.BodyBold, contentWidth - Ui.S(90), Wrap);
             _lines.Add(Block(header, Ui.BodyBold, Ui.Accent, x, y, contentWidth - Ui.S(90), headHeight, Wrap));
 
-            string chip = "可更新";
+            string chip = Lang.T("可更新", "Update available");
             int chipWidth = ChipWidth(chip);
             int chipX = x + Ui.S(4) + TextRenderer.MeasureText(header, Ui.BodyBold).Width;
             NoteLine chipLine = new NoteLine();
@@ -423,7 +423,7 @@ namespace WtSkin
             }
             y += Math.Max(headHeight, Ui.S(18)) + Ui.S(4);
 
-            string body = string.IsNullOrEmpty(_remote.Body) ? "远端没有提供发布说明" : _remote.Body;
+            string body = string.IsNullOrEmpty(_remote.Body) ? Lang.T("远端没有提供发布说明", "No release notes provided") : _remote.Body;
             int bodyHeight = Measure(body, Ui.Small, contentWidth, Wrap);
             _lines.Add(Block(body, Ui.Small, Ui.TextDim, x, y, contentWidth, bodyHeight, Wrap));
             y += bodyHeight + Ui.S(8);
@@ -443,15 +443,15 @@ namespace WtSkin
             y += Ui.S(7);
 
             int groups = 0;
-            y = Group("新增", note.Added, Ui.Good, Ui.GoodBg, x, y, contentWidth, ref groups);
-            y = Group("修复", note.Fixed, Ui.Accent, Ui.Mix(Ui.Panel, Ui.Accent, 0.20f), x, y, contentWidth, ref groups);
-            y = Group("优化", note.Improved, Ui.TextDim, Ui.PanelActive, x, y, contentWidth, ref groups);
-            y = Group("移除", note.Removed, Ui.Bad, Ui.BadBg, x, y, contentWidth, ref groups);
+            y = Group(Lang.T("新增", "Added"), note.Added, Ui.Good, Ui.GoodBg, x, y, contentWidth, ref groups);
+            y = Group(Lang.T("修复", "Fixed"), note.Fixed, Ui.Accent, Ui.Mix(Ui.Panel, Ui.Accent, 0.20f), x, y, contentWidth, ref groups);
+            y = Group(Lang.T("优化", "Improved"), note.Improved, Ui.TextDim, Ui.PanelActive, x, y, contentWidth, ref groups);
+            y = Group(Lang.T("移除", "Removed"), note.Removed, Ui.Bad, Ui.BadBg, x, y, contentWidth, ref groups);
             y = DataBlock(note, x, y, contentWidth, ref groups);
 
             if (groups == 0)
             {
-                string empty = "这个版本没有记录变更";
+                string empty = Lang.T("这个版本没有记录变更", "No changes recorded for this version");
                 int h = Measure(empty, Ui.Small, contentWidth, Wrap);
                 _lines.Add(Block(empty, Ui.Small, Ui.TextFaint, x, y, contentWidth, h, Wrap));
                 y += h + Ui.S(4);
@@ -515,8 +515,8 @@ namespace WtSkin
                 return y;
             }
             groups++;
-            AddChip("数据变更", Ui.Warn, Ui.WarnBg, x, y);
-            int chipWidth = ChipWidth("数据变更");
+            AddChip(Lang.T("数据变更", "Data changes"), Ui.Warn, Ui.WarnBg, x, y);
+            int chipWidth = ChipWidth(Lang.T("数据变更", "Data changes"));
 
             HashSet<string> files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < note.DataChanges.Count; i++)
@@ -530,9 +530,9 @@ namespace WtSkin
             System.Text.StringBuilder summary = new System.Text.StringBuilder();
             if (files.Count > 0)
             {
-                summary.Append(files.Count).Append(" 个文件 · ");
+                summary.Append(files.Count).Append(Lang.T(" 个文件 · ", " files · "));
             }
-            summary.Append(note.DataChanges.Count).Append(" 条");
+            summary.Append(note.DataChanges.Count).Append(Lang.T(" 条", " items"));
             _lines.Add(Block(summary.ToString(), Ui.Small, Ui.Warn,
                              x + chipWidth + Ui.S(8), y + Ui.S(1), contentWidth - chipWidth - Ui.S(8),
                              Ui.S(18), TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix));
@@ -663,18 +663,18 @@ namespace WtSkin
 
         private void Build()
         {
-            MakeLabel("检查更新", 8, 2, 200, 18, Ui.SmallBold, Ui.TextDim);
-            _current = MakeLabel("当前版本 " + BuildInfo.DisplayVersion, 8, 24, 260, 22, Ui.BodyBold, Ui.Text);
+            MakeLabel(Lang.T("检查更新", "Check for updates"), 8, 2, 200, 18, Ui.SmallBold, Ui.TextDim);
+            _current = MakeLabel(Lang.T("当前版本 ", "Current version ") + BuildInfo.DisplayVersion, 8, 24, 260, 22, Ui.BodyBold, Ui.Text);
 
-            _last = MakeLabel("上次检查：尚未检查", 270, 26, 330, 20, Ui.Small, Ui.TextFaint);
+            _last = MakeLabel(Lang.T("上次检查：尚未检查", "Last check: never"), 270, 26, 330, 20, Ui.Small, Ui.TextFaint);
             _last.TextAlign = ContentAlignment.MiddleRight;
 
-            _checkButton = MakeButton("检查更新", 8, 54, 112, 36, true);
+            _checkButton = MakeButton(Lang.T("检查更新", "Check for updates"), 8, 54, 112, 36, true);
             _checkButton.Click += delegate { CheckNow(); };
 
             _autoRow = new CheckRow();
-            _autoRow.Title = "启动时自动检查更新";
-            _autoRow.Subtitle = "关闭后仅在手动点击时检查";
+            _autoRow.Title = Lang.T("启动时自动检查更新", "Check for updates on startup");
+            _autoRow.Subtitle = Lang.T("关闭后仅在手动点击时检查", "When off, only check manually");
             _autoRow.Checked = Config.AutoCheckUpdate;
             _autoRow.Left = Ui.S(132);
             _autoRow.Top = Ui.S(50);
@@ -690,7 +690,7 @@ namespace WtSkin
             Controls.Add(_autoRow);
 
             _allLink = new LinkText();
-            _allLink.Text = "查看所有版本";
+            _allLink.Text = Lang.T("查看所有版本", "View all versions");
             _allLink.Left = Ui.S(494);
             _allLink.Top = Ui.S(62);
             _allLink.Width = Ui.S(106);
@@ -698,7 +698,7 @@ namespace WtSkin
             _allLink.Click += delegate { UpdateService.OpenUrl(Config.ReleasesPage); };
             Controls.Add(_allLink);
 
-            _status = MakeLabel("尚未检查更新", 8, 104, 560, 22, Ui.BodyBold, Ui.TextFaint);
+            _status = MakeLabel(Lang.T("尚未检查更新", "Not checked yet"), 8, 104, 560, 22, Ui.BodyBold, Ui.TextFaint);
 
             _spinner = new Spinner();
             _spinner.Left = Ui.S(580);
@@ -729,12 +729,12 @@ namespace WtSkin
             _summaryLabel.AutoSize = false;
             _summaryPanel.Controls.Add(_summaryLabel);
 
-            _download = MakeButton("下载更新", 8, 132, 120, 34, true);
+            _download = MakeButton(Lang.T("下载更新", "Download update"), 8, 132, 120, 34, true);
             _download.Visible = false;
             _download.Click += delegate { OnPrimaryAction(); };
 
             // 下载中禁用主按钮，右侧出现「取消」；取消后保留 .part，主按钮变「继续下载」。
-            _cancel = MakeButton("取消", 136, 132, 84, 34, false);
+            _cancel = MakeButton(Lang.T("取消", "Cancel"), 136, 132, 84, 34, false);
             _cancel.Visible = false;
             _cancel.Click += delegate { CancelDownload(); };
 
@@ -752,12 +752,12 @@ namespace WtSkin
             _bar.Visible = false;
             Controls.Add(_bar);
 
-            _releases = MakeButton("打开 Releases 页面", 8, 158, 160, 34, false);
+            _releases = MakeButton(Lang.T("打开 Releases 页面", "Open Releases page"), 8, 158, 160, 34, false);
             _releases.Visible = false;
             _releases.Click += delegate { UpdateService.OpenUrl(Config.ReleasesPage); };
 
             _expandLink = new LinkText();
-            _expandLink.Text = "展开";
+            _expandLink.Text = Lang.T("展开", "Expand");
             _expandLink.Left = Ui.S(536);
             _expandLink.Top = Ui.S(136);
             _expandLink.Width = Ui.S(56);
@@ -766,7 +766,7 @@ namespace WtSkin
             _expandLink.Click += delegate
             {
                 _expanded = !_expanded;
-                _expandLink.Text = _expanded ? "收起" : "展开";
+                _expandLink.Text = _expanded ? Lang.T("收起", "Collapse") : Lang.T("展开", "Expand");
                 UpdateSummary();
                 ApplyLayout();
             };
@@ -780,7 +780,7 @@ namespace WtSkin
             UpdateCache cache = UpdateService.ReadCache();
             if (cache != null && cache.LastCheck != DateTime.MinValue)
             {
-                _last.Text = "上次检查：" + UpdateService.FormatTime(cache.LastCheck);
+                _last.Text = Lang.T("上次检查：", "Last check: ") + UpdateService.FormatTime(cache.LastCheck);
             }
             if (_hasResult)
             {
@@ -818,11 +818,11 @@ namespace WtSkin
         {
             _checking = checking;
             _checkButton.Enabled = !checking;
-            _checkButton.Text = checking ? "检查中…" : "检查更新";
+            _checkButton.Text = checking ? Lang.T("检查中…", "Checking…") : Lang.T("检查更新", "Check for updates");
             if (checking)
             {
                 _spinner.Start();
-                _status.Text = "正在检查更新…";
+                _status.Text = Lang.T("正在检查更新…", "Checking for updates…");
                 _status.ForeColor = Ui.TextDim;
                 _detail.Visible = false;
             }
@@ -837,11 +837,11 @@ namespace WtSkin
             _result = result;
             _hasResult = true;
             _expanded = false;
-            _expandLink.Text = "展开";
+            _expandLink.Text = Lang.T("展开", "Expand");
 
             if (result.CheckedAt != DateTime.MinValue)
             {
-                _last.Text = "上次检查：" + UpdateService.FormatTime(result.CheckedAt);
+                _last.Text = Lang.T("上次检查：", "Last check: ") + UpdateService.FormatTime(result.CheckedAt);
             }
 
             _detail.Visible = false;
@@ -853,21 +853,21 @@ namespace WtSkin
             switch (result.State)
             {
                 case UpdateState.NewVersion:
-                    _status.Text = "发现新版本 " + result.VersionText +
+                    _status.Text = Lang.T("发现新版本 ", "New version ") + result.VersionText +
                                    (result.DateText.Length > 0 ? " · " + result.DateText : "");
                     _status.ForeColor = Ui.Accent;
                     BuildSummary(result.Body);
                     _download.Visible = true;
                     break;
                 case UpdateState.Failed:
-                    _status.Text = "检查失败，请稍后重试";
+                    _status.Text = Lang.T("检查失败，请稍后重试", "Check failed; try again later");
                     _status.ForeColor = Ui.Bad;
-                    _detail.Text = "原因：" + result.FailureText;
+                    _detail.Text = Lang.T("原因：", "Reason: ") + result.FailureText;
                     _detail.Visible = true;
                     _releases.Visible = true;
                     break;
                 default:
-                    _status.Text = "当前已是最新版本 " + BuildInfo.DisplayVersion;
+                    _status.Text = Lang.T("当前已是最新版本 ", "You are up to date: ") + BuildInfo.DisplayVersion;
                     _status.ForeColor = Ui.Good;
                     break;
             }
@@ -886,7 +886,7 @@ namespace WtSkin
                 _bar.Visible = false;
                 _cancel.Visible = false;
                 _download.Enabled = true;
-                _download.Text = "下载更新";
+                _download.Text = Lang.T("下载更新", "Download update");
             }
             SyncReadyState();
 
@@ -921,7 +921,7 @@ namespace WtSkin
                 {
                     _partBytes = part;
                     _partTotal = _result.DownloadSize;
-                    _download.Text = "继续下载";
+                    _download.Text = Lang.T("继续下载", "Resume download");
                 }
                 return;
             }
@@ -935,12 +935,12 @@ namespace WtSkin
             _partBytes = size;
             _partTotal = size;
             _download.Enabled = true;
-            _download.Text = "立即安装";
-            _status.Text = "更新已下载，可立即安装";
+            _download.Text = Lang.T("立即安装", "Install now");
+            _status.Text = Lang.T("更新已下载，可立即安装", "Update downloaded; ready to install");
             _status.ForeColor = Ui.Good;
             _cancel.Visible = false;
-            _progressLeft.Text = "已下载 " + DownloadFormat.Size(size);
-            _progressRight.Text = "SHA-256 校验通过";
+            _progressLeft.Text = Lang.T("已下载 ", "Downloaded ") + DownloadFormat.Size(size);
+            _progressRight.Text = Lang.T("SHA-256 校验通过", "SHA-256 verified");
             _progressLeft.Visible = true;
             _progressRight.Visible = true;
             _bar.SetValue(1, true);
@@ -1073,7 +1073,7 @@ namespace WtSkin
 
             if (failed)
             {
-                _releases.Text = "打开 Releases 页面";
+                _releases.Text = Lang.T("打开 Releases 页面", "Open Releases page");
                 _detail.Visible = true;
                 _releases.Visible = true;
                 _releases.Left = Ui.S(8);
@@ -1099,7 +1099,7 @@ namespace WtSkin
             if (_downloadFailed)
             {
                 // 失败兜底：一行提示 +「重试下载」+「打开 GitHub 页面」。
-                _releases.Text = "打开 GitHub 页面";
+                _releases.Text = Lang.T("打开 GitHub 页面", "Open GitHub page");
                 _releases.Visible = true;
                 _releases.Left = Ui.S(136);
                 _releases.Top = Ui.S(actionTop + 26);
@@ -1107,7 +1107,7 @@ namespace WtSkin
                 _detail.Left = Ui.S(8);
                 _detail.Top = Ui.S(actionTop);
                 _detail.Width = Ui.S(592);
-                _detail.Text = string.IsNullOrEmpty(_downloadError) ? "下载失败，请稍后重试" : _downloadError;
+                _detail.Text = string.IsNullOrEmpty(_downloadError) ? Lang.T("下载失败，请稍后重试", "Download failed; try again later") : _downloadError;
                 _detail.Visible = true;
                 _download.Top = Ui.S(actionTop + 26);
                 _cancel.Visible = false;
@@ -1210,11 +1210,11 @@ namespace WtSkin
             _partTotal = _result.DownloadSize;
             _phase = DownloadPhase.Preparing;
             _download.Enabled = false;
-            _download.Text = "下载中…";
+            _download.Text = Lang.T("下载中…", "Downloading…");
             _cancel.Visible = true;
             _cancel.Enabled = true;
-            _cancel.Text = "取消";
-            _progressLeft.Text = existing > 0 ? "继续下载…" : "准备下载…";
+            _cancel.Text = Lang.T("取消", "Cancel");
+            _progressLeft.Text = existing > 0 ? Lang.T("继续下载…", "Resuming…") : Lang.T("准备下载…", "Preparing…");
             _progressLeft.Visible = true;
             _progressRight.Text = "";
             _progressRight.Visible = true;
@@ -1231,8 +1231,8 @@ namespace WtSkin
                 ? UpdateSourceDialog.MirrorUrl(_result.Sha256Url)
                 : _result.Sha256Url;
             Config.Log("自更新：开始下载 v" + version + "，源 " + UpdateSourceDialog.FormatSource(_source) +
-                       (downloadUrl.Length > 0 ? "，地址 " + downloadUrl : "") +
-                       (existing > 0 ? "，断点续传起始 " + existing + " 字节" : ""));
+                       (downloadUrl.Length > 0 ? Lang.T("，地址 ", ", address ") + downloadUrl : "") +
+                       (existing > 0 ? Lang.T("，断点续传起始 ", ", resume at ") + existing + Lang.T(" 字节", " bytes") : ""));
             UpdateDownloader downloader = new UpdateDownloader(version, downloadUrl, _result.Sha256,
                                                                shaUrl, _result.DownloadSize,
                                                                OnDownloadProgress, OnDownloadDone);
@@ -1247,8 +1247,8 @@ namespace WtSkin
                 return;
             }
             _cancel.Enabled = false;
-            _cancel.Text = "取消中…";
-            _progressLeft.Text = "正在取消…";
+            _cancel.Text = Lang.T("取消中…", "Canceling…");
+            _progressLeft.Text = Lang.T("正在取消…", "Canceling…");
             _progressRight.Text = "";
             Config.Log("自更新：用户点击取消，等待下载线程收尾");
             _downloader.Cancel();
@@ -1302,10 +1302,10 @@ namespace WtSkin
             switch (progress.Phase)
             {
                 case DownloadPhase.Preparing:
-                    _progressLeft.Text = progress.Message.Length > 0 ? progress.Message : "准备下载…";
+                    _progressLeft.Text = progress.Message.Length > 0 ? progress.Message : Lang.T("准备下载…", "Preparing…");
                     _progressRight.Text = "";
                     _bar.SetValue(Fraction(progress.Received, progress.Total), false);
-                    _download.Text = "下载中…";
+                    _download.Text = Lang.T("下载中…", "Downloading…");
                     _download.Enabled = false;
                     _cancel.Visible = true;
                     break;
@@ -1313,33 +1313,33 @@ namespace WtSkin
                     _progressLeft.Text = DescribeProgress(progress);
                     _progressRight.Text = DescribeSpeed(progress);
                     _bar.SetValue(Fraction(progress.Received, progress.Total), false);
-                    _download.Text = "下载中…";
+                    _download.Text = Lang.T("下载中…", "Downloading…");
                     _download.Enabled = false;
                     _cancel.Visible = true;
                     break;
                 case DownloadPhase.Retrying:
-                    _progressLeft.Text = "网络中断，正在重试 " + progress.Retry + "/" + progress.RetryMax;
+                    _progressLeft.Text = Lang.T("网络中断，正在重试 ", "Network interrupted; retrying ") + progress.Retry + "/" + progress.RetryMax;
                     _progressRight.Text = DescribeSpeed(progress);
                     _bar.SetValue(Fraction(progress.Received, progress.Total), false);
-                    _download.Text = "重试中…";
+                    _download.Text = Lang.T("重试中…", "Retrying…");
                     _download.Enabled = false;
                     _cancel.Visible = true;
                     break;
                 case DownloadPhase.Verifying:
-                    _progressLeft.Text = "正在校验…";
+                    _progressLeft.Text = Lang.T("正在校验…", "Verifying…");
                     _progressRight.Text = "";
                     _bar.SetValue(1, false);
-                    _download.Text = "校验中…";
+                    _download.Text = Lang.T("校验中…", "Verifying…");
                     _download.Enabled = false;
                     _cancel.Visible = false;
                     break;
                 case DownloadPhase.Canceled:
-                    _download.Text = "继续下载";
+                    _download.Text = Lang.T("继续下载", "Resume download");
                     _download.Enabled = true;
                     _cancel.Visible = false;
                     _progressLeft.Text = progress.Received > 0
-                        ? "已取消 · 已下载 " + DownloadFormat.Size(progress.Received)
-                        : "已取消";
+                        ? Lang.T("已取消 · 已下载 ", "Canceled · downloaded ") + DownloadFormat.Size(progress.Received)
+                        : Lang.T("已取消", "Canceled");
                     _progressRight.Text = "";
                     _bar.SetValue(Fraction(progress.Received, progress.Total), false);
                     break;
@@ -1355,16 +1355,16 @@ namespace WtSkin
             }
             _downloader = null;
             _cancel.Enabled = true;
-            _cancel.Text = "取消";
+            _cancel.Text = Lang.T("取消", "Cancel");
             _download.Enabled = true;
 
             if (result == null)
             {
                 _phase = DownloadPhase.Failed;
                 _downloadFailed = true;
-                _downloadError = "下载已中断，请重试";
-                _download.Text = "重试下载";
-                _status.Text = "下载失败";
+                _downloadError = Lang.T("下载已中断，请重试", "Download interrupted; try again");
+                _download.Text = Lang.T("重试下载", "Retry download");
+                _status.Text = Lang.T("下载失败", "Download failed");
                 _status.ForeColor = Ui.Bad;
                 ApplyLayout();
                 return;
@@ -1395,13 +1395,13 @@ namespace WtSkin
                 _downloadFailed = false;
                 _downloadError = "";
                 _download.Enabled = true;
-                _download.Text = "立即安装";
-                _status.Text = "更新已下载，可立即安装";
+                _download.Text = Lang.T("立即安装", "Install now");
+                _status.Text = Lang.T("更新已下载，可立即安装", "Update downloaded; ready to install");
                 _status.ForeColor = Ui.Good;
                 _cancel.Visible = false;
-                _progressLeft.Text = "已下载 " + DownloadFormat.Size(result.Size);
+                _progressLeft.Text = Lang.T("已下载 ", "Downloaded ") + DownloadFormat.Size(result.Size);
                 _progressLeft.Visible = true;
-                _progressRight.Text = "SHA-256 校验通过";
+                _progressRight.Text = Lang.T("SHA-256 校验通过", "SHA-256 verified");
                 _progressRight.Visible = true;
                 _bar.SetValue(1, true);
                 _bar.Visible = true;
@@ -1414,11 +1414,11 @@ namespace WtSkin
             _phase = DownloadPhase.Failed;
             _downloadFailed = true;
             _downloadError = result.MirrorHint
-                ? "GitHub 直连失败，可挂梯子重试，或使用国内镜像下载"
-                : (result.Error.Length > 0 ? result.Error : "下载失败，请重试");
-            _download.Text = "重试下载";
+                ? Lang.T("GitHub 直连失败，可挂梯子重试，或使用国内镜像下载", "Direct GitHub failed; use a proxy or the China mirror")
+                : (result.Error.Length > 0 ? result.Error : Lang.T("下载失败，请重试", "Download failed; try again"));
+            _download.Text = Lang.T("重试下载", "Retry download");
             _download.Enabled = true;
-            _status.Text = "下载失败";
+            _status.Text = Lang.T("下载失败", "Download failed");
             _status.ForeColor = Ui.Bad;
             _progressLeft.Visible = false;
             _progressRight.Visible = false;
@@ -1445,9 +1445,9 @@ namespace WtSkin
             }
             if (!install)
             {
-                _status.Text = "更新已下载，可立即安装";
+                _status.Text = Lang.T("更新已下载，可立即安装", "Update downloaded; ready to install");
                 _status.ForeColor = Ui.Good;
-                _download.Text = "立即安装";
+                _download.Text = Lang.T("立即安装", "Install now");
                 Config.Log("自更新：用户选择稍后安装 v" + _result.Latest.ToDisplay());
                 return;
             }
@@ -1471,13 +1471,13 @@ namespace WtSkin
             }
 
             _downloadFailed = true;
-            _downloadError = "无法开始更新：" + error;
+            _downloadError = Lang.T("无法开始更新：", "Cannot start update: ") + error;
             Config.Log("自更新：无法开始更新 → " + error);
             if (owner != null)
             {
-                MessageBox.Show(owner, "无法开始更新：\n\n" + error +
-                                       "\n\n可以先继续使用当前版本，或到 GitHub Releases 手动下载。",
-                                "更新失败", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(owner, Lang.T("无法开始更新：\n\n", "Cannot start update:\n\n") + error +
+                                       Lang.T("\n\n可以先继续使用当前版本，或到 GitHub Releases 手动下载。", "\n\nYou can keep using the current version or download the update from GitHub Releases manually."),
+                                Lang.T("更新失败", "Update failed"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             ApplyLayout();
         }
@@ -1495,21 +1495,21 @@ namespace WtSkin
                 {
                     percent = 100;
                 }
-                return "下载中 " + percent + "% · " + DownloadFormat.Size(progress.Received) +
+                return Lang.T("下载中 ", "Downloading ") + percent + "% · " + DownloadFormat.Size(progress.Received) +
                        " / " + DownloadFormat.Size(progress.Total);
             }
-            return "下载中 · " + DownloadFormat.Size(progress.Received) + " / 大小未知";
+            return Lang.T("下载中 · ", "Downloading · ") + DownloadFormat.Size(progress.Received) + Lang.T(" / 大小未知", " / unknown size");
         }
 
         private static string DescribeSpeed(DownloadProgress progress)
         {
             if (!progress.SpeedReady || progress.Speed <= 0)
             {
-                return "计算中…";
+                return Lang.T("计算中…", "calculating…");
             }
             if (progress.EtaSeconds >= 0)
             {
-                return DownloadFormat.Speed(progress.Speed) + " · 剩余 " +
+                return DownloadFormat.Speed(progress.Speed) + Lang.T(" · 剩余 ", " · remaining ") +
                        DownloadFormat.Eta(progress.EtaSeconds);
             }
             return DownloadFormat.Speed(progress.Speed);

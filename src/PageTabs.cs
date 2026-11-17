@@ -10,7 +10,7 @@ namespace WtSkin
         public int Active;
         public event EventHandler PageChanged;
         private int _hover = -1;
-        private readonly string[] _labels = new string[] { "导入", "涂装管理" };
+        private readonly string[] _labels = new string[] { Lang.T("导入", "Import"), Lang.T("涂装管理", "Skins") };
 
         public PageTabs()
         {

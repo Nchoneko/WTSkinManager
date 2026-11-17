@@ -290,7 +290,23 @@ namespace WtSkin
         {
             if (string.IsNullOrEmpty(code))
             {
-                return "未知";
+                return Lang.T("未知", "Unknown");
+            }
+            if (Lang.English)
+            {
+                switch ((code ?? "").ToLowerInvariant())
+                {
+                    case "usa": return "USA";
+                    case "germany": return "Germany";
+                    case "ussr": return "USSR";
+                    case "britain": return "Britain";
+                    case "japan": return "Japan";
+                    case "china": return "China";
+                    case "italy": return "Italy";
+                    case "france": return "France";
+                    case "sweden": return "Sweden";
+                    case "israel": return "Israel";
+                }
             }
             EnsureLoaded();
             string name;

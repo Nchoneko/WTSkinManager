@@ -17,7 +17,7 @@ namespace WtSkin
         private readonly List<VehicleIconEntry> _failed = new List<VehicleIconEntry>();
 
         public IconStatusForm()
-            : base("载具图标", 640, 520)
+            : base(Lang.T("载具图标", "Vehicle icons"), 640, 520)
         {
             VehicleCatalog.Reload();
             List<VehicleIconEntry> all = VehicleCatalog.Snapshot();
@@ -34,13 +34,13 @@ namespace WtSkin
             int permanent = VehicleCatalog.PermanentCount;
             long bytes = VehicleCatalog.UniqueBytes();
 
-            MakeLabel("清单共 " + VehicleCatalog.Count + " 条 · 成功 " + ok + " · 重试中 " + retrying +
-                      " · 永久失败 " + permanent, 24, 8, 580, 26, Ui.H1,
+            MakeLabel(Lang.T("清单共 ", "Entries: ") + VehicleCatalog.Count + Lang.T(" 条 · 成功 ", " · ok ") + ok + Lang.T(" · 重试中 ", " · retrying ") + retrying +
+                      Lang.T(" · 永久失败 ", " · permanently failed ") + permanent, 24, 8, 580, 26, Ui.H1,
                       permanent > 0 ? Ui.Warn : Ui.Good);
-            MakeLabel("唯一文件 " + (ok - VehicleCatalog.DuplicateCount()) + " 张（sha256 去重 " +
-                      VehicleCatalog.DuplicateCount() + " 条）· 体积 " +
+            MakeLabel(Lang.T("唯一文件 ", "Unique files: ") + (ok - VehicleCatalog.DuplicateCount()) + Lang.T(" 张（sha256 去重 ", " (sha256 dedup ") +
+                      VehicleCatalog.DuplicateCount() + Lang.T(" 条）· 体积 ", " · size ") +
                       string.Format(CultureInfo.InvariantCulture, "{0:N1} MB", bytes / 1048576.0) +
-                      " · 清单版本 " + VehicleCatalog.Version, 24, 38, 580, 22, Ui.Small, Ui.TextDim);
+                      Lang.T(" · 清单版本 ", " · manifest ") + VehicleCatalog.Version, 24, 38, 580, 22, Ui.Small, Ui.TextDim);
 
             ListBox list = new ListBox();
             list.Left = Ui.S(24);
@@ -72,27 +72,27 @@ namespace WtSkin
             for (int i = 0; i < _failed.Count && i < 200; i++)
             {
                 VehicleIconEntry e = _failed[i];
-                list.Items.Add(string.Format(CultureInfo.InvariantCulture, "✕ {0} · {1}/{2} · 第 {3}/{4} 次 · {5}",
+                list.Items.Add(string.Format(CultureInfo.InvariantCulture, Lang.T("✕ {0} · {1}/{2} · 第 {3}/{4} 次 · {5}", "✕ {0} · {1}/{2} · try {3}/{4} · {5}"),
                     e.Slug, e.Nation, e.Branch, e.AttemptCount, VehicleCatalog.MaxAttempts,
-                    e.LastError.Length == 0 ? "尚未请求" : e.LastError));
+                    e.LastError.Length == 0 ? Lang.T("尚未请求", "Not requested yet") : e.LastError));
             }
             if (_failed.Count > 200)
             {
-                list.Items.Add("… 其余 " + (_failed.Count - 200) + " 条请导出缺失清单查看");
+                list.Items.Add(Lang.T("… 其余 ", "… and ") + (_failed.Count - 200) + Lang.T(" 条请导出缺失清单查看", " more; export the missing list"));
             }
             if (_failed.Count == 0)
             {
-                list.Items.Add("全部载具图标都已就位，没有待重试或永久失败的条目。");
+                list.Items.Add(Lang.T("全部载具图标都已就位，没有待重试或永久失败的条目。", "All vehicle icons are present; nothing to retry."));
             }
             Content.Controls.Add(list);
 
-            FlatButton export = MakeButton("导出缺失清单", 24, 430, 156, false);
+            FlatButton export = MakeButton(Lang.T("导出缺失清单", "Export missing list"), 24, 430, 156, false);
             export.Click += delegate
             {
                 using (SaveFileDialog dialog = new SaveFileDialog())
                 {
-                    dialog.Filter = "文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*";
-                    dialog.FileName = "缺失图标清单_" + DateTime.Now.ToString("yyyyMMdd_HHmm", CultureInfo.InvariantCulture) + ".txt";
+                    dialog.Filter = Lang.T("文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*", "Text files (*.txt)|*.txt|All files (*.*)|*.*");
+                    dialog.FileName = Lang.T("缺失图标清单_", "missing-icons_") + DateTime.Now.ToString("yyyyMMdd_HHmm", CultureInfo.InvariantCulture) + ".txt";
                     if (dialog.ShowDialog(this) != DialogResult.OK)
                     {
                         return;
@@ -100,18 +100,18 @@ namespace WtSkin
                     try
                     {
                         int n = VehicleCatalog.ExportMissing(dialog.FileName);
-                        MessageBox.Show(this, "已导出 " + n + " 条缺失记录：\r\n" + dialog.FileName,
-                                        "导出缺失清单", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(this, Lang.T("已导出 ", "Exported ") + n + Lang.T(" 条缺失记录：\r\n", " missing entries:\r\n") + dialog.FileName,
+                                        Lang.T("导出缺失清单", "Export missing list"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(this, "导出失败：" + ex.Message, "导出缺失清单",
+                        MessageBox.Show(this, Lang.T("导出失败：", "Export failed: ") + ex.Message, Lang.T("导出缺失清单", "Export missing list"),
                                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             };
 
-            FlatButton retry = MakeButton("重试失败项", 330, 430, 150, false);
+            FlatButton retry = MakeButton(Lang.T("重试失败项", "Retry failed items"), 330, 430, 150, false);
             retry.Enabled = _failed.Count > 0;
             retry.Click += delegate
             {
@@ -120,7 +120,7 @@ namespace WtSkin
                 Close();
             };
 
-            FlatButton close = MakeButton("关闭", 500, 430, 116, true);
+            FlatButton close = MakeButton(Lang.T("关闭", "Close"), 500, 430, 116, true);
             close.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
         }
     }

@@ -20,9 +20,13 @@ namespace WtSkin
         {
             get
             {
-                if (Vehicle != null && !string.IsNullOrEmpty(Vehicle.Zh))
+                if (Vehicle != null)
                 {
-                    return Vehicle.Zh;
+                    string name = Lang.English ? Vehicle.En : Vehicle.Zh;
+                    if (!string.IsNullOrEmpty(name))
+                    {
+                        return name;
+                    }
                 }
                 if (!string.IsNullOrEmpty(UnitId))
                 {
@@ -50,6 +54,10 @@ namespace WtSkin
         {
             get
             {
+                if (Lang.English && Vehicle != null && !string.IsNullOrEmpty(Vehicle.En))
+                {
+                    return Vehicle.En;
+                }
                 // 以涂装文件夹里的 slug 为主键（Vehicle 可能按名称匹配到别的 id，导致配置表命中不到）
                 string byUnit = NameMap.Short(UnitId, Vehicle == null ? FullName : Vehicle.Zh, FullName);
                 if (!string.IsNullOrEmpty(byUnit))
@@ -78,7 +86,7 @@ namespace WtSkin
 
         public string StatusText
         {
-            get { return Disabled ? "已禁用" : "已启用"; }
+            get { return Disabled ? Lang.T("已禁用", "Disabled") : Lang.T("已启用", "Enabled"); }
         }
     }
 
@@ -187,7 +195,7 @@ namespace WtSkin
                 }
                 if (Directory.Exists(target))
                 {
-                    error = "目标目录已存在：" + target;
+                    error = Lang.T("目标目录已存在：", "Target folder already exists: ") + target;
                     return false;
                 }
                 Directory.Move(skin.Path, target);
@@ -228,7 +236,7 @@ namespace WtSkin
                 }
                 if (Directory.Exists(target))
                 {
-                    error = "目标目录已存在：" + target;
+                    error = Lang.T("目标目录已存在：", "Target folder already exists: ") + target;
                     return false;
                 }
                 Directory.Move(skin.Path, target);

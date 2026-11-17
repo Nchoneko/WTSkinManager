@@ -55,7 +55,7 @@ namespace WtSkin
         }
 
         public SetupForm(string detectedGame, InstallScan scan)
-            : base(scan != null && scan.HasInstalled ? "更新 · 已安装" : "安装 · 首次使用",
+            : base(scan != null && scan.HasInstalled ? Lang.T("更新 · 已安装", "Update · installed") : Lang.T("安装 · 首次使用", "Install · first run"),
                    720, 540 + Offset(scan) + 30)
         {
             _scan = scan ?? new InstallScan();
@@ -132,67 +132,67 @@ namespace WtSkin
                 Content.Controls.Add(_candidates);
             }
 
-            MakeLabel("安装目录", 24, 16 + o, 200, 22, Ui.SmallBold, Ui.TextDim);
+            MakeLabel(Lang.T("安装目录", "Install folder"), 24, 16 + o, 200, 22, Ui.SmallBold, Ui.TextDim);
             TextBox installField;
             MakeField(24, 40 + o, 672, 40, out installField);
             _installBox = installField;
             _installBox.Text = _scan.Best != null ? _scan.Best.Dir : Config.DefaultInstallDir;
             _installBox.TextChanged += delegate { UpdateMode(); };
 
-            MakeLabel("备份、日志、缓存都会放在这里，不会写进战雷目录。", 24, 86 + o, 660, 20, Ui.Small, Ui.TextFaint);
+            MakeLabel(Lang.T("备份、日志、缓存都会放在这里，不会写进战雷目录。", "Backups, logs and cache are kept here, never in the game folder."), 24, 86 + o, 660, 20, Ui.Small, Ui.TextFaint);
             _resolvedLabel = MakeLabel("", 24, 108 + o, 660, 20, Ui.Small, Ui.Accent);
 
-            FlatButton pickInstall = MakeButton("浏览…", 538, 132 + o, 74, false);
+            FlatButton pickInstall = MakeButton(Lang.T("浏览…", "Browse…"), 538, 132 + o, 74, false);
             pickInstall.Click += delegate
             {
-                string picked = PickFolder("选择安装目录", _installBox.Text, false);
+                string picked = PickFolder(Lang.T("选择安装目录", "Select install folder"), _installBox.Text, false);
                 if (!string.IsNullOrEmpty(picked))
                 {
                     _installBox.Text = picked;
                 }
             };
-            FlatButton useDefault = MakeButton("用默认目录", 620, 132 + o, 90, false);
+            FlatButton useDefault = MakeButton(Lang.T("用默认目录", "Use default"), 620, 132 + o, 90, false);
             useDefault.Click += delegate { _installBox.Text = Config.DefaultInstallDir; };
 
-            MakeLabel("建议选一个空文件夹；如果选的是盘符根目录或已有内容的文件夹，程序会自动装到其中的 WTSkinManager 子文件夹。",
+            MakeLabel(Lang.T("建议选一个空文件夹；如果选的是盘符根目录或已有内容的文件夹，程序会自动装到其中的 WTSkinManager 子文件夹。", "Prefer an empty folder. If you choose a drive root or a non-empty folder, the app installs into a WTSkinManager subfolder."),
                      24, 184 + o, 672, 20, Ui.Small, Ui.TextFaint);
 
-            MakeLabel("游戏目录", 24, 214 + o, 200, 22, Ui.SmallBold, Ui.TextDim);
+            MakeLabel(Lang.T("游戏目录", "Game folder"), 24, 214 + o, 200, 22, Ui.SmallBold, Ui.TextDim);
             TextBox gameField;
             MakeField(24, 238 + o, 672, 40, out gameField);
             _gameBox = gameField;
-            _gameBox.Text = string.IsNullOrEmpty(detectedGame) ? "尚未找到，请手动选择" : detectedGame;
+            _gameBox.Text = string.IsNullOrEmpty(detectedGame) ? Lang.T("尚未找到，请手动选择", "Not found; select manually") : detectedGame;
             _gameBox.ReadOnly = true;
             _gameBox.TabStop = false;
 
-            MakeLabel("目录里应当能看到 UserSkins 文件夹（Steam 版一般在 steamapps\\common\\War Thunder）。",
+            MakeLabel(Lang.T("目录里应当能看到 UserSkins 文件夹（Steam 版一般在 steamapps\\common\\War Thunder）。", "The folder should contain UserSkins (Steam: steamapps\\common\\War Thunder)."),
                     24, 284 + o, 660, 20, Ui.Small, Ui.TextFaint);
 
-            FlatButton detect = MakeButton("自动检测", 476, 310 + o, 96, false);
+            FlatButton detect = MakeButton(Lang.T("自动检测", "Auto-detect"), 476, 310 + o, 96, false);
             detect.Click += delegate
             {
                 string best = GameLocator.FindBest();
                 if (string.IsNullOrEmpty(best))
                 {
-                    MessageBox.Show(this, "没有找到战雷安装目录，请手动选择。", "自动检测",
+                    MessageBox.Show(this, Lang.T("没有找到战雷安装目录，请手动选择。", "War Thunder installation not found; select it manually."), Lang.T("自动检测", "Auto-detect"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
                 _gameBox.Text = best;
             };
-            FlatButton pickGame = MakeButton("选择游戏目录…", 582, 310 + o, 128, false);
+            FlatButton pickGame = MakeButton(Lang.T("选择游戏目录…", "Select game folder…"), 582, 310 + o, 128, false);
             pickGame.Click += delegate
             {
-                string picked = PickFolder("选择 War Thunder 安装目录（包含 UserSkins）", _gameBox.Text, true);
+                string picked = PickFolder(Lang.T("选择 War Thunder 安装目录（包含 UserSkins）", "Select War Thunder install folder (containing UserSkins)"), _gameBox.Text, true);
                 if (!string.IsNullOrEmpty(picked))
                 {
                     _gameBox.Text = picked;
                 }
             };
 
-            _quit = MakeButton("退出", 462, 424 + o, 96, false);
+            _quit = MakeButton(Lang.T("退出", "Exit"), 462, 424 + o, 96, false);
             _quit.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            _primary = MakeButton("安装并启动", 592, 424 + o, 118, true);
+            _primary = MakeButton(Lang.T("安装并启动", "Install and launch"), 592, 424 + o, 118, true);
             _primary.Click += delegate { DoInstall(); };
 
             // 发布者签名的安装结果就显示在这一行（成功 / 跳过 / 没有可用证书）。
@@ -249,7 +249,7 @@ namespace WtSkin
         {
             string resolved = ResolveInstallDir(_installBox.Text);
             _selected = _scan.Match(resolved);
-            string text = _selected != null ? ("更新到 v" + AppInfo.VersionText) : "安装并启动";
+            string text = _selected != null ? (Lang.T("更新到 v", "Update to v") + AppInfo.VersionText) : Lang.T("安装并启动", "Install and launch");
             _primary.Text = text;
             // 按文字实际宽度算按钮宽度，右对齐并留 24px 边距；左侧「退出」跟着让位，避免重叠/贴边。
             int width = Math.Max(Ui.S(118), TextRenderer.MeasureText(text, Ui.BodyBold).Width + Ui.S(44));
@@ -281,25 +281,25 @@ namespace WtSkin
                 _banner.ForeColor = Ui.Accent;
                 if (_scan.Candidates.Count > 1)
                 {
-                    firstLine = "检测到 " + _scan.Candidates.Count + " 个已安装版本，默认选择最高版本 " +
-                                _selected.VersionLabel + "，位于 " + _selected.Dir + "。可在上方切换。";
+                    firstLine = Lang.T("检测到 ", "Detected ") + _scan.Candidates.Count + Lang.T(" 个已安装版本，默认选择最高版本 ", " installed versions; highest selected by default: ") +
+                                _selected.VersionLabel + Lang.T("，位于 ", " at ") + _selected.Dir + Lang.T("。可在上方切换。", ". You can switch above.");
                 }
                 else if (_selected.VersionUnknown)
                 {
-                    firstLine = "检测到已安装的程序，位于 " + _selected.Dir + "（版本读取失败）。";
+                    firstLine = Lang.T("检测到已安装的程序，位于 ", "Installed program found at ") + _selected.Dir + Lang.T("（版本读取失败）。", " (version could not be read).");
                 }
                 else
                 {
-                    firstLine = "检测到已安装版本 " + _selected.VersionLabel + "，位于 " + _selected.Dir + "。";
+                    firstLine = Lang.T("检测到已安装版本 ", "Installed version ") + _selected.VersionLabel + Lang.T("，位于 ", " at ") + _selected.Dir + "。";
                 }
             }
             else
             {
                 _banner.ForeColor = Ui.Warn;
                 InstallCandidate best = _scan.Best;
-                firstLine = "检测到已安装版本 " + (best == null ? "" : best.VersionLabel) +
-                            "，位于 " + (best == null ? "" : best.Dir) +
-                            "；当前选择的是其他目录，将按全新安装处理，不覆盖已安装版本。";
+                firstLine = Lang.T("检测到已安装版本 ", "Installed version ") + (best == null ? "" : best.VersionLabel) +
+                            Lang.T("，位于 ", " at ") + (best == null ? "" : best.Dir) +
+                            Lang.T("；当前选择的是其他目录，将按全新安装处理，不覆盖已安装版本。", "; the selected folder is different, so this will be a fresh install and will not overwrite the installed version.");
             }
             _banner.Text = firstLine;
         }
@@ -311,14 +311,14 @@ namespace WtSkin
             string suffix = typed.Length == 0 ||
                             string.Equals(resolved.TrimEnd('\\'), typed.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)
                 ? ""
-                : "（自动加了子文件夹）";
+                : Lang.T("（自动加了子文件夹）", " (subfolder added automatically)");
             bool risky = IsUnderFolder(resolved, Environment.GetFolderPath(Environment.SpecialFolder.Desktop)) ||
                          IsUnderFolder(resolved, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
             string mode = _selected != null
-                ? "（覆盖更新）"
-                : (_scan.HasInstalled ? "（全新安装）" : "");
-            _resolvedLabel.Text = "将安装到：" + resolved + suffix + mode +
-                (risky ? "   ⚠ 桌面/文档目录可能被安全软件拦截" : "");
+                ? Lang.T("（覆盖更新）", " (update in place)")
+                : (_scan.HasInstalled ? Lang.T("（全新安装）", " (fresh install)") : "");
+            _resolvedLabel.Text = Lang.T("将安装到：", "Install to: ") + resolved + suffix + mode +
+                (risky ? Lang.T("   ⚠ 桌面/文档目录可能被安全软件拦截", "   ⚠ Desktop/Documents may be blocked by security software") : "");
             _resolvedLabel.ForeColor = risky ? Ui.Warn : Ui.Accent;
         }
 
@@ -354,14 +354,14 @@ namespace WtSkin
             string gameDir = _gameBox.Text.Trim();
             if (installDir.Length == 0)
             {
-                MessageBox.Show(this, "请选择一个安装目录。", "安装", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, Lang.T("请选择一个安装目录。", "Select an install folder."), Lang.T("安装", "Install"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             if (!Config.GameDirLooksValid(gameDir))
             {
-                MessageBox.Show(this, "这个游戏目录看起来不对：\n\n" + gameDir +
-                                "\n\n请选择同时包含 UserSkins 和 aces.exe（或 config.blk）的文件夹。",
-                                "目录不正确", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, Lang.T("这个游戏目录看起来不对：\n\n", "This game folder looks wrong:\n\n") + gameDir +
+                                Lang.T("\n\n请选择同时包含 UserSkins 和 aces.exe（或 config.blk）的文件夹。", "\n\nChoose a folder containing UserSkins and aces.exe (or config.blk)."),
+                                Lang.T("目录不正确", "Invalid folder"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             string fullInstall;
@@ -385,7 +385,7 @@ namespace WtSkin
             if (fullInstall.StartsWith(fullGame + "\\", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(fullInstall, fullGame, StringComparison.OrdinalIgnoreCase))
             {
-                MessageBox.Show(this, "安装目录不能放在战雷的游戏目录里，请换一个位置。", "目录不合适",
+                MessageBox.Show(this, Lang.T("安装目录不能放在战雷的游戏目录里，请换一个位置。", "The install folder cannot be inside the game folder."), Lang.T("目录不合适", "Unsuitable folder"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -404,8 +404,8 @@ namespace WtSkin
                 string closeError;
                 if (!RunningInstance.CloseAll(running, out closeError))
                 {
-                    MessageBox.Show(this, "无法关闭正在运行的程序：\n\n" + closeError +
-                                    "\n\n请手动退出后重试。", "关闭失败",
+                    MessageBox.Show(this, Lang.T("无法关闭正在运行的程序：\n\n", "Cannot close the running program:\n\n") + closeError +
+                                    Lang.T("\n\n请手动退出后重试。", "\n\nExit it manually and try again."), Lang.T("关闭失败", "Close failed"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -442,7 +442,7 @@ namespace WtSkin
 
             // 发布者签名：全新安装 / 覆盖更新时提示导入；已装过、或本次已选「暂不安装」都不再问。
             // 提示发生在写入程序文件之前，签名结果随后显示在安装界面底部。
-            OfferPublisherCert(target == null ? "全新安装" : "覆盖更新", fullInstall);
+            OfferPublisherCert(target == null ? Lang.T("全新安装", "fresh install") : Lang.T("覆盖更新", "update in place"), fullInstall);
 
             InstallResult result = null;
             while (true)
@@ -466,7 +466,7 @@ namespace WtSkin
                 catch (InstallException failed)
                 {
                     MessageBox.Show(this, failed.Message,
-                                    failed.RolledBack ? "更新失败（已回滚）" : "更新失败（回滚未完成）",
+                                    failed.RolledBack ? Lang.T("更新失败（已回滚）", "Update failed (rolled back)") : Lang.T("更新失败（回滚未完成）", "Update failed (rollback incomplete)"),
                                     MessageBoxButtons.OK,
                                     failed.RolledBack ? MessageBoxIcon.Error : MessageBoxIcon.Warning);
                     return;
@@ -490,9 +490,9 @@ namespace WtSkin
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "安装失败：\n\n" + ex.Message +
+                    MessageBox.Show(this, Lang.T("安装失败：\n\n", "Installation failed:\n\n") + ex.Message +
                                     "\n\n" + Installer.EnvironmentHint(),
-                                    "安装失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    Lang.T("安装失败", "Installation failed"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
             }
@@ -502,7 +502,7 @@ namespace WtSkin
                 return;
             }
             InstallLog.Write("界面：完成 " + (result.Fresh ? "全新安装" : "覆盖更新") +
-                             "，v" + result.NewVersion.ToDisplay() + "（数据 " + result.DataVersion + "）");
+                             "，v" + result.NewVersion.ToDisplay() + Lang.T("（数据 ", " (data ") + result.DataVersion + "）");
             InstallDir = fullInstall;
             string targetExe = Path.Combine(fullInstall, "WTSkinManager.exe");
             if (string.Equals(Path.GetFullPath(targetExe), Path.GetFullPath(Config.ExePath),
@@ -528,9 +528,9 @@ namespace WtSkin
             catch (Exception startError)
             {
                 InstallLog.Write("启动更新后的程序失败：" + startError.Message);
-                MessageBox.Show(this, "安装/更新已完成，但没能自动启动新版程序：\n\n" + startError.Message +
-                                "\n\n请手动打开 " + targetExe,
-                                "需要手动启动", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Lang.T("安装/更新已完成，但没能自动启动新版程序：\n\n", "Installation finished but the new version could not be launched:\n\n") + startError.Message +
+                                Lang.T("\n\n请手动打开 ", "\n\nPlease open manually: ") + targetExe,
+                                Lang.T("需要手动启动", "Manual launch required"), MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             DialogResult = DialogResult.Cancel;
             Close();
@@ -548,14 +548,14 @@ namespace WtSkin
             {
                 InstallLog.Write("发布者签名：已存在，不弹窗（主体 " +
                                  (existing == null ? PublisherCert.ExpectedSubject : existing.Subject) +
-                                 "，指纹 " + PublisherCert.ExpectedThumbprint + "）");
-                SetCertStatus("发布者签名已存在", Ui.TextFaint);
+                                 Lang.T("，指纹 ", ", thumbprint ") + PublisherCert.ExpectedThumbprint + "）");
+                SetCertStatus(Lang.T("发布者签名已存在", "Publisher signature already installed"), Ui.TextFaint);
                 return;
             }
             if (PublisherCert.SkippedThisRun)
             {
                 InstallLog.Write("发布者签名：本次安装已选择「暂不安装」，不重复询问；证书未导入");
-                SetCertStatus("本次已跳过发布者签名安装，可在设置里补装", Ui.TextFaint);
+                SetCertStatus(Lang.T("本次已跳过发布者签名安装，可在设置里补装", "Publisher signature skipped; you can install it later in Settings"), Ui.TextFaint);
                 return;
             }
 
@@ -565,7 +565,7 @@ namespace WtSkin
             if (!load.Ok)
             {
                 InstallLog.Write("发布者签名：不弹窗，" + load.Detail);
-                SetCertStatus("没有可用的发布者签名证书，已跳过", Ui.TextFaint);
+                SetCertStatus(Lang.T("没有可用的发布者签名证书，已跳过", "No usable publisher certificate; skipped"), Ui.TextFaint);
                 return;
             }
             InstallLog.Write("发布者签名：弹出安装提示（" + mode + "）；" + load.Detail);
@@ -583,20 +583,20 @@ namespace WtSkin
             if (installedNow && attempt != null)
             {
                 InstallLog.Write("发布者签名：用户选择「安装签名」→ " + attempt.Detail);
-                SetCertStatus("发布者签名已安装（" + PublisherCert.PublisherName + "）", Ui.Good);
+                SetCertStatus(Lang.T("发布者签名已安装（", "Publisher signature installed (") + PublisherCert.PublisherName + "）", Ui.Good);
             }
             else if (attempt != null && !attempt.Ok)
             {
                 InstallLog.Write("发布者签名：用户尝试「安装签名」但导入失败：" + attempt.Detail);
                 InstallLog.Write("发布者签名：用户随后" + (skipped ? "选择「暂不安装」" : "关闭了提示") +
-                                 "，安装继续；证书未导入，指纹 " + PublisherCert.ExpectedThumbprint);
-                SetCertStatus("发布者签名导入失败，已跳过（可在设置里重试）", Ui.Warn);
+                                 Lang.T("，安装继续；证书未导入，指纹 ", ", installation continues; certificate not imported, thumbprint ") + PublisherCert.ExpectedThumbprint);
+                SetCertStatus(Lang.T("发布者签名导入失败，已跳过（可在设置里重试）", "Publisher signature import failed; skipped (retry in Settings)"), Ui.Warn);
             }
             else
             {
                 InstallLog.Write("发布者签名：用户选择「暂不安装」，本次安装不再询问；证书未导入，指纹 " +
                                  PublisherCert.ExpectedThumbprint);
-                SetCertStatus("已跳过发布者签名安装，可在设置里补装", Ui.TextFaint);
+                SetCertStatus(Lang.T("已跳过发布者签名安装，可在设置里补装", "Publisher signature skipped; install it later in Settings"), Ui.TextFaint);
             }
         }
 
@@ -635,9 +635,9 @@ namespace WtSkin
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "没有拿到管理员权限，安装已取消。\n\n" + ex.Message +
-                                "\n\n也可以直接改用默认目录，或用 D 盘里一个普通文件夹。",
-                                "安装", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, Lang.T("没有拿到管理员权限，安装已取消。\n\n", "Administrator permission was not granted; installation canceled.\n\n") + ex.Message +
+                                Lang.T("\n\n也可以直接改用默认目录，或用 D 盘里一个普通文件夹。", "\n\nYou can also use the default folder or a normal folder on another drive."),
+                                Lang.T("安装", "Install"), MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
@@ -656,7 +656,7 @@ namespace WtSkin
                 }
                 if (requireGame && !Config.GameDirLooksValid(dialog.SelectedPath))
                 {
-                    MessageBox.Show(this, "这个目录里没有 UserSkins，确认是战雷安装目录吗？", "提示",
+                    MessageBox.Show(this, Lang.T("这个目录里没有 UserSkins，确认是战雷安装目录吗？", "This folder has no UserSkins. Is it really the War Thunder install folder?"), Lang.T("提示", "Notice"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 return dialog.SelectedPath;
@@ -670,18 +670,18 @@ namespace WtSkin
         public int Choice; // 1=重新安装 0=取消
 
         public SameVersionForm(SemVer version)
-            : base("已安装相同版本", 580, 292)
+            : base(Lang.T("已安装相同版本", "Same version installed"), 580, 292)
         {
             MakeLabel("已安装相同版本 " + (version == null ? "" : version.Display),
                       24, 14, 520, 26, Ui.H1, Ui.Accent);
-            MakeLabel("安装目录里已经是这个版本。可以重新安装并覆盖当前程序文件；" +
-                      "settings.ini、shortnames.ini、备份、日志与缓存都会原样保留。",
+            MakeLabel(Lang.T("安装目录里已经是这个版本。可以重新安装并覆盖当前程序文件；", "This version is already installed. Reinstalling overwrites the current program files;") +
+                      Lang.T("settings.ini、shortnames.ini、备份、日志与缓存都会原样保留。", "settings.ini, shortnames.ini, backups, logs and cache are kept."),
                       24, 48, 520, 44, Ui.Small, Ui.TextDim);
-            MakeLabel("如果只是想继续使用，直接取消即可。", 24, 100, 520, 20, Ui.Small, Ui.TextFaint);
+            MakeLabel(Lang.T("如果只是想继续使用，直接取消即可。", "If you just want to keep using it, click Cancel."), 24, 100, 520, 20, Ui.Small, Ui.TextFaint);
 
-            FlatButton cancel = MakeButton("取消", 338, 160, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 338, 160, 96, false);
             cancel.Click += delegate { Choice = 0; DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton reinstall = MakeButton("重新安装", 444, 160, 110, true);
+            FlatButton reinstall = MakeButton(Lang.T("重新安装", "Reinstall"), 444, 160, 110, true);
             reinstall.Click += delegate { Choice = 1; DialogResult = DialogResult.OK; Close(); };
         }
     }
@@ -692,20 +692,20 @@ namespace WtSkin
         public int Choice; // 1=继续降级 0=取消
 
         public DowngradeForm(SemVer oldVersion, SemVer newVersion)
-            : base("这是降级安装", 600, 330)
+            : base(Lang.T("这是降级安装", "Downgrade install"), 600, 330)
         {
-            string oldText = oldVersion == null ? "未知版本" : oldVersion.Display;
-            string newText = newVersion == null ? "当前安装包" : newVersion.Display;
-            MakeLabel("已安装更高版本 " + oldText, 24, 14, 540, 26, Ui.H1, Ui.Warn);
-            MakeLabel("当前安装包是 " + newText + "，继续会把程序降级到旧版本。" +
-                      "新版本里的修复与功能在这之后不会生效。",
+            string oldText = oldVersion == null ? Lang.T("未知版本", "unknown version") : oldVersion.Display;
+            string newText = newVersion == null ? Lang.T("当前安装包", "This package") : newVersion.Display;
+            MakeLabel(Lang.T("已安装更高版本 ", "A newer version is installed ") + oldText, 24, 14, 540, 26, Ui.H1, Ui.Warn);
+            MakeLabel(Lang.T("当前安装包是 ", "This package is ") + newText + Lang.T("，继续会把程序降级到旧版本。", ", continuing downgrades the app.") +
+                      Lang.T("新版本里的修复与功能在这之后不会生效。", "Fixes and features from the newer version will not be available."),
                       24, 48, 540, 44, Ui.Small, Ui.TextDim);
-            MakeLabel("推荐点「取消」，保留现在安装的版本。", 24, 96, 540, 20, Ui.Small, Ui.Warn);
+            MakeLabel(Lang.T("推荐点「取消」，保留现在安装的版本。", "Recommended: click Cancel and keep the installed version."), 24, 96, 540, 20, Ui.Small, Ui.Warn);
 
-            FlatButton proceed = MakeButton("继续降级", 404, 190, 110, false);
+            FlatButton proceed = MakeButton(Lang.T("继续降级", "Downgrade"), 404, 190, 110, false);
             proceed.Danger = true;
             proceed.Click += delegate { Choice = 1; DialogResult = DialogResult.OK; Close(); };
-            FlatButton cancel = MakeButton("取消", 522, 190, 96, true);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 522, 190, 96, true);
             cancel.Click += delegate { Choice = 0; DialogResult = DialogResult.Cancel; Close(); };
         }
     }
@@ -716,19 +716,19 @@ namespace WtSkin
         public bool Retry;
 
         public BusyRetryForm(string message)
-            : base("程序正在运行", 620, 360)
+            : base(Lang.T("程序正在运行", "Program is running"), 620, 360)
         {
-            MakeLabel("无法覆盖正在运行的程序", 24, 14, 540, 26, Ui.H1, Ui.Warn);
-            Label detail = MakeLabel(string.IsNullOrEmpty(message) ? "程序正在运行，文件被占用。" : message,
+            MakeLabel(Lang.T("无法覆盖正在运行的程序", "Cannot overwrite a running program"), 24, 14, 540, 26, Ui.H1, Ui.Warn);
+            Label detail = MakeLabel(string.IsNullOrEmpty(message) ? Lang.T("程序正在运行，文件被占用。", "The program is running and its files are in use.") : message,
                                      24, 48, 560, 70, Ui.Small, Ui.TextDim);
             detail.AutoEllipsis = true;
-            MakeLabel("请先关闭战雷涂装管理器（包括托盘里的窗口），然后点「重试」。",
+            MakeLabel(Lang.T("请先关闭战雷涂装管理器（包括托盘里的窗口），然后点「重试」。", "Close WTSkinManager (including tray windows), then click Retry."),
                       24, 124, 560, 40, Ui.Small, Ui.TextDim);
-            MakeLabel("本次更新尚未写入任何文件，不会留下半覆盖。", 24, 168, 560, 20, Ui.Small, Ui.Good);
+            MakeLabel(Lang.T("本次更新尚未写入任何文件，不会留下半覆盖。", "No files have been written yet; the update is not partially applied."), 24, 168, 560, 20, Ui.Small, Ui.Good);
 
-            FlatButton cancel = MakeButton("取消", 404, 220, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 404, 220, 96, false);
             cancel.Click += delegate { Retry = false; DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton retry = MakeButton("重试", 510, 220, 96, true);
+            FlatButton retry = MakeButton(Lang.T("重试", "Retry"), 510, 220, 96, true);
             retry.Click += delegate { Retry = true; DialogResult = DialogResult.OK; Close(); };
         }
     }
@@ -737,18 +737,18 @@ namespace WtSkin
     internal class CloseRunningAppForm : ModalForm
     {
         public CloseRunningAppForm(int count)
-            : base("程序正在运行", 540, 260)
+            : base(Lang.T("程序正在运行", "Program is running"), 540, 260)
         {
-            MakeLabel("检测到战雷涂装管理器正在运行" + (count > 1 ? "（" + count + " 个实例）" : "") + "。",
+            MakeLabel(Lang.T("检测到战雷涂装管理器正在运行", "WTSkinManager is running") + (count > 1 ? "（" + count + " 个实例）" : "") + "。",
                       24, 16, 492, 24, Ui.BodyBold, Ui.Text);
-            MakeLabel("安装 / 更新需要先关闭它，未保存的操作会丢失。关闭后安装向导会继续。",
+            MakeLabel(Lang.T("安装 / 更新需要先关闭它，未保存的操作会丢失。关闭后安装向导会继续。", "Install/update requires closing it; unsaved work will be lost. The wizard continues after closing."),
                       24, 48, 492, 40, Ui.Small, Ui.TextDim);
-            MakeLabel("也可以选择「取消」，手动退出程序后重新打开安装包。",
+            MakeLabel(Lang.T("也可以选择「取消」，手动退出程序后重新打开安装包。", "You can also click Cancel, exit the app manually and reopen the installer."),
                       24, 92, 492, 20, Ui.Small, Ui.TextFaint);
 
-            FlatButton cancel = MakeButton("取消", 300, 180, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 300, 180, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton close = MakeButton("关闭并继续", 408, 180, 120, true);
+            FlatButton close = MakeButton(Lang.T("关闭并继续", "Close and continue"), 408, 180, 120, true);
             close.Click += delegate { DialogResult = DialogResult.OK; Close(); };
             Shown += delegate
             {

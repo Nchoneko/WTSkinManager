@@ -84,14 +84,14 @@ namespace WtSkin
             if (unit == null || !IsValidUnitId(unitId))
             {
                 outcome.Result = FolderCreateResult.Failed;
-                outcome.Error = "机型代号为空或包含非法字符：" + unitId;
+                outcome.Error = Lang.T("机型代号为空或包含非法字符：", "Vehicle ID is empty or contains invalid characters: ") + unitId;
                 Config.Log("创建涂装目录 失败：" + outcome.Error);
                 return outcome;
             }
             if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
             {
                 outcome.Result = FolderCreateResult.Failed;
-                outcome.Error = "UserSkins 目录不存在：" + root;
+                outcome.Error = Lang.T("UserSkins 目录不存在：", "UserSkins folder not found: ") + root;
                 Config.Log("创建涂装目录 失败：" + outcome.Error);
                 return outcome;
             }
@@ -105,7 +105,7 @@ namespace WtSkin
                 if (!full.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                 {
                     outcome.Result = FolderCreateResult.Failed;
-                    outcome.Error = "目标路径不在 UserSkins 内：" + full;
+                    outcome.Error = Lang.T("目标路径不在 UserSkins 内：", "Target path is outside UserSkins: ") + full;
                     Config.Log("创建涂装目录 失败：" + outcome.Error);
                     return outcome;
                 }
@@ -113,7 +113,7 @@ namespace WtSkin
             catch (Exception ex)
             {
                 outcome.Result = FolderCreateResult.Failed;
-                outcome.Error = "路径无效：" + ex.Message;
+                outcome.Error = Lang.T("路径无效：", "Invalid path: ") + ex.Message;
                 Config.Log("创建涂装目录 失败：" + outcome.Error);
                 return outcome;
             }
@@ -128,7 +128,7 @@ namespace WtSkin
             if (File.Exists(full))
             {
                 outcome.Result = FolderCreateResult.Failed;
-                outcome.Error = "同名文件已存在，不能创建目录：" + full;
+                outcome.Error = Lang.T("同名文件已存在，不能创建目录：", "A file with that name exists; cannot create folder: ") + full;
                 Config.Log("创建涂装目录 失败：" + outcome.Error);
                 return outcome;
             }
@@ -146,7 +146,7 @@ namespace WtSkin
                 if (Importer.FindExistingFolder(root, unitId) == null)
                 {
                     outcome.Result = FolderCreateResult.Failed;
-                    outcome.Error = "目录已创建但仍无法识别，请检查游戏目录与代号。";
+                    outcome.Error = Lang.T("目录已创建但仍无法识别，请检查游戏目录与代号。", "Folder created but still not recognized; check the game folder and vehicle ID.");
                     Config.Log("创建涂装目录 失败：" + unitId + " → " + full + "：" + outcome.Error);
                     return outcome;
                 }
@@ -156,7 +156,7 @@ namespace WtSkin
             catch (Exception ex)
             {
                 outcome.Result = FolderCreateResult.Failed;
-                outcome.Error = "创建失败：" + ex.Message;
+                outcome.Error = Lang.T("创建失败：", "Creation failed: ") + ex.Message;
                 Config.Log("创建涂装目录 失败：" + unitId + " → " + full + "：" + ex.Message);
             }
             return outcome;

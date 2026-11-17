@@ -65,12 +65,12 @@ namespace WtSkin
             {
                 if (string.IsNullOrEmpty(newExe) || !File.Exists(newExe))
                 {
-                    error = "更新包不存在或已被删除";
+                    error = Lang.T("更新包不存在或已被删除", "Update package missing or deleted");
                     return false;
                 }
                 if (string.IsNullOrEmpty(installDir) || !Directory.Exists(installDir))
                 {
-                    error = "安装目录不存在";
+                    error = Lang.T("安装目录不存在", "Install folder not found");
                     return false;
                 }
                 newExe = Path.GetFullPath(newExe);
@@ -124,10 +124,10 @@ namespace WtSkin
                 {
                     return;
                 }
-                MessageBox.Show("更新失败，已回滚到 v" + version + "。\n\n" +
-                                "旧版本已恢复并继续运行，设置与涂装数据没有丢失。\n" +
-                                "可以稍后再试，或到 GitHub Releases 手动下载最新版。",
-                                "更新失败", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(Lang.T("更新失败，已回滚到 v", "Update failed; rolled back to v") + version + "。\n\n" +
+                                Lang.T("旧版本已恢复并继续运行，设置与涂装数据没有丢失。\n", "The old version is restored and running; settings and skins are intact.\n") +
+                                Lang.T("可以稍后再试，或到 GitHub Releases 手动下载最新版。", "You can try again later or download the latest version from GitHub Releases."),
+                                Lang.T("更新失败", "Update failed"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             catch
             {
@@ -221,31 +221,31 @@ namespace WtSkin
             {
                 if (!Directory.Exists(installDir))
                 {
-                    Fail("安装目录不存在：" + installDir, installDir, oldVersion, false);
+                    Fail(Lang.T("安装目录不存在：", "Install folder not found: ") + installDir, installDir, oldVersion, false);
                     return;
                 }
                 if (pid > 0 && !WaitForExit(pid, WaitTimeoutMs))
                 {
                     Log("失败：等待旧进程退出超时（" + (WaitTimeoutMs / 1000) + " 秒）");
                     Log("结果：失败（旧程序仍在运行，未替换任何文件）");
-                    MessageBox.Show("更新失败：旧程序还在运行，本次没有替换任何文件。\n\n" +
-                                    "请关闭程序后重新点「立即更新」，或到 GitHub Releases 手动下载。",
-                                    "更新失败", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(Lang.T("更新失败：旧程序还在运行，本次没有替换任何文件。\n\n", "Update failed: the old program is still running; no files were replaced.\n\n") +
+                                    Lang.T("请关闭程序后重新点「立即更新」，或到 GitHub Releases 手动下载。", "Close the program, click Update now again, or download manually from GitHub Releases."),
+                                    Lang.T("更新失败", "Update failed"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
                 if (!File.Exists(newExe))
                 {
                     Log("失败：新安装包不存在 " + newExe);
-                    Fail("更新包不存在或已被删除。", installDir, oldVersion, false);
+                    Fail(Lang.T("更新包不存在或已被删除。", "The update package is missing or was deleted."), installDir, oldVersion, false);
                     return;
                 }
                 if (!IsWritable(installDir))
                 {
                     Log("失败：安装目录不可写 " + installDir);
-                    MessageBox.Show("更新失败：安装目录不可写。\n\n" +
-                                    "请用管理员身份运行程序，或把程序移动到可写目录（例如 D:\\Tools\\WTSkinManager）后手动替换 exe。\n\n" +
-                                    "安装目录：" + installDir,
-                                    "更新失败", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(Lang.T("更新失败：安装目录不可写。\n\n", "Update failed: the install folder is not writable.\n\n") +
+                                    Lang.T("请用管理员身份运行程序，或把程序移动到可写目录（例如 D:\\Tools\\WTSkinManager）后手动替换 exe。\n\n", "Run as administrator, or move the app to a writable folder (e.g. D:\\Tools\\WTSkinManager) and replace the exe manually.\n\n") +
+                                    Lang.T("安装目录：", "Install folder: ") + installDir,
+                                    Lang.T("更新失败", "Update failed"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     Launch(ResolveInstallExe(installDir), installDir);
                     return;
                 }
@@ -262,14 +262,14 @@ namespace WtSkin
                 if (expectedSize > 0 && actualSize != expectedSize)
                 {
                     Log("失败：新 exe 大小不符，期望 " + expectedSize + "，实际 " + actualSize);
-                    Fail("更新包大小与记录不一致，已取消更新。", installDir, oldVersion, false);
+                    Fail(Lang.T("更新包大小与记录不一致，已取消更新。", "Update package size does not match; update canceled."), installDir, oldVersion, false);
                     return;
                 }
                 string actualSha = UpdateDownloader.HashFile(newExe);
                 if (expectedSha.Length > 0 && !string.Equals(actualSha, expectedSha, StringComparison.OrdinalIgnoreCase))
                 {
                     Log("失败：新 exe 哈希不符，期望 " + expectedSha + "，实际 " + actualSha);
-                    Fail("更新包校验失败，已取消更新。", installDir, oldVersion, false);
+                    Fail(Lang.T("更新包校验失败，已取消更新。", "Update package verification failed; update canceled."), installDir, oldVersion, false);
                     return;
                 }
                 if (expectedSha.Length == 0)
@@ -303,7 +303,7 @@ namespace WtSkin
                 {
                     TryDelete(staged);
                     Log("失败：复制到安装目录后哈希不符");
-                    Fail("复制到安装目录后校验失败，已取消更新。", installDir, oldVersion, restore.Length > 0);
+                    Fail(Lang.T("复制到安装目录后校验失败，已取消更新。", "Verification failed after copying to the install folder; update canceled."), installDir, oldVersion, restore.Length > 0);
                     return;
                 }
 
@@ -337,8 +337,8 @@ namespace WtSkin
                 {
                     TryDelete(staged);
                     Log("失败：替换 exe 失败（已重试 " + ReplaceRetries + " 次）→ " +
-                        (last == null ? "未知原因" : last.Message));
-                    Fail("替换程序文件失败（文件被占用）。", installDir, oldVersion, restore.Length > 0);
+                        (last == null ? Lang.T("未知原因", "unknown reason") : last.Message));
+                    Fail(Lang.T("替换程序文件失败（文件被占用）。", "Failed to replace program files (files in use)."), installDir, oldVersion, restore.Length > 0);
                     return;
                 }
 
@@ -346,7 +346,7 @@ namespace WtSkin
                 if (expectedSha.Length > 0 && !string.Equals(installedSha, expectedSha, StringComparison.OrdinalIgnoreCase))
                 {
                     Log("失败：替换后哈希不符，期望 " + expectedSha + "，实际 " + installedSha);
-                    Fail("替换后的程序校验失败。", installDir, oldVersion, restore.Length > 0);
+                    Fail(Lang.T("替换后的程序校验失败。", "Verification failed after replacement."), installDir, oldVersion, restore.Length > 0);
                     return;
                 }
 
@@ -357,15 +357,15 @@ namespace WtSkin
                 if (!Launch(installExe, installDir))
                 {
                     Log("警告：新程序启动失败，请手动运行 " + installExe);
-                    MessageBox.Show("更新完成，但没能自动启动新版本。\n\n请手动运行：" + installExe,
-                                    "更新完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(Lang.T("更新完成，但没能自动启动新版本。\n\n请手动运行：", "Update complete, but the new version could not be launched.\n\nRun manually: ") + installExe,
+                                    Lang.T("更新完成", "Update complete"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 Log("结果：成功（v" + oldVersion + " → v" + (newVersion.Length > 0 ? newVersion : "?") + "）");
             }
             catch (Exception ex)
             {
                 Log("失败：未预料的异常 → " + ex.GetType().Name + ": " + ex.Message);
-                Fail("更新过程中出现异常。", installDir, oldVersion, restore.Length > 0);
+                Fail(Lang.T("更新过程中出现异常。", "An error occurred during the update."), installDir, oldVersion, restore.Length > 0);
             }
         }
 
@@ -434,8 +434,8 @@ namespace WtSkin
             Log("结果：失败（" + message + "）");
             if (!Launch(installExe, installDir))
             {
-                MessageBox.Show(message + "\n\n自动启动旧版本失败，请手动运行：" + installExe,
-                                "更新失败", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(message + Lang.T("\n\n自动启动旧版本失败，请手动运行：", "\n\nFailed to auto-launch the old version; run manually: ") + installExe,
+                                Lang.T("更新失败", "Update failed"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 

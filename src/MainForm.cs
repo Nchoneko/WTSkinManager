@@ -115,12 +115,12 @@ namespace WtSkin
                 meta = Package.FilesText + "  ·  " + Package.SizeText;
                 if (Package.Units.Count == 0)
                 {
-                    meta += "  ·  需要手动指定载具";
+                    meta += Lang.T("  ·  需要手动指定载具", "  ·  manual vehicle assignment required");
                     metaColor = Ui.Warn;
                 }
                 else if (Package.UnknownIds.Count > 0)
                 {
-                    meta += "  ·  " + Package.UnknownIds.Count + " 个未识别";
+                    meta += "  ·  " + Package.UnknownIds.Count + Lang.T(" 个未识别", " unrecognized");
                     metaColor = Ui.TextSecondary;
                 }
             }
@@ -291,6 +291,7 @@ namespace WtSkin
         private bool _githubHover;
         private SiteButton _liveButton;
         private SiteButton _wtButton;
+        private LanguageToggle _langButton;
         private FlatButton _settingsButton;
         private PathChip _pathChip;
         private BuildInfoTip _buildTip;
@@ -324,7 +325,7 @@ namespace WtSkin
             {
                 _openManagerPage = true;
             }
-            Text = "战雷涂装管理器";
+            Text = Lang.T("战雷涂装管理器", "WTSkinManager");
             FormBorderStyle = FormBorderStyle.None;
             Rectangle workArea = Screen.PrimaryScreen.WorkingArea;
             int windowWidth = Math.Min(Ui.S(1180), (int)(workArea.Width * 0.95));
@@ -1000,10 +1001,10 @@ namespace WtSkin
                 _buildTip = new BuildInfoTip();
             }
             List<string> lines = new List<string>();
-            lines.Add("版本 " + BuildInfo.DisplayVersion + "（" + BuildInfo.FullVersion + "）");
-            lines.Add("构建时间：" + (string.IsNullOrEmpty(BuildInfo.BuildTime) ? "未知" : BuildInfo.BuildTime));
-            lines.Add("数据版本：schema " + DataFiles.SchemaVersion + " · " + DataFiles.DataVersion);
-            lines.Add("安装目录：" + Config.InstallDir);
+            lines.Add(Lang.T("版本 ", "Version ") + BuildInfo.DisplayVersion + "（" + BuildInfo.FullVersion + "）");
+            lines.Add(Lang.T("构建时间：", "Build time: ") + (string.IsNullOrEmpty(BuildInfo.BuildTime) ? Lang.T("未知", "unknown") : BuildInfo.BuildTime));
+            lines.Add(Lang.T("数据版本：schema ", "Data version: schema ") + DataFiles.SchemaVersion + " · " + DataFiles.DataVersion);
+            lines.Add(Lang.T("安装目录：", "Install folder: ") + Config.InstallDir);
             _buildTip.SetLines(lines);
             Point point = PointToScreen(new Point(_versionRect.X, _versionRect.Bottom + Ui.S(4)));
             _buildTip.Location = point;
@@ -1097,11 +1098,15 @@ namespace WtSkin
                 int gap = Ui.Sp8;
                 int wtW = Math.Max(Ui.S(156), TextRenderer.MeasureText(_wtButton.Text, _wtButton.Font).Width + Ui.S(56));
                 int liveW = Math.Max(Ui.S(124), TextRenderer.MeasureText(_liveButton.Text, _liveButton.Font).Width + Ui.S(56));
-                int right = ClientSize.Width - pad;
                 int row2Top = Ui.S(Row2Top);
                 int row2H = Ui.S(Row2Height);
-                _liveButton.SetBounds(right - liveW - gap - wtW, row2Top, liveW, row2H);
-                _wtButton.SetBounds(right - wtW, row2Top, wtW, row2H);
+                int langW = _langButton.PreferredWidth();
+                // 与第一行「设置」按钮左边缘对齐，从左往右排。
+                int left = chip.Left - Ui.Sp8 - Ui.S(76);
+                _langButton.SetBounds(left, row2Top, langW, row2H);
+                int bx = left + langW + gap;
+                _liveButton.SetBounds(bx, row2Top, liveW, row2H);
+                _wtButton.SetBounds(bx + liveW + gap, row2Top, wtW, row2H);
             }
             if (_settingsButton != null)
             {
@@ -1143,7 +1148,7 @@ namespace WtSkin
             }
             string dir = Config.GameDir;
             _pathChip.Valid = Config.GameDirLooksValid(dir);
-            _pathChip.PathText = string.IsNullOrEmpty(dir) ? "未设置游戏目录" : ShortPath(dir);
+            _pathChip.PathText = string.IsNullOrEmpty(dir) ? Lang.T("未设置游戏目录", "Game folder not set") : ShortPath(dir);
             _pathChip.Invalidate();
         }
 
@@ -1171,19 +1176,37 @@ namespace WtSkin
             Controls.Add(_header);
 
             _liveButton = new SiteButton();
-            _liveButton.Text = "官方涂装站";
+            _liveButton.Text = Lang.T("官方涂装站", "Live");
             _liveButton.Icon = LoadSiteIcon("live.png");
             _liveButton.Click += delegate { OpenUrl("https://live.warthunder.com/feed/all/"); };
             _header.Controls.Add(_liveButton);
 
             _wtButton = new SiteButton();
-            _wtButton.Text = "战雷涂装中文网";
+            _wtButton.Text = Lang.T("战雷涂装中文网", "WTliker");
             _wtButton.Icon = LoadSiteIcon("wtliker.png");
             _wtButton.Click += delegate { OpenUrl("https://wtliker.com/"); };
             _header.Controls.Add(_wtButton);
 
+            _langButton = new LanguageToggle();
+            _langButton.Toggled += delegate
+            {
+                Lang.Toggle();
+                bool restart;
+                using (RestartChoiceDialog dialog = new RestartChoiceDialog(
+                    Lang.T(Lang.T("语言已切换，需要重启程序才会完全生效。", "Language changed; restart the program to apply."),
+                           "Language changed; restart the program to apply.")))
+                {
+                    restart = dialog.ShowDialog(this) == DialogResult.OK;
+                }
+                if (restart)
+                {
+                    AppRestart.Restart();
+                }
+            };
+            _header.Controls.Add(_langButton);
+
             _settingsButton = new FlatButton();
-            _settingsButton.Text = "设置";
+            _settingsButton.Text = Lang.T("设置", "Settings");
             _settingsButton.Font = Ui.SmallBold;
             _settingsButton.BackColor = Ui.Page;
             _settingsButton.Click += delegate { OpenSettings(); };
@@ -1191,7 +1214,7 @@ namespace WtSkin
 
             _pathChip = new PathChip();
             _pathChip.Font = Ui.CardSub;
-            _pathChip.Click += delegate { OpenSettings(); };
+            _pathChip.Click += delegate { OpenSettings(1); };
             _header.Controls.Add(_pathChip);
         }
 
@@ -1336,12 +1359,12 @@ namespace WtSkin
             int tx = iconRect.Right + Ui.Sp16;
             int titleLine = Ui.LineHeight(Ui.Title);
             int titleTop = row1Top + (row1H - titleLine) / 2;
-            Ui.DrawText(g, "战雷涂装管理器", Ui.Title, Ui.TextPrimary,
+            Ui.DrawText(g, Lang.T("战雷涂装管理器", "WTSkinManager"), Ui.Title, Ui.TextPrimary,
                     new Rectangle(tx, titleTop, Ui.S(340), titleLine),
                     TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.NoPrefix);
 
             string versionText = BuildInfo.HeaderText;
-            Size titleSize = TextRenderer.MeasureText("战雷涂装管理器", Ui.Title);
+            Size titleSize = TextRenderer.MeasureText(Lang.T("战雷涂装管理器", "WTSkinManager"), Ui.Title);
             int versionX = tx + titleSize.Width + Ui.Sp8;
             int versionLine = Ui.LineHeight(Ui.Small);
             int versionTop = titleTop + (int)((titleLine - versionLine) * 0.78f);
@@ -1361,7 +1384,8 @@ namespace WtSkin
             }
 
             // 第二行：副标题（12px 次要色）+ GitHub 图标（弱化色，不抢焦点）。
-            const string subtitle = "War Thunder 自定义涂装 · 识别 / 替换 / 备份";
+            string subtitle = Lang.T(Lang.T("War Thunder 自定义涂装 · 识别 / 替换 / 备份", "War Thunder custom skins · detect / replace / back up"),
+                                        "War Thunder custom skins · detect / replace / back up");
             int row2Top = Ui.S(Row2Top);
             int row2H = Ui.S(Row2Height);
             Ui.DrawText(g, subtitle, Ui.CardSub, Ui.TextSecondary,
@@ -1497,7 +1521,7 @@ namespace WtSkin
                     else
                     {
                         Config.Log("自动检查更新：当前已是最新版本 " + BuildInfo.DisplayVersion +
-                                   (result.FromCache ? "（10 分钟缓存）" : ""));
+                                   (result.FromCache ? Lang.T("（10 分钟缓存）", " (10-minute cache)") : ""));
                     }
                 });
             }
@@ -1616,10 +1640,10 @@ namespace WtSkin
 
         private Rectangle GameChipRect()
         {
-            int width = Ui.S(300);
             int height = Ui.S(ControlHeight38);
             int winWidth = Ui.S(46) * 3;
             int right = ClientSize.Width - Ui.S(8);
+            int width = Ui.S(308);
             int x = right - winWidth - Ui.Sp16 - width;
             int y = Ui.S(Row1Top) + (Ui.S(Row1Height) - height) / 2;
             return new Rectangle(x, y, width, height);
@@ -1656,8 +1680,8 @@ namespace WtSkin
             Controls.Add(_body);
 
             _drop = new DropZone();
-            _drop.Main = "把涂装包拖到这里";
-            _drop.Sub = "支持 .zip 压缩包或已解压的文件夹，可以一次拖入多个";
+            _drop.Main = Lang.T("把涂装包拖到这里", "Drop skin packages here");
+            _drop.Sub = Lang.T("支持 .zip 压缩包或已解压的文件夹，可以一次拖入多个", "Supports .zip archives or extracted folders; multiple at once");
             _drop.Cursor = Cursors.Hand;
             _drop.Click += delegate { BrowseFiles(); };
             _drop.ChooseButton.Click += delegate { BrowseFiles(); };
@@ -1762,7 +1786,7 @@ namespace WtSkin
             _detail.Controls.Add(_vehPanel);
 
             _refreshButton = new FlatButton();
-            _refreshButton.Text = "刷新文件夹";
+            _refreshButton.Text = Lang.T("刷新文件夹", "Refresh folders");
             _refreshButton.BackColor = Ui.CardBg;
             _refreshButton.Height = Ui.HSecondary;
             _refreshButton.Click += delegate { RefreshFolders(true); };
@@ -1772,7 +1796,7 @@ namespace WtSkin
             _refreshButton.BackColor = Ui.CardBg;
 
             _manualButton = new FlatButton();
-            _manualButton.Text = "手动指定载具…";
+            _manualButton.Text = Lang.T("手动指定载具…", "Assign vehicle…");
             _manualButton.Primary = true;
             _manualButton.BackColor = Ui.CardBg;
             _manualButton.Visible = false;
@@ -1797,7 +1821,7 @@ namespace WtSkin
             int buttonY = height - pad - Ui.HPrimary;
             // 按文字实际宽度给按钮留足空间，避免 125%/150% 字号放大后被裁切。
             int refreshWidth = Math.Max(Ui.S(120),
-                TextRenderer.MeasureText("刷新文件夹", Ui.BodyBold).Width + Ui.S(36));
+                TextRenderer.MeasureText(Lang.T("刷新文件夹", "Refresh folders"), Ui.BodyBold).Width + Ui.S(36));
             _refreshButton.SetBounds(pad, buttonY + (Ui.HPrimary - Ui.HSecondary) / 2,
                                      refreshWidth, Ui.HSecondary);
             _manualButton.SetBounds(pad + refreshWidth + Ui.Sp12, buttonY,
@@ -1829,7 +1853,7 @@ namespace WtSkin
             Ui.DrawRound(g, r, Ui.RCard, Ui.Stroke, Ui.BorderWidth);
 
             // 标题位置在空态/内容态完全一致。
-            Ui.DrawText(g, "涂装包详情", Ui.SmallBold, Ui.TextSecondary,
+            Ui.DrawText(g, Lang.T("涂装包详情", "Package details"), Ui.SmallBold, Ui.TextSecondary,
                     new Rectangle(Ui.Sp24, Ui.Sp24, Ui.S(200), Ui.S(20)),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
             using (Pen pen = new Pen(Ui.StrokeSoft, Ui.BorderWidth))
@@ -1902,7 +1926,7 @@ namespace WtSkin
             int textWidth = width - pad * 2;
             Font introFont = Ui.Body;
             int lineHeight = (int)(Ui.LineHeight(introFont) * 1.6f);
-            string intro = "导入涂装包后，这里会显示文件数、体积和可导入的载具。";
+            string intro = Lang.T("导入涂装包后，这里会显示文件数、体积和可导入的载具。", "Drop a skin package to see file count, size and detected vehicles.");
             List<string> introLines = Ui.WrapLines(intro, introFont, textWidth);
             Font itemFont = Ui.CardSub;
             int itemHeight = (int)(Ui.LineHeight(itemFont) * 1.6f);
@@ -1928,9 +1952,9 @@ namespace WtSkin
 
             string[] items = new string[]
             {
-                "支持 .zip 压缩包或已解压的文件夹",
-                "可以一次拖入多个涂装包",
-                "识别出的载具需勾选后再导入"
+                Lang.T("支持 .zip 压缩包或已解压的文件夹", "Supports .zip packages or extracted folders"),
+                Lang.T("可以一次拖入多个涂装包", "Drop multiple packages at once"),
+                Lang.T("识别出的载具需勾选后再导入", "Tick detected vehicles before importing")
             };
             Color itemColor = Ui.TextSecondary;
             for (int i = 0; i < items.Length; i++)
@@ -2122,26 +2146,26 @@ namespace WtSkin
             _status.ForeColor = Ui.TextWeak;
             _status.BackColor = Ui.Page;
             _status.TextAlign = ContentAlignment.MiddleLeft;
-            _status.Text = "准备就绪";
+            _status.Text = Lang.T("准备就绪", "Ready");
             _footer.Controls.Add(_status);
 
             // 最右：强调色实心主按钮，权重最高。
             _importButton = new FlatButton();
-            _importButton.Text = "导入选中";
+            _importButton.Text = Lang.T("导入选中", "Import selected");
             _importButton.Primary = true;
             _importButton.BackColor = Ui.Page;
             _importButton.Click += delegate { StartImport(); };
             _footer.Controls.Add(_importButton);
 
             FlatButton open = new FlatButton();
-            open.Text = "打开UserSkins文件夹";
+            open.Text = Lang.T("打开UserSkins文件夹", "Open UserSkins");
             open.Font = Ui.Body;
             open.BackColor = Ui.Page;
             open.Click += delegate { OpenUserSkins(); };
             _footer.Controls.Add(open);
 
             FlatButton clear = new FlatButton();
-            clear.Text = "清空列表";
+            clear.Text = Lang.T("清空列表", "Clear list");
             clear.Font = Ui.Body;
             clear.BackColor = Ui.Page;
             clear.Click += delegate
@@ -2168,8 +2192,8 @@ namespace WtSkin
             int gap = Ui.Sp12;
             int top = (_footer.Height - height) / 2;
             int right = width - pad;
-            FlatButton open = FindButton("打开UserSkins文件夹");
-            FlatButton clear = FindButton("清空列表");
+            FlatButton open = FindButton(Lang.T("打开UserSkins文件夹", "Open UserSkins"));
+            FlatButton clear = FindButton(Lang.T("清空列表", "Clear list"));
             int openWidth = open == null ? Ui.S(176) : Math.Max(Ui.S(176), ButtonTextWidth(open) + Ui.S(32));
             int clearWidth = clear == null ? Ui.S(96) : Math.Max(Ui.S(96), ButtonTextWidth(clear) + Ui.S(28));
             int importWidth = Math.Max(Ui.S(166), ButtonTextWidth(_importButton) + Ui.S(36));
@@ -2281,7 +2305,7 @@ namespace WtSkin
                 {
                     message += "· " + errors[i] + "\n";
                 }
-                MessageBox.Show(this, "有些文件没能读取：\n\n" + message, "提示",
+                MessageBox.Show(this, Lang.T("有些文件没能读取：\n\n", "Some files could not be read:\n\n") + message, Lang.T("提示", "Notice"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
@@ -2305,8 +2329,8 @@ namespace WtSkin
         {
             using (OpenFileDialog dialog = new OpenFileDialog())
             {
-                dialog.Title = "选择涂装包";
-                dialog.Filter = "涂装包 (*.zip)|*.zip|所有文件 (*.*)|*.*";
+                dialog.Title = Lang.T("选择涂装包", "Select skin package");
+                dialog.Filter = Lang.T("涂装包 (*.zip)|*.zip|所有文件 (*.*)|*.*", "Skin packages (*.zip)|*.zip|All files (*.*)|*.*");
                 dialog.Multiselect = true;
                 if (dialog.ShowDialog(this) == DialogResult.OK)
                 {
@@ -2392,13 +2416,13 @@ namespace WtSkin
         {
             ContextMenuStrip menu = new ContextMenuStrip();
             SkinPackage captured = package;
-            menu.Items.Add("指定载具…", null, delegate
+            menu.Items.Add(Lang.T("指定载具…", "Assign vehicle…"), null, delegate
             {
                 _selected = captured;
                 RefreshList();
                 ManualAssign();
             });
-            menu.Items.Add("移除", null, delegate
+            menu.Items.Add(Lang.T("移除", "Remove"), null, delegate
             {
                 _packages.Remove(captured);
                 if (_selected == captured)
@@ -2450,7 +2474,7 @@ namespace WtSkin
                 catch
                 {
                 }
-                _detailMetaText = _selected.FilesText + "  ·  " + _selected.SizeText + "\n来源：" + sourceName;
+                _detailMetaText = _selected.FilesText + "  ·  " + _selected.SizeText + Lang.T("\n来源：", "\nSource: ") + sourceName;
                 _detailMetaColor = Ui.TextDim;
             }
 
@@ -2525,7 +2549,7 @@ namespace WtSkin
                 row.Height = Ui.S(46);
                 if (!hasFolder)
                 {
-                    row.Badge = "未识别到文件夹";
+                    row.Badge = Lang.T("未识别到文件夹", "Folder not found");
                     row.BadgeKind = 2;
                     row.Highlight = false;
                 }
@@ -2534,12 +2558,12 @@ namespace WtSkin
                     row.Highlight = true;
                     if (data.History != null)
                     {
-                        row.Badge = "上次导入";
+                        row.Badge = Lang.T("上次导入", "Last imported");
                         row.BadgeKind = 1;
                     }
                     else
                     {
-                        row.Badge = "准备就绪";
+                        row.Badge = Lang.T("准备就绪", "Ready");
                         row.BadgeKind = 3;
                     }
                 }
@@ -2567,8 +2591,8 @@ namespace WtSkin
                 unknown.ForeColor = Ui.Warn;
                 unknown.Font = Ui.Small;
                 unknown.BackColor = Ui.CardBg;
-                unknown.Text = "还有 " + _selected.UnknownIds.Count + " 个 .blk 没认出来：" +
-                               JoinIds(_selected.UnknownIds) + "\n可以手动指定载具。";
+                unknown.Text = Lang.T("还有 ", "Still ") + _selected.UnknownIds.Count + Lang.T(" 个 .blk 没认出来：", " .blk files unrecognized: ") +
+                               JoinIds(_selected.UnknownIds) + Lang.T("\n可以手动指定载具。", "\nYou can assign vehicles manually.");
                 _vehPanel.Controls.Add(unknown);
             }
 
@@ -2581,8 +2605,8 @@ namespace WtSkin
                 }
             }
             _detailSectionText = total == 0
-                ? "该涂装包可导入的载具（0）"
-                : "该涂装包可导入的载具（" + total + "） · 可导入 " + selectedHere + "/" + total;
+                ? Lang.T("该涂装包可导入的载具（0）", "Importable vehicles (0)")
+                : Lang.T("该涂装包可导入的载具（", "Importable vehicles (") + total + Lang.T("） · 可导入 ", " ) · selected ") + selectedHere + "/" + total;
 
             bool missing = total > 0 && found < total;
             _detailManualVisible = total == 0 || _selected.UnknownIds.Count > 0;
@@ -2600,12 +2624,12 @@ namespace WtSkin
 
             if (missing)
             {
-                _detailHintText = "黄色行是找到专属文件夹、可以直接导入的；黑色行是未识别，\n需要先在游戏里给该载具创建模板，再点「刷新文件夹」。";
+                _detailHintText = Lang.T("黄色行是找到专属文件夹、可以直接导入的；黑色行是未识别，\n需要先在游戏里给该载具创建模板，再点「刷新文件夹」。", "Yellow rows have a matching folder and can be imported; dark rows are unrecognized.\nCreate a template for the vehicle in game, then click \"Refresh folders\".");
                 _detailHintColor = Ui.Warn;
             }
             else
             {
-                _detailHintText = "黄色行是找到专属文件夹、可以直接导入的；\n导入前会把旧内容备份到安装目录。";
+                _detailHintText = Lang.T("黄色行是找到专属文件夹、可以直接导入的；\n导入前会把旧内容备份到安装目录。", "Yellow rows have a matching folder and can be imported.\nOld content is backed up before import.");
                 _detailHintColor = Ui.TextFaint;
             }
             ApplyDetailChildren();
@@ -2639,7 +2663,7 @@ namespace WtSkin
             info.FolderExists = exists;
             info.LevelWeight = VehicleMeta.Display(row.Model);
             info.LevelWeightModes = VehicleMeta.ModesLine(row.Model);
-            info.Status = string.IsNullOrEmpty(row.Badge) ? (exists ? "已启用" : "未识别") : row.Badge;
+            info.Status = string.IsNullOrEmpty(row.Badge) ? (exists ? Lang.T("已启用", "Enabled") : Lang.T("未识别", "Unrecognized")) : row.Badge;
             info.StatusKind = row.BadgeKind == 2 ? 2 : (row.BadgeKind == 1 ? 1 : (exists ? 1 : 3));
             _detailCard.UnitId = row.Model;
             _detailCard.SetData(info);
@@ -2707,7 +2731,7 @@ namespace WtSkin
             }
             if (ids.Count > 4)
             {
-                s += " 等";
+                s += Lang.T(" 等", " etc.");
             }
             return s;
         }
@@ -2730,14 +2754,14 @@ namespace WtSkin
             }
             if (_packages.Count == 0)
             {
-                _status.Text = "准备就绪 · 拖入涂装包开始";
+                _status.Text = Lang.T("准备就绪 · 拖入涂装包开始", "Ready · drop a skin package to start");
             }
             else
             {
-                _status.Text = "已添加 " + _packages.Count + " 个包 · 可导入 " + selectedCount + " 个载具";
+                _status.Text = Lang.T("已添加 ", "Added ") + _packages.Count + Lang.T(" 个包 · 可导入 ", " packages · importable ") + selectedCount + Lang.T(" 个载具", " vehicles");
                 if (missing > 0)
                 {
-                    _status.Text += " · " + missing + " 个还没建文件夹";
+                    _status.Text += " · " + missing + Lang.T(" 个还没建文件夹", " vehicles still need folders");
                 }
             }
             if (_selected != null)
@@ -2752,11 +2776,11 @@ namespace WtSkin
                     }
                 }
                 _detailSectionText = curTotal == 0
-                    ? "该涂装包可导入的载具（0）"
-                    : "该涂装包可导入的载具（" + curTotal + "） · 可导入 " + curSelected + "/" + curTotal;
+                    ? Lang.T("该涂装包可导入的载具（0）", "Importable vehicles (0)")
+                    : Lang.T("该涂装包可导入的载具（", "Importable vehicles (") + curTotal + Lang.T("） · 可导入 ", " ) · selected ") + curSelected + "/" + curTotal;
                 _detail.Invalidate();
             }
-            _importButton.Text = selectedCount > 0 ? "导入选中（" + selectedCount + "）" : "导入选中";
+            _importButton.Text = selectedCount > 0 ? Lang.T("导入选中（", "Import selected (") + selectedCount + "）" : Lang.T("导入选中", "Import selected");
             _importButton.Enabled = selectedCount > 0;
             if (_footer != null && _footer.Width > 0)
             {
@@ -2830,22 +2854,22 @@ namespace WtSkin
             }
             if (created > 0 || failed > 0)
             {
-                string msg = "已创建 " + created + " 个涂装目录";
+                string msg = Lang.T("已创建 ", "Created ") + created + Lang.T(" 个涂装目录", " skin folders");
                 if (existed > 0)
                 {
-                    msg += "，已存在 " + existed + " 个";
+                    msg += Lang.T("，已存在 ", ", already existed ") + existed + Lang.T(" 个", "");
                 }
                 if (failed > 0)
                 {
-                    msg += "，失败 " + failed + " 个";
+                    msg += Lang.T("，失败 ", ", failed ") + failed + Lang.T(" 个", "");
                 }
                 msg += "。";
                 if (detail.Length > 0)
                 {
                     msg += "\n\n" + detail;
                 }
-                msg += "\n\n创建完成后，需要在游戏内重新打开该载具的涂装界面才会出现。";
-                MessageBox.Show(this, msg, "创建涂装目录", MessageBoxButtons.OK,
+                msg += Lang.T("\n\n创建完成后，需要在游戏内重新打开该载具的涂装界面才会出现。", "\n\nReopen the vehicle's skin menu in game for the new folder to appear.");
+                MessageBox.Show(this, msg, Lang.T("创建涂装目录", "Create skin folder"), MessageBoxButtons.OK,
                                 failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
             }
             RefreshFolders(false);
@@ -2900,7 +2924,7 @@ namespace WtSkin
                         }
                     }
                 }
-                _status.Text = "已重新检查：" + found + " / " + total + " 个载具已有文件夹";
+                _status.Text = Lang.T("已重新检查：", "Rechecked: ") + found + " / " + total + Lang.T(" 个载具已有文件夹", " vehicles already have folders");
             }
         }
 
@@ -2927,7 +2951,7 @@ namespace WtSkin
                 {
                     if (string.Equals(_selected.Units[i].UnitId, unitId, StringComparison.OrdinalIgnoreCase))
                     {
-                        MessageBox.Show(this, "这个载具已经在列表里了。", "提示",
+                        MessageBox.Show(this, Lang.T("这个载具已经在列表里了。", "This vehicle is already in the list."), Lang.T("提示", "Notice"),
                                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return;
                     }
@@ -2952,8 +2976,8 @@ namespace WtSkin
         {
             if (string.IsNullOrEmpty(Config.UserSkinsDir) || !Directory.Exists(Config.UserSkinsDir))
             {
-                MessageBox.Show(this, "还没有设置正确的游戏目录，请先在「设置」里选择 War Thunder 安装目录。",
-                                "找不到 UserSkins", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, Lang.T("还没有设置正确的游戏目录，请先在「设置」里选择 War Thunder 安装目录。", "No valid game folder is configured. Choose the War Thunder install folder in Settings first."),
+                                Lang.T("找不到 UserSkins", "UserSkins not found"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 OpenSettings();
                 return;
             }
@@ -2967,7 +2991,7 @@ namespace WtSkin
             }
             if (selected.Count == 0)
             {
-                MessageBox.Show(this, "还没有可导入的涂装。先拖入涂装包，并勾选载具。", "没有可导入的内容",
+                MessageBox.Show(this, Lang.T("还没有可导入的涂装。先拖入涂装包，并勾选载具。", "Nothing to import. Drop a skin package and tick vehicles first."), Lang.T("没有可导入的内容", "Nothing to import"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -3001,13 +3025,13 @@ namespace WtSkin
             ImportPlan plan = Importer.Build(selected);
             if (plan.Missing.Count > 0)
             {
-                MessageBox.Show(this, "还有载具没有文件夹，请先在游戏里创建。", "提示",
+                MessageBox.Show(this, Lang.T("还有载具没有文件夹，请先在游戏里创建。", "Some vehicles still have no folder. Create them in game first."), Lang.T("提示", "Notice"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             if (plan.Targets.Count == 0)
             {
-                MessageBox.Show(this, "没有生成任何导入目标。", "提示",
+                MessageBox.Show(this, Lang.T("没有生成任何导入目标。", "No import targets were generated."), Lang.T("提示", "Notice"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -3038,7 +3062,7 @@ namespace WtSkin
                 ImportHistory.Record(done.Package.Fingerprint, done.Unit.UnitId, done.TargetDir);
             }
             Config.Log("导入 " + plan.Targets.Count + " 个载具，成功 " + result.Done.Count +
-                       "，失败 " + result.Failed.Count);
+                       Lang.T("，失败 ", ", failed ") + result.Failed.Count);
             for (int i = 0; i < result.Done.Count; i++)
             {
                 Config.Log("  OK  " + result.Done[i]);
@@ -3049,9 +3073,9 @@ namespace WtSkin
             }
 
             string subtitle = result.Failed.Count == 0
-                ? "已导入 " + result.Done.Count + " 个涂装"
-                : "完成 " + result.Done.Count + " 个，失败 " + result.Failed.Count + " 个";
-            using (ResultForm done = new ResultForm(result, "导入完成", subtitle))
+                ? Lang.T("已导入 ", "Imported ") + result.Done.Count + Lang.T(" 个涂装", " skins")
+                : Lang.T("完成 ", "Completed ") + result.Done.Count + Lang.T(" 个，失败 ", ", failed ") + result.Failed.Count + Lang.T(" 个", "");
+            using (ResultForm done = new ResultForm(result, Lang.T("导入完成", "Import complete"), subtitle))
             {
                 done.ShowDialog(this);
             }
@@ -3061,15 +3085,15 @@ namespace WtSkin
                 string note = "";
                 if (validation.Warn.Count > 0)
                 {
-                    note += "已忽略 " + validation.Warn.Count + " 个说明文件（不会安装）：\n" +
+                    note += Lang.T("已忽略 ", "Ignored ") + validation.Warn.Count + Lang.T(" 个说明文件（不会安装）：\n", " readme files (not installed):\n") +
                             string.Join("\n", validation.Warn.ToArray()) + "\n\n";
                 }
                 if (validation.Illegal.Count > 0)
                 {
-                    note += "本次包含 " + validation.Illegal.Count + " 个未通过校验的文件：\n" +
+                    note += Lang.T("本次包含 ", "This import contains ") + validation.Illegal.Count + Lang.T(" 个未通过校验的文件：\n", " files that failed validation:\n") +
                             string.Join("\n", validation.Illegal.ToArray());
                 }
-                MessageBox.Show(this, note.Trim(), "导入提示", MessageBoxButtons.OK,
+                MessageBox.Show(this, note.Trim(), Lang.T("导入提示", "Import notice"), MessageBoxButtons.OK,
                                 validation.Illegal.Count > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
             }
             // 不清理列表：导入后立刻能看到“上次导入”标记和最新文件夹状态。
@@ -3130,7 +3154,7 @@ namespace WtSkin
             string dir = Config.UserSkinsDir;
             if (!Directory.Exists(dir))
             {
-                MessageBox.Show(this, "UserSkins 文件夹不存在，请检查游戏目录设置。", "提示",
+                MessageBox.Show(this, Lang.T("UserSkins 文件夹不存在，请检查游戏目录设置。", "UserSkins folder does not exist; check the game folder setting."), Lang.T("提示", "Notice"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }

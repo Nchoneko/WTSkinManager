@@ -536,7 +536,7 @@ namespace WtSkin
         public static string StatusText()
         {
             EnsureLoaded();
-            return "数据 " + Version + " · " + Updated;
+            return Lang.T("数据 ", "Data ") + Version + " · " + Updated;
         }
 
         /// <summary>详情窗口文本：版本、采集时间、来源分布、映射与未匹配数量。</summary>

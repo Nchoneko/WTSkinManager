@@ -395,6 +395,7 @@ $cscArgs = @(
     ('/resource:' + (Join-Path $DataDir 'vehicle_meta.dat') + ',vehicle_meta.dat'),
     ('/resource:' + $dataManifestPath + ',data-manifest.json'),
     ('/resource:' + (Join-Path $DataDir 'updates.dat') + ',updates.dat'),
+    ('/resource:' + (Join-Path $Root 'USER_AGREEMENT.md') + ',user-agreement.md'),
     ('/resource:' + $buildInfoPath + ',build-info.dat'),
     ('/resource:' + (Join-Path $Root 'assets\github.png') + ',github.png'),
     ('/resource:' + (Join-Path $Root 'assets\live.png') + ',live.png'),

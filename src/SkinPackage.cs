@@ -31,9 +31,13 @@ namespace WtSkin
         {
             get
             {
-                if (Vehicle != null && !string.IsNullOrEmpty(Vehicle.Zh))
+                if (Vehicle != null)
                 {
-                    return Vehicle.Zh;
+                    string name = Lang.English ? Vehicle.En : Vehicle.Zh;
+                    if (!string.IsNullOrEmpty(name))
+                    {
+                        return name;
+                    }
                 }
                 return UnitId;
             }
@@ -59,6 +63,10 @@ namespace WtSkin
             {
                 if (Vehicle != null)
                 {
+                    if (Lang.English && !string.IsNullOrEmpty(Vehicle.En))
+                    {
+                        return Vehicle.En;
+                    }
                     string shortName = NameMap.Short(Vehicle);
                     if (!string.IsNullOrEmpty(shortName))
                     {

@@ -61,8 +61,8 @@ namespace WtSkin
                         string closeError;
                         if (!RunningInstance.CloseAll(running, out closeError))
                         {
-                            MessageBox.Show("无法关闭正在运行的程序：\n\n" + closeError +
-                                            "\n\n请手动退出后重试。", "关闭失败",
+                            MessageBox.Show(Lang.T("无法关闭正在运行的程序：\n\n", "Cannot close the running program:\n\n") + closeError +
+                                            Lang.T("\n\n请手动退出后重试。", "\n\nExit it manually and try again."), Lang.T("关闭失败", "Close failed"),
                                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             return;
                         }
@@ -76,7 +76,7 @@ namespace WtSkin
                 mutex = new Mutex(true, "WTSkinManager.SingleInstance", out created);
                 if (!created)
                 {
-                    MessageBox.Show("战雷涂装管理器已经在运行了。", "战雷涂装管理器",
+                    MessageBox.Show(Lang.T("战雷涂装管理器已经在运行了。", "WTSkinManager is already running."), Lang.T("战雷涂装管理器", "WTSkinManager"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
@@ -103,6 +103,21 @@ namespace WtSkin
                     // 全部界面动画关闭：淡入/滑入/分页过渡/浮层渐变都不再执行
                     Ui.Animations = false;
                     Ui.Init(Native.GetDpiScale() * (Config.ZoomPercent / 100f), Config.ZoomPercent / 100f);
+                }
+
+                // 首次使用必须同意用户协议；拒绝则直接退出。
+                if (!Config.AgreementAccepted)
+                {
+                    using (AgreementForm agreement = new AgreementForm())
+                    {
+                        if (agreement.ShowDialog() != DialogResult.OK)
+                        {
+                            return;
+                        }
+                    }
+                    Config.AgreementAccepted = true;
+                    Config.AgreementVersion = AgreementForm.Version;
+                    Config.Save();
                 }
 
                 // 上次自更新失败回滚过：启动时提示一次（读完即删）。
@@ -194,8 +209,8 @@ namespace WtSkin
             catch (Exception ex)
             {
                 InstallLog.Write("管理员安装失败：" + ex.Message);
-                MessageBox.Show("用管理员身份也没能写入：\n\n" + ex.Message + "\n\n" + Installer.EnvironmentHint(),
-                                "安装失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(Lang.T("用管理员身份也没能写入：\n\n", "Writing failed even with administrator rights:\n\n") + ex.Message + "\n\n" + Installer.EnvironmentHint(),
+                                Lang.T("安装失败", "Installation failed"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             try
@@ -207,8 +222,8 @@ namespace WtSkin
             }
             catch (Exception ex)
             {
-                MessageBox.Show("安装完成，但没能自动启动：\n\n" + ex.Message + "\n\n请手动打开 " + exe,
-                                "安装完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(Lang.T("安装完成，但没能自动启动：\n\n", "Installation completed but auto-launch failed:\n\n") + ex.Message + Lang.T("\n\n请手动打开 ", "\n\nPlease open manually: ") + exe,
+                                Lang.T("安装完成", "Installation complete"), MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
@@ -346,9 +361,9 @@ namespace WtSkin
             catch
             {
             }
-            string text = ex == null ? "发生未知错误。" : ex.Message;
-            MessageBox.Show("程序遇到一个问题：\n\n" + text + "\n\n详细信息已写入日志。",
-                            "战雷涂装管理器", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            string text = ex == null ? Lang.T("发生未知错误。", "An unknown error occurred.") : ex.Message;
+            MessageBox.Show(Lang.T("程序遇到一个问题：\n\n", "The program encountered a problem:\n\n") + text + Lang.T("\n\n详细信息已写入日志。", "\n\nDetails were written to the log."),
+                            Lang.T("战雷涂装管理器", "WTSkinManager"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

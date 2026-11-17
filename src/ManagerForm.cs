@@ -67,7 +67,7 @@ namespace WtSkin
         private bool _wasHidden;
 
         public ManagerForm()
-            : base("涂装管理", 1320, 860)
+            : base(Lang.T("涂装管理", "Skin Manager"), 1320, 860)
         {
             Content.BackColor = Ui.Bg;
             BuildSidebar();
@@ -155,7 +155,7 @@ namespace WtSkin
             Content.Controls.Add(_side);
 
             Label brand = new Label();
-            brand.Text = "涂装库";
+            brand.Text = Lang.T("涂装库", "Skin library");
             brand.Font = Ui.H1;
             brand.ForeColor = Ui.Text;
             brand.BackColor = Ui.BgSoft;
@@ -164,7 +164,7 @@ namespace WtSkin
             _side.Controls.Add(brand);
 
             _libStats = new Label();
-            _libStats.Text = "已安装 0 个涂装 · 占用 计算中…";
+            _libStats.Text = Lang.T("已安装 0 个涂装 · 占用 计算中…", "No skins installed · size calculating…");
             _libStats.Font = Ui.Small;
             _libStats.ForeColor = Ui.TextFaint;
             _libStats.BackColor = Ui.BgSoft;
@@ -175,7 +175,7 @@ namespace WtSkin
             _side.Controls.Add(_libStats);
 
             Label tip = new Label();
-            tip.Text = "按国家筛选";
+            tip.Text = Lang.T("按国家筛选", "Filter by nation");
             tip.Font = Ui.Small;
             tip.ForeColor = Ui.TextFaint;
             tip.BackColor = Ui.BgSoft;
@@ -217,7 +217,7 @@ namespace WtSkin
             _search.BackColor = Ui.Panel;
             _search.ForeColor = Ui.Text;
             _search.Font = Ui.Body;
-            Native.SetCue(_search, "搜索涂装 / 载具 / 文件夹");
+            Native.SetCue(_search, Lang.T("搜索涂装 / 载具 / 文件夹", "Search skins / vehicles / folders"));
             _search.TextChanged += delegate { RebuildGrid(); UpdateButtons(); };
             _search.GotFocus += delegate { _searchPanel.Invalidate(); };
             _search.LostFocus += delegate { _searchPanel.Invalidate(); };
@@ -229,33 +229,33 @@ namespace WtSkin
             };
             Content.Controls.Add(_searchPanel);
 
-            _sortButton = ToolButton("排序：文件夹", false);
+            _sortButton = ToolButton(Lang.T("排序：文件夹", "Sort: folder"), false);
             _sortButton.Click += delegate
             {
                 _sortMode = (_sortMode + 1) % 2;
-                _sortButton.Text = _sortMode == 0 ? "排序：文件夹" : "排序：载具";
+                _sortButton.Text = _sortMode == 0 ? Lang.T("排序：文件夹", "Sort: folder") : Lang.T("排序：载具", "Sort: vehicle");
                 RebuildGrid();
                 UpdateButtons();
             };
 
-            _selectAll = ToolButton("全选", false);
+            _selectAll = ToolButton(Lang.T("全选", "Select all"), false);
             _selectAll.Click += delegate { ToggleSelectAll(); };
 
-            _clearButton = ToolButton("清空文件夹", true);
+            _clearButton = ToolButton(Lang.T("清空文件夹", "Clear folder"), true);
             _clearButton.Click += delegate { ClearSelected(); };
-            _openButton = ToolButton("打开文件夹", false);
+            _openButton = ToolButton(Lang.T("打开文件夹", "Open folder"), false);
             _openButton.Click += delegate { OpenSelected(); };
-            _backupButton = ToolButton("备份", false);
+            _backupButton = ToolButton(Lang.T("备份", "Back up"), false);
             _backupButton.Click += delegate { BackupClicked(); };
-            _restoreButton = ToolButton("还原备份", false);
+            _restoreButton = ToolButton(Lang.T("还原备份", "Restore backup"), false);
             _restoreButton.Click += delegate { RestoreBackup(); };
-            _refreshButton = ToolButton("刷新", false);
+            _refreshButton = ToolButton(Lang.T("刷新", "Refresh"), false);
             _refreshButton.Click += delegate { Reload(); };
 
-            _updateButton = ToolButton("更新数据", false);
+            _updateButton = ToolButton(Lang.T("更新数据", "Update data"), false);
             _updateButton.Click += delegate { UpdateVehicleMeta(false); };
 
-            _updateAllButton = ToolButton("更新全部数据", false);
+            _updateAllButton = ToolButton(Lang.T("更新全部数据", "Update all data"), false);
             _updateAllButton.Click += delegate { UpdateVehicleMeta(true); };
 
             _metaLabel = new Label();
@@ -313,26 +313,26 @@ namespace WtSkin
             _detail.Controls.Add(_detailList);
 
             _detailSelectAll = new FlatButton();
-            _detailSelectAll.Text = "全选";
+            _detailSelectAll.Text = Lang.T("全选", "Select all");
             _detailSelectAll.Font = Ui.SmallBold;
             _detailSelectAll.Click += delegate { DetailSelectAll(); };
             _detail.Controls.Add(_detailSelectAll);
 
             _detailBackup = new FlatButton();
-            _detailBackup.Text = "备份所选";
+            _detailBackup.Text = Lang.T("备份所选", "Back up selected");
             _detailBackup.Font = Ui.SmallBold;
             _detailBackup.Click += delegate { DetailBackupClicked(); };
             _detail.Controls.Add(_detailBackup);
 
             _detailDelete = new FlatButton();
-            _detailDelete.Text = "删除所选";
+            _detailDelete.Text = Lang.T("删除所选", "Delete selected");
             _detailDelete.Font = Ui.SmallBold;
             _detailDelete.Danger = true;
             _detailDelete.Click += delegate { DetailDeleteClicked(); };
             _detail.Controls.Add(_detailDelete);
 
             _detailRename = new FlatButton();
-            _detailRename.Text = "重命名";
+            _detailRename.Text = Lang.T("重命名", "Rename");
             _detailRename.Font = Ui.SmallBold;
             _detailRename.Click += delegate { DetailRenameClicked(); };
             _detail.Controls.Add(_detailRename);
@@ -344,7 +344,7 @@ namespace WtSkin
             _detail.Controls.Add(_detailClose);
 
             _detailSort = new FlatButton();
-            _detailSort.Text = "排序：名称";
+            _detailSort.Text = Lang.T("排序：名称", "Sort: name");
             _detailSort.Font = Ui.SmallBold;
             _detailSort.Click += delegate
             {
@@ -354,13 +354,13 @@ namespace WtSkin
             _detail.Controls.Add(_detailSort);
 
             _detailRecalc = new FlatButton();
-            _detailRecalc.Text = "重新计算占用";
+            _detailRecalc.Text = Lang.T("重新计算占用", "Recalculate size");
             _detailRecalc.Font = Ui.SmallBold;
             _detailRecalc.Click += delegate { RecalculateOccupancy(); };
             _detail.Controls.Add(_detailRecalc);
 
             _detailCount = new Label();
-            _detailCount.Text = "已选 0 个";
+            _detailCount.Text = Lang.T("已选 0 个", "0 selected");
             _detailCount.Font = Ui.Small;
             _detailCount.ForeColor = Ui.TextDim;
             _detailCount.BackColor = Ui.CardBg;
@@ -538,23 +538,23 @@ namespace WtSkin
             int btnH = Ui.S(28);
             int bx = pad;
             int top = Ui.S(52);
-            int wAll = Math.Max(Ui.S(58), TextRenderer.MeasureText("取消勾选", Ui.SmallBold).Width + Ui.S(16));
+            int wAll = Math.Max(Ui.S(58), TextRenderer.MeasureText(Lang.T("取消勾选", "Deselect all"), Ui.SmallBold).Width + Ui.S(16));
             _detailSelectAll.SetBounds(bx, top, wAll, btnH);
             bx += wAll + Ui.S(6);
-            int wBackup = Math.Max(Ui.S(76), TextRenderer.MeasureText("备份所选", Ui.SmallBold).Width + Ui.S(16));
+            int wBackup = Math.Max(Ui.S(76), TextRenderer.MeasureText(Lang.T("备份所选", "Back up selected"), Ui.SmallBold).Width + Ui.S(16));
             _detailBackup.SetBounds(bx, top, wBackup, btnH);
             bx += wBackup + Ui.S(6);
-            int wDelete = Math.Max(Ui.S(76), TextRenderer.MeasureText("删除所选", Ui.SmallBold).Width + Ui.S(16));
+            int wDelete = Math.Max(Ui.S(76), TextRenderer.MeasureText(Lang.T("删除所选", "Delete selected"), Ui.SmallBold).Width + Ui.S(16));
             _detailDelete.SetBounds(bx, top, wDelete, btnH);
             bx += wDelete + Ui.S(6);
-            int wRename = Math.Max(Ui.S(64), TextRenderer.MeasureText("重命名", Ui.SmallBold).Width + Ui.S(16));
+            int wRename = Math.Max(Ui.S(64), TextRenderer.MeasureText(Lang.T("重命名", "Rename"), Ui.SmallBold).Width + Ui.S(16));
             _detailRename.SetBounds(bx, top, wRename, btnH);
             _detailClose.SetBounds(w - pad - Ui.S(26), Ui.S(12), Ui.S(26), Ui.S(26));
-            int countW = Math.Max(Ui.S(64), TextRenderer.MeasureText("已选 99 个", Ui.SmallBold).Width + Ui.S(10));
+            int countW = Math.Max(Ui.S(64), TextRenderer.MeasureText(Lang.T("已选 99 个", "99 selected"), Ui.SmallBold).Width + Ui.S(10));
 
             int rowTop = top + btnH + Ui.S(8);
-            int wSort = Math.Max(Ui.S(84), TextRenderer.MeasureText("排序：名称", Ui.SmallBold).Width + Ui.S(16));
-            int wRecalc = Math.Max(Ui.S(96), TextRenderer.MeasureText("重新计算占用", Ui.SmallBold).Width + Ui.S(16));
+            int wSort = Math.Max(Ui.S(84), TextRenderer.MeasureText(Lang.T("排序：名称", "Sort: name"), Ui.SmallBold).Width + Ui.S(16));
+            int wRecalc = Math.Max(Ui.S(96), TextRenderer.MeasureText(Lang.T("重新计算占用", "Recalculate size"), Ui.SmallBold).Width + Ui.S(16));
             bool narrow = w < Ui.S(348);
             if (narrow)
             {
@@ -621,10 +621,10 @@ namespace WtSkin
             Rectangle r = new Rectangle(0, 0, _detail.Width - 1, _detail.Height - 1);
             Ui.FillRound(g, r, Ui.RCard, Ui.CardBg);
             Ui.DrawRound(g, r, Ui.RCard, Ui.Stroke, Ui.BorderWidth);
-            string title = "涂装列表";
+            string title = Lang.T("涂装列表", "Skins");
             if (_detailVehicle != null && !string.IsNullOrEmpty(_detailVehicle.Title))
             {
-                title = "涂装列表 · " + _detailVehicle.Title;
+                title = Lang.T("涂装列表 · ", "Skins · ") + _detailVehicle.Title;
             }
             Ui.DrawText(g, title, Ui.SmallBold, Ui.TextSecondary,
                     new Rectangle(Ui.S(14), Ui.S(14), Math.Max(Ui.S(60), _detail.Width - Ui.S(28)), Ui.S(20)),
@@ -757,14 +757,14 @@ namespace WtSkin
             }
 
             int top = Ui.S(2);
-            AddNationItem("", "全部", _all.Count, top);
+            AddNationItem("", Lang.T("全部", "All"), _all.Count, top);
             top += Ui.S(36);
             for (int i = 0; i < codes.Count; i++)
             {
                 string code = codes[i];
                 int n;
                 counts.TryGetValue(code, out n);
-                string label = code == "__unknown" ? "未知" : NameMap.NationName(code);
+                string label = code == "__unknown" ? Lang.T("未知", "Unknown") : NameMap.NationName(code);
                 AddNationItem(code, label, n, top);
                 top += Ui.S(36);
             }
@@ -949,8 +949,8 @@ namespace WtSkin
             {
                 Label empty = new Label();
                 empty.Text = _all.Count == 0
-                    ? "UserSkins 里还没有涂装。\r\n先在游戏里创建涂装示例并导入一个包，这里就会出现。"
-                    : "没有匹配的涂装。\r\n试试切换国家筛选或清空搜索关键词。";
+                    ? Lang.T("UserSkins 里还没有涂装。\r\n先在游戏里创建涂装示例并导入一个包，这里就会出现。", "No skins in UserSkins yet.\r\nCreate a skin sample in game and import a package.")
+                    : Lang.T("没有匹配的涂装。\r\n试试切换国家筛选或清空搜索关键词。", "No matching skins.\r\nTry another nation filter or clear the search.");
                 empty.ForeColor = Ui.TextFaint;
                 empty.BackColor = Ui.Bg;
                 empty.Font = Ui.Body;
@@ -1073,7 +1073,7 @@ namespace WtSkin
                 }
             }
             bool allVisible = visible.Count > 0 && visibleSelected == visible.Count;
-            _selectAll.Text = allVisible ? "取消勾选" : "全选";
+            _selectAll.Text = allVisible ? Lang.T("取消勾选", "Deselect all") : Lang.T("全选", "Select all");
             _selectAll.Primary = allVisible;
             _selectAll.Enabled = visible.Count > 0;
 
@@ -1087,11 +1087,11 @@ namespace WtSkin
             _updateAllButton.Enabled = !_updating;
             if (Content != null && Content.Width < Ui.S(1000))
             {
-                _stats.Text = "共" + _all.Count + " · 筛" + visible.Count + " · 选" + selected;
+                _stats.Text = Lang.T("共", "Total ") + _all.Count + Lang.T(" · 筛", " · shown ") + visible.Count + Lang.T(" · 选", " · selected ") + selected;
             }
             else
             {
-                _stats.Text = "共 " + _all.Count + " 个 · 当前 " + visible.Count + " 个 · 已选 " + selected + " 个";
+                _stats.Text = Lang.T("共 ", "Total ") + _all.Count + Lang.T(" 个 · 当前 ", "  · current ") + visible.Count + Lang.T(" 个 · 已选 ", " · selected ") + selected + Lang.T(" 个", "");
             }
         }
 
@@ -1106,9 +1106,9 @@ namespace WtSkin
             _updating = true;
             _updateButton.Enabled = false;
             _updateAllButton.Enabled = false;
-            _updateButton.Text = "更新中…";
+            _updateButton.Text = Lang.T("更新中…", "Updating…");
             _updateButton.Invalidate();
-            _metaLabel.Text = full ? "正在采集全部载具数据…" : "正在更新本机涂装载具数据…";
+            _metaLabel.Text = full ? Lang.T("正在采集全部载具数据…", "Collecting all vehicle data…") : Lang.T("正在更新本机涂装载具数据…", "Updating local vehicle data…");
 
             // 本机涂装模式只给这些载具补图；全部模式按清单补齐。
             List<string> scope = new List<string>();
@@ -1149,7 +1149,7 @@ namespace WtSkin
                 catch (Exception ex)
                 {
                     result = new VehicleMetaUpdateResult();
-                    result.Message = "更新失败：" + ex.Message;
+                    result.Message = Lang.T("更新失败：", "Update failed: ") + ex.Message;
                     Config.Log("载具数据更新异常：" + ex.Message);
                 }
                 // 等级权重采集结束后，同一任务继续补图标；两者共用同一份清单状态。
@@ -1175,7 +1175,7 @@ namespace WtSkin
                 catch (Exception ex)
                 {
                     icons = new IconUpdateResult();
-                    icons.Message = "图标更新失败：" + ex.Message;
+                    icons.Message = Lang.T("图标更新失败：", "Icon update failed: ") + ex.Message;
                     Config.Log("载具图标更新异常：" + ex.Message);
                 }
                 try
@@ -1195,7 +1195,7 @@ namespace WtSkin
             _updating = false;
             _updateButton.Enabled = true;
             _updateAllButton.Enabled = true;
-            _updateButton.Text = "更新数据";
+            _updateButton.Text = Lang.T("更新数据", "Update data");
             _updateButton.Invalidate();
             _updateAllButton.Invalidate();
             VehicleMeta.Reload();
@@ -1204,7 +1204,7 @@ namespace WtSkin
             _metaLabel.Text = VehicleMeta.StatusText() + " · " + VehicleCatalog.CoverageShort();
             if (result != null && result.UnmatchedCount > 0)
             {
-                _metaLabel.Text = _metaLabel.Text + " · 未匹配 " + result.UnmatchedCount;
+                _metaLabel.Text = _metaLabel.Text + Lang.T(" · 未匹配 ", " · unmatched ") + result.UnmatchedCount;
             }
             if (_grid != null)
             {
@@ -1216,8 +1216,8 @@ namespace WtSkin
             {
                 string why = result != null && result.Paused ? result.Message : icons.Message;
                 MessageBox.Show(this,
-                    why + "\r\n\r\n请检查网络后再次点击「更新数据」，会从断点继续，已完成的条目不会重复请求。",
-                    "更新已暂停", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    why + Lang.T("\r\n\r\n请检查网络后再次点击「更新数据」，会从断点继续，已完成的条目不会重复请求。", "\r\n\r\nCheck the network and click Update data again to resume from where it stopped."),
+                    Lang.T("更新已暂停", "Update paused"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             else
             {
@@ -1242,9 +1242,9 @@ namespace WtSkin
             _updating = true;
             _updateButton.Enabled = false;
             _updateAllButton.Enabled = false;
-            _updateButton.Text = "重试中…";
+            _updateButton.Text = Lang.T("重试中…", "Retrying…");
             _updateButton.Invalidate();
-            _metaLabel.Text = "正在重试失败的图标…";
+            _metaLabel.Text = Lang.T("正在重试失败的图标…", "Retrying failed icons…");
             Thread thread = new Thread(delegate()
             {
                 IconUpdateResult icons = null;
@@ -1270,7 +1270,7 @@ namespace WtSkin
                 catch (Exception ex)
                 {
                     icons = new IconUpdateResult();
-                    icons.Message = "重试失败：" + ex.Message;
+                    icons.Message = Lang.T("重试失败：", "Retry failed: ") + ex.Message;
                     Config.Log("重试图标异常：" + ex.Message);
                 }
                 try
@@ -1325,7 +1325,7 @@ namespace WtSkin
                     string error;
                     if (!BackupTo(selected, out root, out error))
                     {
-                        MessageBox.Show(this, "备份失败，未执行清空：\r\n\r\n" + error, "清空文件夹",
+                        MessageBox.Show(this, Lang.T("备份失败，未执行清空：\r\n\r\n", "Backup failed; nothing was cleared:\r\n\r\n") + error, Lang.T("清空文件夹", "Clear folder"),
                                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
@@ -1334,7 +1334,7 @@ namespace WtSkin
             string deleteError;
             if (!DeleteSkins(selected, out deleteError))
             {
-                MessageBox.Show(this, "清空失败，已回滚：\r\n\r\n" + deleteError, "清空文件夹",
+                MessageBox.Show(this, Lang.T("清空失败，已回滚：\r\n\r\n", "Clear failed; changes rolled back:\r\n\r\n") + deleteError, Lang.T("清空文件夹", "Clear folder"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Reload();
                 return;
@@ -1358,7 +1358,7 @@ namespace WtSkin
             }
             catch (Exception ex)
             {
-                error = "无法解析 UserSkins 路径：" + ex.Message;
+                error = Lang.T("无法解析 UserSkins 路径：", "Cannot resolve UserSkins path: ") + ex.Message;
                 return false;
             }
             string prefix = root + "\\";
@@ -1371,19 +1371,19 @@ namespace WtSkin
                 }
                 catch (Exception ex)
                 {
-                    error = "路径无效：" + skins[i].Path + "（" + ex.Message + "）";
+                    error = Lang.T("路径无效：", "Invalid path: ") + skins[i].Path + "（" + ex.Message + Lang.T("）", " )");
                     return false;
                 }
                 if (!full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ||
                     string.IsNullOrEmpty(skins[i].Folder) ||
                     skins[i].Folder.IndexOf('\\') >= 0 || skins[i].Folder.IndexOf('/') >= 0)
                 {
-                    error = "拒绝删除 UserSkins 之外的路径：" + full;
+                    error = Lang.T("拒绝删除 UserSkins 之外的路径：", "Refusing to delete outside UserSkins: ") + full;
                     return false;
                 }
                 if (!Directory.Exists(full))
                 {
-                    error = "目录不存在：" + full;
+                    error = Lang.T("目录不存在：", "Folder not found: ") + full;
                     return false;
                 }
             }
@@ -1400,7 +1400,7 @@ namespace WtSkin
             catch (Exception ex)
             {
                 Util.TryDeleteDirectory(undo);
-                error = "无法创建撤销副本，未删除任何文件：" + ex.Message;
+                error = Lang.T("无法创建撤销副本，未删除任何文件：", "Cannot create undo copy; no files were deleted: ") + ex.Message;
                 return false;
             }
 
@@ -1420,12 +1420,12 @@ namespace WtSkin
                     if (restored)
                     {
                         Util.TryDeleteDirectory(undo);
-                        error = "删除「" + skins[i].Folder + "」失败，已恢复先前删掉的涂装：" + ex.Message;
+                        error = Lang.T("删除「", "Delete \"") + skins[i].Folder + Lang.T("」失败，已恢复先前删掉的涂装：", "\" failed; previously deleted skins restored: ") + ex.Message;
                     }
                     else
                     {
-                        error = "删除「" + skins[i].Folder + "」失败，恢复也失败：" + ex.Message +
-                                "\r\n撤销副本保留在：" + undo + "\r\n" + rollback;
+                        error = Lang.T("删除「", "Delete \"") + skins[i].Folder + Lang.T("」失败，恢复也失败：", "\" failed and restore also failed: ") + ex.Message +
+                                Lang.T("\r\n撤销副本保留在：", "\r\nUndo copy kept at: ") + undo + "\r\n" + rollback;
                     }
                     return false;
                 }
@@ -1496,7 +1496,7 @@ namespace WtSkin
             string path = selected[0].Path;
             if (!Directory.Exists(path))
             {
-                MessageBox.Show(this, "目录不存在：\r\n\r\n" + path, "打开文件夹",
+                MessageBox.Show(this, Lang.T("目录不存在：\r\n\r\n", "Folder not found:\r\n\r\n") + path, Lang.T("打开文件夹", "Open folder"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 Reload();
                 return;
@@ -1507,7 +1507,7 @@ namespace WtSkin
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "无法打开资源管理器：" + ex.Message, "打开文件夹",
+                MessageBox.Show(this, Lang.T("无法打开资源管理器：", "Cannot open File Explorer: ") + ex.Message, Lang.T("打开文件夹", "Open folder"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
@@ -1519,15 +1519,15 @@ namespace WtSkin
             List<InstalledSkin> targets = all ? new List<InstalledSkin>(_all) : selected;
             if (targets.Count == 0)
             {
-                MessageBox.Show(this, "UserSkins 里还没有可备份的涂装。", "备份",
+                MessageBox.Show(this, Lang.T("UserSkins 里还没有可备份的涂装。", "No skins to back up in UserSkins."), Lang.T("备份", "Back up"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             string preview = Path.Combine(InstalledSkins.BackupRootDir,
                                           DateTime.Now.ToString("yyyyMMdd_HHmmss"));
-            string text = "将备份 " + targets.Count + " 个涂装（" + (all ? "全部" : "选中的") + "）到：\r\n\r\n" +
-                          preview + "\r\n\r\n备份保留原目录结构，不写入战雷目录。";
-            if (MessageBox.Show(this, text, "备份", MessageBoxButtons.OKCancel,
+            string text = Lang.T("将备份 ", "Back up ") + targets.Count + Lang.T(" 个涂装（", " skins (") + (all ? Lang.T("全部", "All") : Lang.T("选中的", "selected")) + Lang.T("）到：\r\n\r\n", " ) to:\r\n\r\n") +
+                          preview + Lang.T("\r\n\r\n备份保留原目录结构，不写入战雷目录。", "\r\n\r\nThe backup keeps the folder structure and is not written into the game folder.");
+            if (MessageBox.Show(this, text, Lang.T("备份", "Back up"), MessageBoxButtons.OKCancel,
                                 MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.OK)
             {
                 return;
@@ -1536,14 +1536,14 @@ namespace WtSkin
             string error;
             if (!BackupTo(targets, out root, out error))
             {
-                MessageBox.Show(this, "备份失败，已清理未完成的副本：\r\n\r\n" + error, "备份",
+                MessageBox.Show(this, Lang.T("备份失败，已清理未完成的副本：\r\n\r\n", "Backup failed; incomplete copies removed:\r\n\r\n") + error, Lang.T("备份", "Back up"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             Config.Log("备份涂装 " + targets.Count + " 个 -> " + root);
-            MessageBox.Show(this, "已备份 " + targets.Count + " 个涂装到：\r\n\r\n" + root +
-                            "\r\n\r\n可以从「还原备份」把文件复制回 UserSkins。",
-                            "备份完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, Lang.T("已备份 ", "Backed up ") + targets.Count + Lang.T(" 个涂装到：\r\n\r\n", " skins to:\r\n\r\n") + root +
+                            Lang.T("\r\n\r\n可以从「还原备份」把文件复制回 UserSkins。", "\r\n\r\nUse Restore backup to copy them back to UserSkins."),
+                            Lang.T("备份完成", "Backup complete"), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private bool BackupTo(List<InstalledSkin> skins, out string root, out string error)
@@ -1561,7 +1561,7 @@ namespace WtSkin
             }
             catch (Exception ex)
             {
-                error = "无法创建备份目录：" + root + "（" + ex.Message + "）";
+                error = Lang.T("无法创建备份目录：", "Cannot create backup folder: ") + root + "（" + ex.Message + Lang.T("）", " )");
                 return false;
             }
             for (int i = 0; i < skins.Count; i++)
@@ -1585,7 +1585,7 @@ namespace WtSkin
             string root = InstalledSkins.BackupRootDir;
             if (!Directory.Exists(root))
             {
-                MessageBox.Show(this, "还没有备份。\r\n\r\n默认备份目录：" + root, "还原备份",
+                MessageBox.Show(this, Lang.T("还没有备份。\r\n\r\n默认备份目录：", "No backups yet.\r\n\r\nDefault backup folder: ") + root, Lang.T("还原备份", "Restore backup"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -1603,7 +1603,7 @@ namespace WtSkin
                 string userSkins = Config.UserSkinsDir;
                 if (string.IsNullOrEmpty(userSkins))
                 {
-                    MessageBox.Show(this, "还没有设置正确的游戏目录。", "还原备份",
+                    MessageBox.Show(this, Lang.T("还没有设置正确的游戏目录。", "No valid game folder configured."), Lang.T("还原备份", "Restore backup"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -1619,11 +1619,11 @@ namespace WtSkin
                 }
                 if (dirs.Length > 12)
                 {
-                    list += "… 等 " + dirs.Length + " 个\r\n";
+                    list += Lang.T("… 等 ", "… and ") + dirs.Length + Lang.T(" 个\r\n", " more\r\n");
                 }
-                string text = "将把 " + dirs.Length + " 个涂装还原到：\r\n\r\n" + userSkins +
-                              "\r\n\r\n" + list + "\r\n同名文件夹会跳过，不会覆盖。";
-                if (MessageBox.Show(this, text, "还原备份", MessageBoxButtons.OKCancel,
+                string text = Lang.T("将把 ", "Restore ") + dirs.Length + Lang.T(" 个涂装还原到：\r\n\r\n", " skins to:\r\n\r\n") + userSkins +
+                              "\r\n\r\n" + list + Lang.T("\r\n同名文件夹会跳过，不会覆盖。", "\r\nSkipped if a folder with the same name exists; nothing is overwritten.");
+                if (MessageBox.Show(this, text, Lang.T("还原备份", "Restore backup"), MessageBoxButtons.OKCancel,
                                     MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.OK)
                 {
                     return;
@@ -1662,17 +1662,17 @@ namespace WtSkin
                     {
                         Util.TryDeleteDirectory(created[i]);
                     }
-                    MessageBox.Show(this, "还原失败，已移除本次新建的文件夹：\r\n\r\n" + error, "还原备份",
+                    MessageBox.Show(this, Lang.T("还原失败，已移除本次新建的文件夹：\r\n\r\n", "Restore failed; folders created in this run were removed:\r\n\r\n") + error, Lang.T("还原备份", "Restore backup"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else
                 {
-                    string note = "已还原 " + created.Count + " 个涂装。";
+                    string note = Lang.T("已还原 ", "Restored ") + created.Count + Lang.T(" 个涂装。", " skins.");
                     if (skipped.Count > 0)
                     {
-                        note += "\r\n跳过 " + skipped.Count + " 个同名文件夹：" + string.Join("、", skipped.ToArray());
+                        note += Lang.T("\r\n跳过 ", "\r\nSkipped ") + skipped.Count + Lang.T(" 个同名文件夹：", " folders with the same name: ") + string.Join("、", skipped.ToArray());
                     }
-                    MessageBox.Show(this, note, "还原备份", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, note, Lang.T("还原备份", "Restore backup"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 Reload();
             }
@@ -1785,11 +1785,11 @@ namespace WtSkin
             }
             if (_detailVehicle.Unreadable)
             {
-                _detailEmpty.Text = "无法读取这个载具目录（可能没有访问权限）。";
+                _detailEmpty.Text = Lang.T("无法读取这个载具目录（可能没有访问权限）。", "Cannot read this vehicle folder (permission denied?).");
             }
             else if (items.Count == 0)
             {
-                _detailEmpty.Text = "这个载具还没有涂装。\r\n在游戏里为该载具创建涂装示例后，涂装会显示在这里。";
+                _detailEmpty.Text = Lang.T("这个载具还没有涂装。\r\n在游戏里为该载具创建涂装示例后，涂装会显示在这里。", "No skins for this vehicle yet.\r\nCreate a skin sample in game and it will appear here.");
             }
             else
             {
@@ -1865,7 +1865,7 @@ namespace WtSkin
             }
             bool all = selectable > 0 && selected == selectable;
             bool open = _detailOpen && _detailVehicle != null;
-            _detailSelectAll.Text = all ? "取消勾选" : "全选";
+            _detailSelectAll.Text = all ? Lang.T("取消勾选", "Deselect all") : Lang.T("全选", "Select all");
             _detailSelectAll.Primary = all;
             _detailSelectAll.Enabled = open && selectable > 0;
             _detailBackup.Enabled = open && selected > 0;
@@ -1873,8 +1873,8 @@ namespace WtSkin
             _detailRename.Enabled = open && selected == 1;
             _detailSort.Enabled = open;
             _detailRecalc.Enabled = open;
-            _detailCount.Text = "已选 " + selected + " 个";
-            _detailSort.Text = _detailSortMode == 0 ? "排序：名称" : "排序：大小";
+            _detailCount.Text = Lang.T("已选 ", "Selected ") + selected + Lang.T(" 个", "");
+            _detailSort.Text = _detailSortMode == 0 ? Lang.T("排序：名称", "Sort: name") : Lang.T("排序：大小", "Sort: size");
         }
 
         private void DetailSelectAll()
@@ -1935,7 +1935,7 @@ namespace WtSkin
             ManagerSkinItem item = selected[0];
             if (item.Legacy)
             {
-                MessageBox.Show(this, "这是载具目录本身，不能重命名。", "重命名",
+                MessageBox.Show(this, Lang.T("这是载具目录本身，不能重命名。", "This is the vehicle folder itself and cannot be renamed."), Lang.T("重命名", "Rename"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -1949,7 +1949,7 @@ namespace WtSkin
                 string error = SkinNameRules.Validate(name);
                 if (error.Length > 0)
                 {
-                    MessageBox.Show(this, error, "重命名", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, error, Lang.T("重命名", "Rename"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
                 if (string.Equals(name, item.FolderName, StringComparison.Ordinal))
@@ -1960,13 +1960,13 @@ namespace WtSkin
                 string target = Path.Combine(parent, name);
                 if (Directory.Exists(target))
                 {
-                    MessageBox.Show(this, "目标文件夹已存在：\r\n\r\n" + target, "重命名",
+                    MessageBox.Show(this, Lang.T("目标文件夹已存在：\r\n\r\n", "Target folder already exists:\r\n\r\n") + target, Lang.T("重命名", "Rename"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
                 if (File.Exists(target))
                 {
-                    MessageBox.Show(this, "目标同名文件已存在，不能重命名：\r\n\r\n" + target, "重命名",
+                    MessageBox.Show(this, Lang.T("目标同名文件已存在，不能重命名：\r\n\r\n", "A file with that name exists; cannot rename:\r\n\r\n") + target, Lang.T("重命名", "Rename"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -1977,7 +1977,7 @@ namespace WtSkin
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "重命名失败：\r\n\r\n" + ex.Message, "重命名",
+                    MessageBox.Show(this, Lang.T("重命名失败：\r\n\r\n", "Rename failed:\r\n\r\n") + ex.Message, Lang.T("重命名", "Rename"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
@@ -2011,13 +2011,13 @@ namespace WtSkin
             string error;
             if (!ManagerSkins.BackupItems(selected, _detailVehicle.Folder, out root, out copied, out error))
             {
-                MessageBox.Show(this, "备份失败：\r\n\r\n" + error, "备份所选",
+                MessageBox.Show(this, Lang.T("备份失败：\r\n\r\n", "Backup failed:\r\n\r\n") + error, Lang.T("备份所选", "Back up selected"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             Config.Log("备份涂装 " + copied + " 个 -> " + root + "（载具 " + _detailVehicle.Folder + "）");
-            MessageBox.Show(this, "已备份 " + copied + " 个涂装到：\r\n\r\n" + root +
-                            "\r\n\r\n原目录未做改动。", "备份完成",
+            MessageBox.Show(this, Lang.T("已备份 ", "Backed up ") + copied + Lang.T(" 个涂装到：\r\n\r\n", " skins to:\r\n\r\n") + root +
+                            Lang.T("\r\n\r\n原目录未做改动。", "\r\n\r\nThe original folder was not changed."), Lang.T("备份完成", "Backup complete"),
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -2041,7 +2041,7 @@ namespace WtSkin
                     string error;
                     if (!ManagerSkins.BackupItems(selected, _detailVehicle.Folder, out root, out copied, out error))
                     {
-                        MessageBox.Show(this, "备份失败，未执行删除：\r\n\r\n" + error, "删除所选",
+                        MessageBox.Show(this, Lang.T("备份失败，未执行删除：\r\n\r\n", "Backup failed; nothing was deleted:\r\n\r\n") + error, Lang.T("删除所选", "Delete selected"),
                                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
@@ -2055,14 +2055,14 @@ namespace WtSkin
             Config.Log("删除涂装 " + deleted.Count + " 个，跳过 " + skipped.Count + " 个（载具 " + vehicleFolder + "）");
             // 刷新列表与左栏总占用；载具目录本身保留，全部删完时右栏显示空态。
             Reload();
-            string text = "已删除 " + deleted.Count + " 个涂装。";
+            string text = Lang.T("已删除 ", "Deleted ") + deleted.Count + Lang.T(" 个涂装。", " skins.");
             if (skipped.Count > 0)
             {
-                text += "\r\n跳过 " + skipped.Count + " 个（可能被占用或无权限）：\r\n" +
+                text += Lang.T("\r\n跳过 ", "\r\nSkipped ") + skipped.Count + Lang.T(" 个（可能被占用或无权限）：\r\n", " (in use or no permission):\r\n") +
                         string.Join("\r\n", skipped.ToArray());
             }
-            text += "\r\n\r\n载具目录本身已保留。";
-            MessageBox.Show(this, text, "删除所选", MessageBoxButtons.OK,
+            text += Lang.T("\r\n\r\n载具目录本身已保留。", "\r\n\r\nThe vehicle folder itself was preserved.");
+            MessageBox.Show(this, text, Lang.T("删除所选", "Delete selected"), MessageBoxButtons.OK,
                             skipped.Count > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
         }
 
@@ -2168,10 +2168,10 @@ namespace WtSkin
             }
             if (_library == null)
             {
-                _libStats.Text = "已安装 0 个涂装 · 占用 计算中…";
+                _libStats.Text = Lang.T("已安装 0 个涂装 · 占用 计算中…", "No skins installed · size calculating…");
                 return;
             }
-            _libStats.Text = "已安装 " + _library.SkinCount + " 个涂装 · 占用 " +
+            _libStats.Text = Lang.T("已安装 ", "Installed ") + _library.SkinCount + Lang.T(" 个涂装 · 占用 ", " skins · size ") +
                              ManagerSkins.FormatSize(_library.TotalBytes);
         }
 
@@ -2179,7 +2179,7 @@ namespace WtSkin
         {
             if (!Directory.Exists(source))
             {
-                throw new DirectoryNotFoundException("目录不存在：" + source);
+                throw new DirectoryNotFoundException(Lang.T("目录不存在：", "Folder not found: ") + source);
             }
             Directory.CreateDirectory(target);
             string[] files = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
@@ -2544,7 +2544,7 @@ namespace WtSkin
             }
             else
             {
-                Ui.DrawText(g, "暂无图标", Ui.Small, Ui.TextFaint, imageBox, Ui.Center);
+                Ui.DrawText(g, Lang.T("暂无图标", "No icon"), Ui.Small, Ui.TextFaint, imageBox, Ui.Center);
             }
 
             int textX = pad;
@@ -2570,9 +2570,9 @@ namespace WtSkin
             }
             y += fullLines * Ui.S(FullLineH) + Ui.S(8);
 
-            DrawKeyValue(g, "国家", Skin == null ? "" : Skin.NationName, Skin == null ? "" : Skin.Nation, textX, textW, ref y, false);
+            DrawKeyValue(g, Lang.T("国家", "Nation"), Skin == null ? "" : Skin.NationName, Skin == null ? "" : Skin.Nation, textX, textW, ref y, false);
             DrawLevelWeight(g, textX, textW, ref y);
-            DrawKeyValue(g, "机型代号", Skin == null ? "" : Skin.UnitId, "", textX, textW, ref y, false);
+            DrawKeyValue(g, Lang.T("机型代号", "Vehicle ID"), Skin == null ? "" : Skin.UnitId, "", textX, textW, ref y, false);
             DrawFolder(g, textX, textW, ref y);
 
             Ui.DrawRound(g, r, Ui.S(10), _selected ? Ui.Accent : Ui.LineSoft, _selected ? 1.6f : 1f);
@@ -2632,7 +2632,7 @@ namespace WtSkin
                 valueX = flagRect.Right + Ui.S(6);
                 available = textX + textW - valueX;
             }
-            string shown = string.IsNullOrEmpty(value) ? "未知" : value;
+            string shown = string.IsNullOrEmpty(value) ? Lang.T("未知", "Unknown") : value;
             List<string> lines = Ui.WrapLines(shown, Ui.CardValue, available);
             int lineH = Ui.S(FullLineH);
             int contentH = lines.Count * lineH;
@@ -2650,7 +2650,7 @@ namespace WtSkin
         /// <summary>等级 / 权重固定一行：例如「VII · 11.7」；缺数据显示「—」。</summary>
         private void DrawLevelWeight(Graphics g, int textX, int textW, ref int y)
         {
-            Ui.DrawText(g, "等级 / 权重", Ui.CardLabel, Ui.TextFaint,
+            Ui.DrawText(g, Lang.T("等级 / 权重", "Rank / BR"), Ui.CardLabel, Ui.TextFaint,
                     new Rectangle(textX, y, Ui.S(LabelW), Ui.S(RowH)),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
             int valueX = textX + Ui.S(LabelW) + Ui.S(6);
@@ -2668,8 +2668,8 @@ namespace WtSkin
         {
             string folder = Skin == null ? "" : Skin.Folder;
             bool fallback = string.IsNullOrEmpty(folder);
-            string shown = fallback ? "未知" : folder;
-            Ui.DrawText(g, "文件夹", Ui.CardLabel, Ui.TextFaint,
+            string shown = fallback ? Lang.T("未知", "Unknown") : folder;
+            Ui.DrawText(g, Lang.T("文件夹", "Folder"), Ui.CardLabel, Ui.TextFaint,
                     new Rectangle(textX, y, Ui.S(LabelW), Ui.S(RowH)),
                     TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.NoPrefix);
             int valueX = textX + Ui.S(LabelW) + Ui.S(6);
@@ -2701,10 +2701,10 @@ namespace WtSkin
         public bool BackupFirst;
 
         public ClearSkinsForm(List<InstalledSkin> skins)
-            : base("清空文件夹", 660, 520)
+            : base(Lang.T("清空文件夹", "Clear folder"), 660, 520)
         {
-            MakeLabel("将删除 " + skins.Count + " 个涂装", 24, 12, 600, 26, Ui.H1, Ui.Bad);
-            MakeLabel("作用范围仅限当前勾选的载具目录；载具目录里的涂装子目录会一并删除。", 24, 40, 610, 20, Ui.Small, Ui.TextDim);
+            MakeLabel(Lang.T("将删除 ", "Delete ") + skins.Count + Lang.T(" 个涂装", " skins"), 24, 12, 600, 26, Ui.H1, Ui.Bad);
+            MakeLabel(Lang.T("作用范围仅限当前勾选的载具目录；载具目录里的涂装子目录会一并删除。", "Only the selected vehicle folders are affected; their skin subfolders are deleted too."), 24, 40, 610, 20, Ui.Small, Ui.TextDim);
 
             ListBox list = new ListBox();
             list.Left = Ui.S(24);
@@ -2722,7 +2722,7 @@ namespace WtSkin
             Content.Controls.Add(list);
 
             CheckBox backup = new CheckBox();
-            backup.Text = "先备份再清空";
+            backup.Text = Lang.T("先备份再清空", "Back up before clearing");
             backup.Left = Ui.S(24);
             backup.Top = Ui.S(326);
             backup.Width = Ui.S(240);
@@ -2735,12 +2735,12 @@ namespace WtSkin
             BackupFirst = true;
             backup.CheckedChanged += delegate { BackupFirst = backup.Checked; };
 
-            MakeLabel("删除后无法撤销（除非勾选了备份）。按 Enter 或 Esc 都执行「取消」。",
+            MakeLabel(Lang.T("删除后无法撤销（除非勾选了备份）。按 Enter 或 Esc 都执行「取消」。", "This cannot be undone unless backed up. Enter or Esc cancels."),
                       24, 356, 600, 40, Ui.Small, Ui.TextFaint);
 
-            FlatButton cancel = MakeButton("取消", 426, 418, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 426, 418, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton ok = MakeButton("删除", 530, 418, 96, false);
+            FlatButton ok = MakeButton(Lang.T("删除", "Delete"), 530, 418, 96, false);
             ok.Danger = true;
             ok.Click += delegate { DialogResult = DialogResult.OK; Close(); };
             AcceptButton = null;
@@ -2771,9 +2771,9 @@ namespace WtSkin
         private FlatButton _ok;
 
         public RenameSkinForm(string current)
-            : base("重命名涂装", 540, 300)
+            : base(Lang.T("重命名涂装", "Rename skin"), 540, 300)
         {
-            MakeLabel("涂装文件夹名", 24, 18, 200, 22, Ui.SmallBold, Ui.TextDim);
+            MakeLabel(Lang.T("涂装文件夹名", "Skin folder name"), 24, 18, 200, 22, Ui.SmallBold, Ui.TextDim);
             _box = new TextBox();
             _box.Left = Ui.S(24);
             _box.Top = Ui.S(44);
@@ -2785,11 +2785,11 @@ namespace WtSkin
             _box.Text = current;
             Content.Controls.Add(_box);
             _error = MakeLabel("", 24, 84, 492, 36, Ui.Small, Ui.Bad);
-            MakeLabel("只改第二级涂装文件夹名，载具 template_ 目录本身不变。", 24, 124, 492, 22, Ui.Small, Ui.TextDim);
+            MakeLabel(Lang.T("只改第二级涂装文件夹名，载具 template_ 目录本身不变。", "Only the skin subfolder name changes; the template_ vehicle folder stays."), 24, 124, 492, 22, Ui.Small, Ui.TextDim);
 
-            FlatButton cancel = MakeButton("取消", 340, 210, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 340, 210, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            _ok = MakeButton("确定", 448, 210, 96, true);
+            _ok = MakeButton(Lang.T("确定", "OK"), 448, 210, 96, true);
             _ok.Click += delegate
             {
                 Value = _box.Text.Trim();
@@ -2822,7 +2822,7 @@ namespace WtSkin
         public bool BackupFirst;
 
         public DeleteSkinsConfirmForm(ManagerVehicleEntry vehicle, List<ManagerSkinItem> items)
-            : base("删除涂装", 660, 540)
+            : base(Lang.T("删除涂装", "Delete skins"), 660, 540)
         {
             long total = 0;
             int unknown = 0;
@@ -2840,9 +2840,9 @@ namespace WtSkin
             string sizeText = ManagerSkins.FormatSize(total);
             if (unknown > 0)
             {
-                sizeText += "（另有 " + unknown + " 个计算中）";
+                sizeText += Lang.T("（另有 ", " (plus ") + unknown + Lang.T(" 个计算中）", " calculating)");
             }
-            MakeLabel("将删除 " + items.Count + " 个涂装（共 " + sizeText + "）", 24, 12, 600, 26, Ui.H1, Ui.Bad);
+            MakeLabel(Lang.T("将删除 ", "Delete ") + items.Count + Lang.T(" 个涂装（共 ", " skins (total ") + sizeText + Lang.T("）", " )"), 24, 12, 600, 26, Ui.H1, Ui.Bad);
             string vehicleName = "";
             if (vehicle != null)
             {
@@ -2850,7 +2850,7 @@ namespace WtSkin
                     ? vehicle.Folder
                     : vehicle.Title + " · " + vehicle.Folder;
             }
-            MakeLabel("所属载具：" + vehicleName, 24, 40, 610, 20, Ui.Small, Ui.TextDim);
+            MakeLabel(Lang.T("所属载具：", "Vehicle: ") + vehicleName, 24, 40, 610, 20, Ui.Small, Ui.TextDim);
 
             ListBox list = new ListBox();
             list.Left = Ui.S(24);
@@ -2867,10 +2867,10 @@ namespace WtSkin
             }
             Content.Controls.Add(list);
 
-            MakeLabel("只删除勾选的涂装子目录；载具目录本身会保留。", 24, 326, 600, 20, Ui.Small, Ui.TextDim);
+            MakeLabel(Lang.T("只删除勾选的涂装子目录；载具目录本身会保留。", "Only selected skin subfolders are deleted; the vehicle folder stays."), 24, 326, 600, 20, Ui.Small, Ui.TextDim);
 
             CheckBox backup = new CheckBox();
-            backup.Text = "先备份再删除";
+            backup.Text = Lang.T("先备份再删除", "Back up before deleting");
             backup.Left = Ui.S(24);
             backup.Top = Ui.S(354);
             backup.Width = Ui.S(240);
@@ -2883,12 +2883,12 @@ namespace WtSkin
             BackupFirst = true;
             backup.CheckedChanged += delegate { BackupFirst = backup.Checked; };
 
-            MakeLabel("删除后无法撤销（除非勾选了备份）。按 Enter 或 Esc 都执行「取消」。",
+            MakeLabel(Lang.T("删除后无法撤销（除非勾选了备份）。按 Enter 或 Esc 都执行「取消」。", "This cannot be undone unless backed up. Enter or Esc cancels."),
                       24, 386, 600, 40, Ui.Small, Ui.TextFaint);
 
-            FlatButton cancel = MakeButton("取消", 426, 438, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 426, 438, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton ok = MakeButton("删除", 530, 438, 96, false);
+            FlatButton ok = MakeButton(Lang.T("删除", "Delete"), 530, 438, 96, false);
             ok.Danger = true;
             ok.Click += delegate { DialogResult = DialogResult.OK; Close(); };
             AcceptButton = null;
@@ -2914,10 +2914,10 @@ namespace WtSkin
         private readonly List<string> _runs = new List<string>();
 
         public RestoreBackupsForm(string root)
-            : base("还原备份", 680, 560)
+            : base(Lang.T("还原备份", "Restore backup"), 680, 560)
         {
-            MakeLabel("备份目录：" + root, 24, 12, 620, 22, Ui.Small, Ui.TextDim);
-            MakeLabel("选择要还原的批次；同名文件夹会跳过，不会覆盖。", 24, 38, 620, 22, Ui.Small, Ui.TextFaint);
+            MakeLabel(Lang.T("备份目录：", "Backup folder: ") + root, 24, 12, 620, 22, Ui.Small, Ui.TextDim);
+            MakeLabel(Lang.T("选择要还原的批次；同名文件夹会跳过，不会覆盖。", "Choose a backup to restore; same-name folders are skipped, not overwritten."), 24, 38, 620, 22, Ui.Small, Ui.TextFaint);
 
             _list.Left = Ui.S(24);
             _list.Top = Ui.S(68);
@@ -2949,7 +2949,7 @@ namespace WtSkin
                 {
                     size += Util.DirectorySize(skins[s]);
                 }
-                _list.Items.Add(name + "    (" + skins.Length + " 个涂装, " + Util.HumanSize(size) + ")");
+                _list.Items.Add(name + "    (" + skins.Length + Lang.T(" 个涂装, ", " skins, ") + Util.HumanSize(size) + ")");
                 _runs.Add(dirs[i]);
             }
             if (_runs.Count > 0)
@@ -2958,12 +2958,12 @@ namespace WtSkin
             }
             else
             {
-                _list.Items.Add("（这个目录里还没有备份）");
+                _list.Items.Add(Lang.T("（这个目录里还没有备份）", "(no backups in this folder)"));
             }
 
-            FlatButton cancel = MakeButton("取消", 444, 438, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 444, 438, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton ok = MakeButton("还原", 550, 438, 104, true);
+            FlatButton ok = MakeButton(Lang.T("还原", "Restore"), 550, 438, 104, true);
             ok.Enabled = _runs.Count > 0;
             ok.Click += delegate
             {
@@ -2983,10 +2983,10 @@ namespace WtSkin
     internal class AbnormalFilesForm : ModalForm
     {
         public AbnormalFilesForm(ValidationResult result)
-            : base("发现异常文件", 700, 600)
+            : base(Lang.T("发现异常文件", "Unexpected files"), 700, 600)
         {
-            MakeLabel("这个包里有 " + result.Illegal.Count + " 个未通过校验的文件", 24, 12, 620, 26, Ui.H1, Ui.Warn);
-            MakeLabel("允许的类型：" + AllowedText() + "。下面这些文件可能有风险，是否仍然安装？",
+            MakeLabel(Lang.T("这个包里有 ", "This package contains ") + result.Illegal.Count + Lang.T(" 个未通过校验的文件", " files that failed validation"), 24, 12, 620, 26, Ui.H1, Ui.Warn);
+            MakeLabel(Lang.T("允许的类型：", "Allowed types: ") + AllowedText() + Lang.T("。下面这些文件可能有风险，是否仍然安装？", ". These files may be risky; install anyway?"),
                       24, 42, 640, 22, Ui.Small, Ui.TextDim);
 
             ListBox list = new ListBox();
@@ -3007,7 +3007,7 @@ namespace WtSkin
             int top = 270;
             if (result.Warn.Count > 0)
             {
-                MakeLabel("已忽略的说明文件（不会安装）：", 24, top, 400, 20, Ui.SmallBold, Ui.TextDim);
+                MakeLabel(Lang.T("已忽略的说明文件（不会安装）：", "Ignored readme files (not installed):"), 24, top, 400, 20, Ui.SmallBold, Ui.TextDim);
                 top += 24;
                 ListBox warns = new ListBox();
                 warns.Left = Ui.S(24);
@@ -3026,12 +3026,12 @@ namespace WtSkin
                 top += warns.Height + 10;
             }
 
-            MakeLabel("选「仍然安装」会按原包内容继续，完成后会标注未通过校验的文件数量。",
+            MakeLabel(Lang.T("选「仍然安装」会按原包内容继续，完成后会标注未通过校验的文件数量。", "Install anyway continues with the package and records how many files failed validation."),
                       24, top, 640, 40, Ui.Small, Ui.TextFaint);
 
-            FlatButton cancel = MakeButton("取消", 460, 470, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 460, 470, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton ok = MakeButton("仍然安装", 566, 470, 110, true);
+            FlatButton ok = MakeButton(Lang.T("仍然安装", "Install anyway"), 566, 470, 110, true);
             ok.Click += delegate { DialogResult = DialogResult.OK; Close(); };
             AcceptButton = null;
         }

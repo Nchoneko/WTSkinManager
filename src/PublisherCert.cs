@@ -138,8 +138,8 @@ namespace WtSkin
                 }
                 catch (Exception ex)
                 {
-                    CertResult read = CertResult.Fail("读取证书文件失败，已跳过签名安装。",
-                        "读取失败：" + file + "：" + ex.Message + "；指纹 " + ExpectedThumbprint);
+                    CertResult read = CertResult.Fail(Lang.T("读取证书文件失败，已跳过签名安装。", "Failed to read the certificate file; signature installation skipped."),
+                        Lang.T("读取失败：", "Read failed: ") + file + "：" + ex.Message + Lang.T("；指纹 ", "; thumbprint ") + ExpectedThumbprint);
                     read.Source = file;
                     return read;
                 }
@@ -147,15 +147,15 @@ namespace WtSkin
                 if (!string.Equals(actual, ExpectedSha256, StringComparison.OrdinalIgnoreCase))
                 {
                     bytes = null;
-                    CertResult bad = CertResult.Fail("证书文件已损坏或被修改（SHA-256 校验不通过），已拒绝导入。",
-                        "哈希不符：期望 " + ExpectedSha256 + "，实际 " + actual + "，来源 " + file +
-                        "；指纹 " + ExpectedThumbprint);
+                    CertResult bad = CertResult.Fail(Lang.T("证书文件已损坏或被修改（SHA-256 校验不通过），已拒绝导入。", "The certificate is damaged or modified (SHA-256 mismatch); import refused."),
+                        Lang.T("哈希不符：期望 ", "Hash mismatch: expected ") + ExpectedSha256 + Lang.T("，实际 ", ": actual ") + actual + Lang.T("，来源 ", ", source ") + file +
+                        Lang.T("；指纹 ", "; thumbprint ") + ExpectedThumbprint);
                     bad.Source = file;
                     return bad;
                 }
                 source = file;
-                return CertResult.Success("证书文件校验通过。",
-                    "读取外部证书文件：" + file + "（SHA-256 校验通过，" + ExpectedSha256 + "）");
+                return CertResult.Success(Lang.T("证书文件校验通过。", "Certificate file verified."),
+                    Lang.T("读取外部证书文件：", "External certificate read: ") + file + Lang.T("（SHA-256 校验通过，", " (SHA-256 verified, ") + ExpectedSha256 + "）");
             }
 
             try
@@ -165,9 +165,9 @@ namespace WtSkin
                 {
                     if (stream == null)
                     {
-                        CertResult missing = CertResult.Fail("没有随包找到发布者证书，已跳过签名安装。",
+                        CertResult missing = CertResult.Fail(Lang.T("没有随包找到发布者证书，已跳过签名安装。", "No publisher certificate found; signature installation skipped."),
                             "证书缺失：exe 内嵌资源 " + ResourceName + " 不存在，外部文件 " + file +
-                            " 也不存在；指纹 " + ExpectedThumbprint);
+                            Lang.T(" 也不存在；指纹 ", " also missing; thumbprint ") + ExpectedThumbprint);
                         return missing;
                     }
                     using (MemoryStream memory = new MemoryStream())
@@ -185,26 +185,26 @@ namespace WtSkin
             catch (Exception ex)
             {
                 bytes = null;
-                return CertResult.Fail("读取内嵌证书失败，已跳过签名安装。",
-                    "读取内嵌资源失败：" + ResourceName + "：" + ex.Message);
+                return CertResult.Fail(Lang.T("读取内嵌证书失败，已跳过签名安装。", "Failed to read embedded certificate; signature installation skipped."),
+                    Lang.T("读取内嵌资源失败：", "Failed to read embedded resource: ") + ResourceName + "：" + ex.Message);
             }
 
             if (bytes == null || bytes.Length == 0)
             {
                 bytes = null;
-                return CertResult.Fail("没有随包找到发布者证书，已跳过签名安装。",
-                    "证书缺失：内嵌资源 " + ResourceName + " 为空；指纹 " + ExpectedThumbprint);
+                return CertResult.Fail(Lang.T("没有随包找到发布者证书，已跳过签名安装。", "No publisher certificate found; signature installation skipped."),
+                    "证书缺失：内嵌资源 " + ResourceName + Lang.T(" 为空；指纹 ", " is empty; thumbprint ") + ExpectedThumbprint);
             }
             string embeddedHash = Sha256Hex(bytes);
             if (!string.Equals(embeddedHash, ExpectedSha256, StringComparison.OrdinalIgnoreCase))
             {
                 bytes = null;
-                return CertResult.Fail("内嵌证书校验不通过，已拒绝导入。",
-                    "内嵌证书哈希不符：期望 " + ExpectedSha256 + "，实际 " + embeddedHash);
+                return CertResult.Fail(Lang.T("内嵌证书校验不通过，已拒绝导入。", "Embedded certificate failed verification; import refused."),
+                    Lang.T("内嵌证书哈希不符：期望 ", "Embedded certificate hash mismatch: expected ") + ExpectedSha256 + Lang.T("，实际 ", ": actual ") + embeddedHash);
             }
             source = "exe 内嵌资源 " + ResourceName;
-            return CertResult.Success("内嵌证书校验通过。",
-                "读取内嵌证书 " + ResourceName + "（SHA-256 校验通过，" + ExpectedSha256 + "）");
+            return CertResult.Success(Lang.T("内嵌证书校验通过。", "Embedded certificate verified."),
+                "读取内嵌证书 " + ResourceName + Lang.T("（SHA-256 校验通过，", " (SHA-256 verified, ") + ExpectedSha256 + "）");
         }
 
         /// <summary>读取随包证书并导入当前用户的受信任发布者。</summary>
@@ -227,8 +227,8 @@ namespace WtSkin
             string error;
             if (!TryLoadCertificate(bytes, verifyHash, out cert, out error))
             {
-                CertResult bad = CertResult.Fail("证书文件已损坏或不是有效的证书，已拒绝导入。",
-                    "证书校验失败：" + error + "；期望指纹 " + ExpectedThumbprint);
+                CertResult bad = CertResult.Fail(Lang.T("证书文件已损坏或不是有效的证书，已拒绝导入。", "The certificate is damaged or invalid; import refused."),
+                    Lang.T("证书校验失败：", "Certificate verification failed: ") + error + Lang.T("；期望指纹 ", "; expected thumbprint ") + ExpectedThumbprint);
                 bad.Source = source;
                 return bad;
             }
@@ -240,8 +240,8 @@ namespace WtSkin
                 store.Open(OpenFlags.ReadWrite);
                 if (FindInStore(store) != null)
                 {
-                    CertResult already = CertResult.Success("发布者签名已经安装过了。",
-                        "已存在（TrustedPublisher / CurrentUser），未重复导入；指纹 " + ExpectedThumbprint);
+                    CertResult already = CertResult.Success(Lang.T("发布者签名已经安装过了。", "The publisher signature is already installed."),
+                        Lang.T("已存在（TrustedPublisher / CurrentUser），未重复导入；指纹 ", "Already present (TrustedPublisher / CurrentUser); not re-imported; thumbprint ") + ExpectedThumbprint);
                     already.AlreadyInstalled = true;
                     already.Source = source;
                     return already;
@@ -250,42 +250,42 @@ namespace WtSkin
                 // 导入后按指纹复查，确认真的进了列表。
                 if (FindInStore(store) == null)
                 {
-                    CertResult lost = CertResult.Fail("导入后复查不到证书，可能被系统策略拦截。",
-                        "导入后按指纹复查失败：" + ExpectedThumbprint + "；来源 " + source);
+                    CertResult lost = CertResult.Fail(Lang.T("导入后复查不到证书，可能被系统策略拦截。", "Certificate not found after import; a system policy may have blocked it."),
+                        Lang.T("导入后按指纹复查失败：", "Post-import thumbprint check failed: ") + ExpectedThumbprint + Lang.T("；来源 ", "; source ") + source);
                     lost.Source = source;
                     return lost;
                 }
-                CertResult ok = CertResult.Success("发布者签名已安装（" + PublisherName + "）。",
-                    "导入成功：TrustedPublisher / CurrentUser，按指纹复查通过；指纹 " + ExpectedThumbprint +
-                    "；来源 " + source);
+                CertResult ok = CertResult.Success(Lang.T("发布者签名已安装（", "Publisher signature installed (") + PublisherName + "）。",
+                    Lang.T("导入成功：TrustedPublisher / CurrentUser，按指纹复查通过；指纹 ", "Import succeeded: TrustedPublisher / CurrentUser, thumbprint verified; ") + ExpectedThumbprint +
+                    Lang.T("；来源 ", "; source ") + source);
                 ok.Source = source;
                 return ok;
             }
             catch (UnauthorizedAccessException ex)
             {
-                CertResult denied = CertResult.Fail("没有权限修改受信任发布者列表，已跳过签名安装。",
-                    "导入失败（权限）：" + ex.Message + "；指纹 " + ExpectedThumbprint);
+                CertResult denied = CertResult.Fail(Lang.T("没有权限修改受信任发布者列表，已跳过签名安装。", "No permission to modify trusted publishers; signature installation skipped."),
+                    Lang.T("导入失败（权限）：", "Import failed (permission): ") + ex.Message + Lang.T("；指纹 ", "; thumbprint ") + ExpectedThumbprint);
                 denied.Source = source;
                 return denied;
             }
             catch (System.Security.SecurityException ex)
             {
-                CertResult denied = CertResult.Fail("系统拒绝了证书存储操作，已跳过签名安装。",
-                    "导入失败（权限）：" + ex.Message + "；指纹 " + ExpectedThumbprint);
+                CertResult denied = CertResult.Fail(Lang.T("系统拒绝了证书存储操作，已跳过签名安装。", "The system rejected the certificate store operation; skipped."),
+                    Lang.T("导入失败（权限）：", "Import failed (permission): ") + ex.Message + Lang.T("；指纹 ", "; thumbprint ") + ExpectedThumbprint);
                 denied.Source = source;
                 return denied;
             }
             catch (CryptographicException ex)
             {
-                CertResult corrupt = CertResult.Fail("证书损坏或被证书存储拒绝，已跳过签名安装。",
-                    "导入失败（证书损坏 / 存储拒绝）：" + ex.Message + "；指纹 " + ExpectedThumbprint);
+                CertResult corrupt = CertResult.Fail(Lang.T("证书损坏或被证书存储拒绝，已跳过签名安装。", "Certificate damaged or rejected by the store; skipped."),
+                    Lang.T("导入失败（证书损坏 / 存储拒绝）：", "Import failed (damaged certificate / store rejection): ") + ex.Message + Lang.T("；指纹 ", "; thumbprint ") + ExpectedThumbprint);
                 corrupt.Source = source;
                 return corrupt;
             }
             catch (Exception ex)
             {
-                CertResult failed = CertResult.Fail("导入失败：" + ex.Message,
-                    "导入失败：" + ex.GetType().Name + "：" + ex.Message + "；指纹 " + ExpectedThumbprint);
+                CertResult failed = CertResult.Fail(Lang.T("导入失败：", "Import failed: ") + ex.Message,
+                    Lang.T("导入失败：", "Import failed: ") + ex.GetType().Name + "：" + ex.Message + Lang.T("；指纹 ", "; thumbprint ") + ExpectedThumbprint);
                 failed.Source = source;
                 return failed;
             }
@@ -307,8 +307,8 @@ namespace WtSkin
                     store.Certificates.Find(X509FindType.FindByThumbprint, ExpectedThumbprint, false);
                 if (list.Count == 0)
                 {
-                    CertResult none = CertResult.Success("当前用户的受信任发布者里没有这个签名。",
-                        "无需移除：TrustedPublisher / CurrentUser 里没有指纹 " + ExpectedThumbprint);
+                    CertResult none = CertResult.Success(Lang.T("当前用户的受信任发布者里没有这个签名。", "This signature is not in the current user's trusted publishers."),
+                        Lang.T("无需移除：TrustedPublisher / CurrentUser 里没有指纹 ", "Nothing to remove: no thumbprint in TrustedPublisher / CurrentUser ") + ExpectedThumbprint);
                     none.AlreadyInstalled = false;
                     return none;
                 }
@@ -318,32 +318,32 @@ namespace WtSkin
                 }
                 if (FindInStore(store) != null)
                 {
-                    return CertResult.Fail("移除后仍能按指纹查到证书，请稍后重试。",
-                        "移除后复查仍存在：指纹 " + ExpectedThumbprint);
+                    return CertResult.Fail(Lang.T("移除后仍能按指纹查到证书，请稍后重试。", "Certificate still found after removal; try again later."),
+                        Lang.T("移除后复查仍存在：指纹 ", "Still present after removal: thumbprint ") + ExpectedThumbprint);
                 }
-                CertResult ok = CertResult.Success("发布者签名已从当前用户移除。",
-                    "移除成功：TrustedPublisher / CurrentUser，指纹 " + ExpectedThumbprint);
+                CertResult ok = CertResult.Success(Lang.T("发布者签名已从当前用户移除。", "Publisher signature removed for the current user."),
+                    Lang.T("移除成功：TrustedPublisher / CurrentUser，指纹 ", "Removed: TrustedPublisher / CurrentUser, thumbprint ") + ExpectedThumbprint);
                 return ok;
             }
             catch (UnauthorizedAccessException ex)
             {
-                return CertResult.Fail("没有权限修改受信任发布者列表。",
-                    "移除失败（权限）：" + ex.Message + "；指纹 " + ExpectedThumbprint);
+                return CertResult.Fail(Lang.T("没有权限修改受信任发布者列表。", "No permission to modify trusted publishers."),
+                    Lang.T("移除失败（权限）：", "Removal failed (permission): ") + ex.Message + Lang.T("；指纹 ", "; thumbprint ") + ExpectedThumbprint);
             }
             catch (System.Security.SecurityException ex)
             {
-                return CertResult.Fail("系统拒绝了证书存储操作。",
-                    "移除失败（权限）：" + ex.Message + "；指纹 " + ExpectedThumbprint);
+                return CertResult.Fail(Lang.T("系统拒绝了证书存储操作。", "The system rejected the certificate store operation."),
+                    Lang.T("移除失败（权限）：", "Removal failed (permission): ") + ex.Message + Lang.T("；指纹 ", "; thumbprint ") + ExpectedThumbprint);
             }
             catch (CryptographicException ex)
             {
-                return CertResult.Fail("移除失败：证书存储报错。",
-                    "移除失败（证书存储）：" + ex.Message + "；指纹 " + ExpectedThumbprint);
+                return CertResult.Fail(Lang.T("移除失败：证书存储报错。", "Removal failed: certificate store error."),
+                    Lang.T("移除失败（证书存储）：", "Removal failed (certificate store): ") + ex.Message + Lang.T("；指纹 ", "; thumbprint ") + ExpectedThumbprint);
             }
             catch (Exception ex)
             {
-                return CertResult.Fail("移除失败：" + ex.Message,
-                    "移除失败：" + ex.GetType().Name + "：" + ex.Message + "；指纹 " + ExpectedThumbprint);
+                return CertResult.Fail(Lang.T("移除失败：", "Removal failed: ") + ex.Message,
+                    Lang.T("移除失败：", "Removal failed: ") + ex.GetType().Name + "：" + ex.Message + Lang.T("；指纹 ", "; thumbprint ") + ExpectedThumbprint);
             }
             finally
             {
@@ -357,7 +357,7 @@ namespace WtSkin
             error = "";
             if (bytes == null || bytes.Length == 0)
             {
-                error = "证书内容为空";
+                error = Lang.T("证书内容为空", "Certificate is empty");
                 return false;
             }
             if (verifyHash)
@@ -365,7 +365,7 @@ namespace WtSkin
                 string actual = Sha256Hex(bytes);
                 if (!string.Equals(actual, ExpectedSha256, StringComparison.OrdinalIgnoreCase))
                 {
-                    error = "SHA-256 不一致（期望 " + ExpectedSha256 + "，实际 " + actual + "）";
+                    error = Lang.T("SHA-256 不一致（期望 ", "SHA-256 mismatch (expected ") + ExpectedSha256 + Lang.T("，实际 ", ": actual ") + actual + "）";
                     return false;
                 }
             }
@@ -374,7 +374,7 @@ namespace WtSkin
                 X509Certificate2 loaded = new X509Certificate2(bytes);
                 if (!string.Equals(loaded.Thumbprint, ExpectedThumbprint, StringComparison.OrdinalIgnoreCase))
                 {
-                    error = "指纹不一致（期望 " + ExpectedThumbprint + "，实际 " + loaded.Thumbprint + "）";
+                    error = Lang.T("指纹不一致（期望 ", "Thumbprint mismatch (expected ") + ExpectedThumbprint + Lang.T("，实际 ", ": actual ") + loaded.Thumbprint + "）";
                     return false;
                 }
                 cert = loaded;
@@ -382,12 +382,12 @@ namespace WtSkin
             }
             catch (CryptographicException ex)
             {
-                error = "证书内容无法解析（" + ex.Message + "）";
+                error = Lang.T("证书内容无法解析（", "Cannot parse certificate (") + ex.Message + "）";
                 return false;
             }
             catch (Exception ex)
             {
-                error = "读取证书失败（" + ex.Message + "）";
+                error = Lang.T("读取证书失败（", "Failed to read certificate (") + ex.Message + "）";
                 return false;
             }
         }

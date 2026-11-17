@@ -473,17 +473,17 @@ namespace WtSkin
     internal class DeleteIconsConfirmForm : ModalForm
     {
         public DeleteIconsConfirmForm(string path)
-            : base("删除图标包", 560, 280)
+            : base(Lang.T("删除图标包", "Delete icon pack"), 560, 280)
         {
-            MakeLabel("确定删除图标包？", 24, 16, 512, 26, Ui.BodyBold, Ui.Text);
+            MakeLabel(Lang.T("确定删除图标包？", "Delete the icon pack?"), 24, 16, 512, 26, Ui.BodyBold, Ui.Text);
             Label pathLabel = MakeLabel(path, 24, 48, 512, 22, Ui.Mono, Ui.TextDim);
             pathLabel.AutoEllipsis = true;
-            MakeLabel("删除并重启后，载具图标会显示为占位图；之后可以重新拖入或从网盘下载。",
+            MakeLabel(Lang.T("删除并重启后，载具图标会显示为占位图；之后可以重新拖入或从网盘下载。", "Vehicle icons will show as placeholders after deleting and restarting. You can drag in the pack again or download it later."),
                       24, 84, 512, 40, Ui.Small, Ui.TextDim);
 
-            FlatButton cancel = MakeButton("取消", 300, 190, 96, false);
+            FlatButton cancel = MakeButton(Lang.T(Lang.T("取消", "Cancel"), "Cancel"), 300, 190, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton delete = MakeButton("删除", 408, 190, 120, false);
+            FlatButton delete = MakeButton(Lang.T("删除", "Delete"), 408, 190, 120, false);
             delete.Danger = true;
             delete.Click += delegate { DialogResult = DialogResult.OK; Close(); };
             Shown += delegate
@@ -504,7 +504,7 @@ namespace WtSkin
         {
             Label text = MakeLabel(message, 24, 16, 512, 120, Ui.Body, Ui.Text);
             text.AutoEllipsis = true;
-            FlatButton ok = MakeButton("确定", 440, 180, 96, true);
+            FlatButton ok = MakeButton(Lang.T("确定", "OK"), 440, 180, 96, true);
             ok.Click += delegate { DialogResult = DialogResult.OK; Close(); };
             Shown += delegate
             {
@@ -519,16 +519,16 @@ namespace WtSkin
     internal class RestartChoiceDialog : ModalForm
     {
         public RestartChoiceDialog(string message)
-            : base("需要重启", 520, 250)
+            : base(Lang.T("需要重启", "Restart required"), 520, 250)
         {
             Label text = MakeLabel(message, 24, 16, 472, 88, Ui.Body, Ui.Text);
             text.AutoEllipsis = true;
-            MakeLabel("选择「立刻重启」后约 2 秒自动重新打开程序。",
+            MakeLabel(Lang.T("选择「立刻重启」后约 2 秒自动重新打开程序。", "The program will reopen automatically about 2 seconds after choosing Restart now."),
                       24, 112, 472, 20, Ui.Small, Ui.TextFaint);
 
-            FlatButton later = MakeButton("稍后重启", 278, 160, 100, false);
+            FlatButton later = MakeButton(Lang.T("稍后重启", "Restart later"), 278, 160, 100, false);
             later.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton now = MakeButton("立刻重启", 390, 160, 100, true);
+            FlatButton now = MakeButton(Lang.T("立刻重启", "Restart now"), 390, 160, 100, true);
             now.Click += delegate { DialogResult = DialogResult.OK; Close(); };
             Shown += delegate
             {
@@ -593,7 +593,7 @@ namespace WtSkin
         }
 
         public SettingsForm(int startPage)
-            : base("设置", 840, 640)
+            : base(Lang.T("设置", "Settings"), 840, 640)
         {
             ShowGear = true;
             _theme = Config.ThemeIndex;
@@ -640,38 +640,38 @@ namespace WtSkin
             Content.Controls.Add(_pageDonate);
 
             _tabUi = new SideTab();
-            _tabUi.Text = "界面设置";
+            _tabUi.Text = Lang.T("界面设置", "Appearance");
             _tabUi.Selected = true;
             _tabUi.SetBounds(Ui.S(16), Ui.S(16), Ui.S(168), Ui.S(42));
             _tabUi.Click += delegate { SelectPage(0); };
             Content.Controls.Add(_tabUi);
 
             _tabPrefs = new SideTab();
-            _tabPrefs.Text = "使用偏好";
+            _tabPrefs.Text = Lang.T("使用偏好", "Preferences");
             _tabPrefs.SetBounds(Ui.S(16), Ui.S(64), Ui.S(168), Ui.S(42));
             _tabPrefs.Click += delegate { SelectPage(1); };
             Content.Controls.Add(_tabPrefs);
 
             _tabCert = new SideTab();
-            _tabCert.Text = "发布者签名";
+            _tabCert.Text = Lang.T(Lang.T("发布者签名", "Publisher signature"), "Publisher");
             _tabCert.SetBounds(Ui.S(16), Ui.S(112), Ui.S(168), Ui.S(42));
             _tabCert.Click += delegate { SelectPage(2); };
             Content.Controls.Add(_tabCert);
 
             _tabIcons = new SideTab();
-            _tabIcons.Text = "涂装包";
+            _tabIcons.Text = Lang.T("涂装包", "Icon pack");
             _tabIcons.SetBounds(Ui.S(16), Ui.S(208), Ui.S(168), Ui.S(42));
             _tabIcons.Click += delegate { SelectPage(5); };
             Content.Controls.Add(_tabIcons);
 
             _tabUpdate = new SideTab();
-            _tabUpdate.Text = "更新与日志";
+            _tabUpdate.Text = Lang.T("更新与日志", "Updates");
             _tabUpdate.SetBounds(Ui.S(16), Ui.S(160), Ui.S(168), Ui.S(42));
             _tabUpdate.Click += delegate { SelectPage(3); };
             Content.Controls.Add(_tabUpdate);
 
             _tabDonate = new SideTab();
-            _tabDonate.Text = "关于";
+            _tabDonate.Text = Lang.T(Lang.T("关于", "About"), "About");
             _tabDonate.SetBounds(Ui.S(16), Content.Height - Ui.S(58), Ui.S(168), Ui.S(42));
             _tabDonate.Click += delegate { SelectPage(4); };
             Content.Controls.Add(_tabDonate);
@@ -683,9 +683,9 @@ namespace WtSkin
             BuildDonatePage();
             BuildIconsPage();
 
-            FlatButton cancel = MakeButton("取消", 610, 536, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 610, 536, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton save = MakeButton("保存", 718, 536, 98, true);
+            FlatButton save = MakeButton(Lang.T("保存", "Save"), 718, 536, 98, true);
             save.Click += delegate { SaveSettings(); };
 
             // 分页切换放到 OnShown：此时句柄/滚动容器都已创建，避免在构造函数里提前布局。
@@ -790,7 +790,7 @@ namespace WtSkin
 
         private void BuildUiPage()
         {
-            PageLabel(_pageUi, "主题", 8, 6, 120, 22, Ui.SmallBold, Ui.TextDim);
+            PageLabel(_pageUi, Lang.T("主题", "Theme"), 8, 6, 120, 22, Ui.SmallBold, Ui.TextDim);
             int chipCount = Palettes.All.Length;
             int chipMargin = Ui.S(8);
             int chipGap = Ui.S(10);
@@ -820,7 +820,7 @@ namespace WtSkin
                 _pageUi.Controls.Add(chip);
             }
 
-            PageLabel(_pageUi, "缩放", 8, 118, 60, 20, Ui.SmallBold, Ui.TextDim);
+            PageLabel(_pageUi, Lang.T("缩放", "Zoom"), 8, 118, 60, 20, Ui.SmallBold, Ui.TextDim);
             int zoomValueWidth = Math.Max(Ui.S(70), TextRenderer.MeasureText("150%", Ui.BodyBold).Width + Ui.S(24));
             int zoomButtonWidth = Ui.S(38);
             // “缩放”标签宽 60，按钮从 72 开始，避免标签的实底盖住按钮左边缘。
@@ -838,14 +838,14 @@ namespace WtSkin
             zoomIn.Click += delegate { ChangeZoom(5); };
             zoomX += zoomButtonWidth + Ui.S(12);
             // 这里传入的是已缩放的物理坐标，直接设 Left/Width，不能再经 PageLabel 二次 Ui.S。
-            Label zoomHint = PageLabel(_pageUi, "75% – 150%，修改后需要重启程序生效。",
+            Label zoomHint = PageLabel(_pageUi, Lang.T("75% – 150%，修改后需要重启程序生效。", "75% – 150%; restart the program to apply."),
                       0, 120, 10, 20, Ui.Small, Ui.TextFaint);
             zoomHint.Left = zoomX;
             zoomHint.Width = Math.Max(Ui.S(120), _pageUi.Width - zoomX - Ui.S(8));
 
             _animRow = new CheckRow();
-            _animRow.Title = "界面动画";
-            _animRow.Subtitle = "对话框滑入、卡片悬停渐变等";
+            _animRow.Title = Lang.T("界面动画", "UI animations");
+            _animRow.Subtitle = Lang.T("对话框滑入、卡片悬停渐变等", "Dialog slides and card hover fades");
             _animRow.Checked = false;
             _animRow.Visible = false;
             _animRow.Left = Ui.S(4);
@@ -855,34 +855,34 @@ namespace WtSkin
             _animRow.BackColor = Ui.Panel;
             _pageUi.Controls.Add(_animRow);
 
-            PageLabel(_pageUi, "当前的界面缩放会按显示器 DPI 自动适配，高分屏觉得字发虚时可以在这里调大。",
+            PageLabel(_pageUi, Lang.T("当前的界面缩放会按显示器 DPI 自动适配，高分屏觉得字发虚时可以在这里调大。", "UI scale follows the display DPI automatically; increase it if text looks blurry on high-DPI screens."),
                       8, 226, 590, 40, Ui.Small, Ui.TextFaint);
-            PageLabel(_pageUi, "主题和缩放修改后需要重启程序才会完全生效。",
+            PageLabel(_pageUi, Lang.T("主题和缩放修改后需要重启程序才会完全生效。", "Theme and zoom changes take full effect after restarting the program."),
                       8, 266, 590, 20, Ui.Small, Ui.Accent);
         }
 
         private void BuildPrefsPage()
         {
-            PageLabel(_pagePrefs, "游戏目录", 8, 6, 200, 22, Ui.SmallBold, Ui.TextDim);
+            PageLabel(_pagePrefs, Lang.T("游戏目录", "Game folder"), 8, 6, 200, 22, Ui.SmallBold, Ui.TextDim);
             _dirBox = PageField(_pagePrefs, 8, 30, 592, 40);
             _dirBox.Text = Config.GameDir;
 
-            PageButton(_pagePrefs, "自动检测", 500, 78, 90, false).Click += delegate
+            PageButton(_pagePrefs, Lang.T("自动检测", "Auto-detect"), 500, 78, 90, false).Click += delegate
             {
                 string best = GameLocator.FindBest();
                 if (string.IsNullOrEmpty(best))
                 {
-                    MessageBox.Show(this, "没有找到战雷安装目录，请手动选择。", "自动检测",
+                    MessageBox.Show(this, Lang.T("没有找到战雷安装目录，请手动选择。", "War Thunder installation not found. Please select it manually."), Lang.T("自动检测", "Auto-detect"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
                 _dirBox.Text = best;
             };
-            PageButton(_pagePrefs, "浏览…", 402, 78, 90, false).Click += delegate
+            PageButton(_pagePrefs, Lang.T("浏览…", "Browse…"), 402, 78, 90, false).Click += delegate
             {
                 using (FolderBrowserDialog dialog = new FolderBrowserDialog())
                 {
-                    dialog.Description = "选择 War Thunder 安装目录";
+                    dialog.Description = Lang.T("选择 War Thunder 安装目录", "Select the War Thunder install folder");
                     dialog.SelectedPath = _dirBox.Text;
                     if (dialog.ShowDialog(this) == DialogResult.OK)
                     {
@@ -891,10 +891,10 @@ namespace WtSkin
                 }
             };
 
-            PageLabel(_pagePrefs, "导入", 8, 136, 100, 22, Ui.SmallBold, Ui.TextDim);
+            PageLabel(_pagePrefs, Lang.T("导入", "Import"), 8, 136, 100, 22, Ui.SmallBold, Ui.TextDim);
             _backupRow = new CheckRow();
-            _backupRow.Title = "导入前备份旧文件夹";
-            _backupRow.Subtitle = "旧内容会复制到安装目录的 backups 里，不会写进战雷目录";
+            _backupRow.Title = Lang.T("导入前备份旧文件夹", "Back up old folders before import");
+            _backupRow.Subtitle = Lang.T("旧内容会复制到安装目录的 backups 里，不会写进战雷目录", "Old content is copied to backups in the install folder, never into the game folder");
             _backupRow.Checked = Config.Backup;
             _backupRow.Left = Ui.S(4);
             _backupRow.Top = Ui.S(160);
@@ -903,34 +903,34 @@ namespace WtSkin
             _backupRow.BackColor = Ui.Panel;
             _pagePrefs.Controls.Add(_backupRow);
 
-            PageLabel(_pagePrefs, "保留最近几份", 8, 220, 110, 20, Ui.Small, Ui.TextFaint);
+            PageLabel(_pagePrefs, Lang.T("保留最近几份", "Keep latest"), 8, 220, 110, 20, Ui.Small, Ui.TextFaint);
             FlatButton keepMinus = PageButton(_pagePrefs, "－", 116, 214, 34, false);
             keepMinus.Click += delegate { ChangeKeep(-1); };
             _keepLabel = PageLabel(_pagePrefs, _keepValue.ToString(), 156, 214, 54, 38, Ui.BodyBold, Ui.Text);
             _keepLabel.TextAlign = ContentAlignment.MiddleCenter;
             FlatButton keepPlus = PageButton(_pagePrefs, "＋", 216, 214, 34, false);
             keepPlus.Click += delegate { ChangeKeep(1); };
-            PageLabel(_pagePrefs, "份（1–50），旧备份会被自动清理", 264, 222, 300, 20, Ui.Small, Ui.TextFaint);
+            PageLabel(_pagePrefs, Lang.T("份（1–50），旧备份会被自动清理", "copies (1–50); older backups are cleaned up automatically"), 264, 222, 300, 20, Ui.Small, Ui.TextFaint);
 
-            PageLabel(_pagePrefs, "安装目录", 8, 276, 120, 20, Ui.SmallBold, Ui.TextDim);
+            PageLabel(_pagePrefs, Lang.T("安装目录", "Install folder"), 8, 276, 120, 20, Ui.SmallBold, Ui.TextDim);
             PageLabel(_pagePrefs, Config.InstallDir, 8, 298, 420, 20, Ui.Small, Ui.TextDim);
-            PageButton(_pagePrefs, "打开", 440, 288, 70, false).Click += delegate { OpenFolder(Config.InstallDir); };
-            PageButton(_pagePrefs, "备份", 518, 288, 70, false).Click += delegate { OpenFolder(Config.BackupDir); };
-            PageLabel(_pagePrefs, "备份、日志、缓存都在安装目录里，不会写进战雷目录。",
+            PageButton(_pagePrefs, Lang.T("打开", "Open"), 440, 288, 70, false).Click += delegate { OpenFolder(Config.InstallDir); };
+            PageButton(_pagePrefs, Lang.T("备份", "Back up"), 518, 288, 70, false).Click += delegate { OpenFolder(Config.BackupDir); };
+            PageLabel(_pagePrefs, Lang.T("备份、日志、缓存都在安装目录里，不会写进战雷目录。", "Backups, logs and cache live in the install folder, never in the game folder."),
                       8, 330, 590, 20, Ui.Small, Ui.TextFaint);
-            PageLabel(_pagePrefs, "程序 v" + AppInfo.VersionText + " · 数据 " + AppInfo.DataVersionText,
+            PageLabel(_pagePrefs, Lang.T("程序 v", "App v") + AppInfo.VersionText + Lang.T(" · 数据 ", " · data ") + AppInfo.DataVersionText,
                       8, 346, 260, 18, Ui.Small, Ui.TextFaint);
 
-            PageButton(_pagePrefs, "查看导入日志", 8, 366, 130, false).Click += delegate
+            PageButton(_pagePrefs, Lang.T("查看导入日志", "View import log"), 8, 366, 130, false).Click += delegate
             {
                 OpenFolder(Config.LogDir);
             };
-            PageButton(_pagePrefs, "打开安装目录", 148, 366, 130, false).Click += delegate
+            PageButton(_pagePrefs, Lang.T("打开安装目录", "Open install folder"), 148, 366, 130, false).Click += delegate
             {
                 OpenFolder(Config.InstallDir);
             };
             // 与「安装/更新完成」窗口共用同一份更新日志数据（ReleaseLog），不另写文案。
-            PageButton(_pagePrefs, "历史版本", 288, 366, 110, false).Click += delegate
+            PageButton(_pagePrefs, Lang.T("历史版本", "Version history"), 288, 366, 110, false).Click += delegate
             {
                 using (UpdateNotesForm form = UpdateNotesForm.History())
                 {
@@ -938,12 +938,12 @@ namespace WtSkin
                 }
             };
 
-            PageLabel(_pagePrefs, "缺少涂装目录时", 8, 406, 180, 20, Ui.SmallBold, Ui.TextDim);
-            _policyAsk = PageButton(_pagePrefs, "每次询问", 8, 428, 124, false);
+            PageLabel(_pagePrefs, Lang.T("缺少涂装目录时", "When a skin folder is missing"), 8, 406, 180, 20, Ui.SmallBold, Ui.TextDim);
+            _policyAsk = PageButton(_pagePrefs, Lang.T("每次询问", "Ask every time"), 8, 428, 124, false);
             _policyAsk.Click += delegate { SetMissingPolicy(0); };
-            _policyAuto = PageButton(_pagePrefs, "自动创建", 140, 428, 124, false);
+            _policyAuto = PageButton(_pagePrefs, Lang.T("自动创建", "Create automatically"), 140, 428, 124, false);
             _policyAuto.Click += delegate { SetMissingPolicy(1); };
-            _policyOff = PageButton(_pagePrefs, "关闭", 272, 428, 90, false);
+            _policyOff = PageButton(_pagePrefs, Lang.T("关闭", "Off"), 272, 428, 90, false);
             _policyOff.Click += delegate { SetMissingPolicy(2); };
             RefreshPolicyButtons();
         }
@@ -976,18 +976,18 @@ namespace WtSkin
         {
             _donateAlipay = LoadDonateImage("donate_alipay.jpg");
             _donateWechat = LoadDonateImage("donate_wechat.png");
-            PageLabel(_pageDonate, "关于", 8, 4, 240, 30, Ui.H1, Ui.Text);
-            PageLabel(_pageDonate, "战雷涂装管理器  " + BuildInfo.HeaderText, 8, 40, 580, 22, Ui.Small, Ui.TextDim);
-            PageLabel(_pageDonate, "War Thunder 自定义涂装的识别、导入与管理工具。个人开发，与 Gaijin Entertainment 无关联。",
+            PageLabel(_pageDonate, Lang.T("关于", "About"), 8, 4, 240, 30, Ui.H1, Ui.Text);
+            PageLabel(_pageDonate, Lang.T("战雷涂装管理器  ", "WTSkinManager  ") + BuildInfo.HeaderText, 8, 40, 580, 22, Ui.Small, Ui.TextDim);
+            PageLabel(_pageDonate, Lang.T("War Thunder 自定义涂装的识别、导入与管理工具。个人开发，与 Gaijin Entertainment 无关联。", "A tool to detect, import and manage War Thunder custom skins. Individually developed; not affiliated with Gaijin Entertainment."),
                       8, 64, 580, 40, Ui.Small, Ui.TextDim);
-            PageButton(_pageDonate, "GitHub 仓库", 8, 106, 118, true).Click += delegate { OpenUrl(Config.RepoUrl); };
-            PageButton(_pageDonate, "问题反馈", 134, 106, 92, false).Click += delegate { OpenUrl(Config.RepoUrl + "/issues"); };
-            PageButton(_pageDonate, "开源协议", 234, 106, 92, false).Click += delegate { OpenUrl(Config.RepoUrl + "/blob/main/LICENSE"); };
-            PageLabel(_pageDonate, "赞助我", 8, 152, 200, 24, Ui.BodyBold, Ui.Text);
-            PageLabel(_pageDonate, "如果这个工具帮到了你，可以扫码支持一下；完全自愿，不影响任何功能。",
+            PageButton(_pageDonate, Lang.T("GitHub 仓库", "GitHub"), 8, 106, 118, true).Click += delegate { OpenUrl(Config.RepoUrl); };
+            PageButton(_pageDonate, Lang.T("问题反馈", "Issues"), 134, 106, 92, false).Click += delegate { OpenUrl(Config.RepoUrl + "/issues"); };
+            PageButton(_pageDonate, Lang.T("开源协议", "License"), 234, 106, 92, false).Click += delegate { OpenUrl(Config.RepoUrl + "/blob/main/LICENSE"); };
+            PageLabel(_pageDonate, Lang.T("赞助我", "Support me"), 8, 152, 200, 24, Ui.BodyBold, Ui.Text);
+            PageLabel(_pageDonate, Lang.T("如果这个工具帮到了你，可以扫码支持一下；完全自愿，不影响任何功能。", "If this tool helps you, you can scan to support it. Completely optional and does not affect any feature."),
                       8, 176, 580, 20, Ui.Small, Ui.TextDim);
-            AddDonateCard(_pageDonate, _donateAlipay, "支付宝", 24, 204);
-            AddDonateCard(_pageDonate, _donateWechat, "微信支付", 320, 204);
+            AddDonateCard(_pageDonate, _donateAlipay, Lang.T("支付宝", "Alipay"), 24, 204);
+            AddDonateCard(_pageDonate, _donateWechat, Lang.T("微信支付", "WeChat Pay"), 320, 204);
         }
 
         private static void OpenUrl(string url)
@@ -1027,7 +1027,7 @@ namespace WtSkin
                 }
                 Ui.DrawText(g, caption, Ui.BodyBold, Ui.Text,
                         new Rectangle(0, card.Height - Ui.S(50), card.Width, Ui.S(24)), Ui.Center);
-                Ui.DrawText(g, "扫码赞助", Ui.Small, Ui.TextFaint,
+                Ui.DrawText(g, Lang.T("扫码赞助", "Scan to support"), Ui.Small, Ui.TextFaint,
                         new Rectangle(0, card.Height - Ui.S(26), card.Width, Ui.S(20)), Ui.Center);
             };
             page.Controls.Add(card);
@@ -1063,39 +1063,39 @@ namespace WtSkin
         /// <summary>「涂装包」页：三个网盘并排下载入口 + 拖入 vehicles.zip 一键导入。</summary>
         private void BuildIconsPage()
         {
-            PageLabel(_pageIcons, "涂装包下载", 8, 2, 240, 30, Ui.H1, Ui.Text);
-            PageLabel(_pageIcons, "载具图标包属于第三方素材，不随软件、发行 zip 或 GitHub 提供，需要单独下载。",
+            PageLabel(_pageIcons, Lang.T("涂装包下载", "Icon pack download"), 8, 2, 240, 30, Ui.H1, Ui.Text);
+            PageLabel(_pageIcons, Lang.T("载具图标包属于第三方素材，不随软件、发行 zip 或 GitHub 提供，需要单独下载。", "Vehicle icons are third-party artwork and are not included in the app, release zip or GitHub. Download them separately."),
                       8, 36, 592, 22, Ui.Small, Ui.TextDim);
-            PageLabel(_pageIcons, "解压后把 vehicles.zip 拖到下方虚线区域，或放到程序目录后重启程序。",
+            PageLabel(_pageIcons, Lang.T("解压后把 vehicles.zip 拖到下方虚线区域，或放到程序目录后重启程序。", "Extract vehicles.zip below, or place it in the program folder and restart the app."),
                       8, 60, 592, 22, Ui.Small, Ui.TextDim);
 
-            PageLabel(_pageIcons, "下载地址", 8, 96, 140, 22, Ui.SmallBold, Ui.TextDim);
+            PageLabel(_pageIcons, Lang.T("下载地址", "Download links"), 8, 96, 140, 22, Ui.SmallBold, Ui.TextDim);
             DownloadLinkButton baidu = new DownloadLinkButton();
-            baidu.Badge = "百";
-            baidu.Title = "百度网盘";
+            baidu.Badge = Lang.T("百", "B");
+            baidu.Title = Lang.T("百度网盘", "Baidu Pan");
             baidu.SetBounds(Ui.S(8), Ui.S(122), Ui.S(139), Ui.S(56));
             baidu.Open += delegate { OpenUrl("https://pan.baidu.com/s/1xxmhGCyle5F7KNd9OykdXA?pwd=97yx"); };
             _pageIcons.Controls.Add(baidu);
             DownloadLinkButton quark = new DownloadLinkButton();
-            quark.Badge = "夸";
-            quark.Title = "夸克网盘";
+            quark.Badge = Lang.T("夸", "Q");
+            quark.Title = Lang.T("夸克网盘", "Quark");
             quark.SetBounds(Ui.S(159), Ui.S(122), Ui.S(139), Ui.S(56));
             quark.Open += delegate { OpenUrl("https://pan.quark.cn/s/dad0fa59501a"); };
             _pageIcons.Controls.Add(quark);
             DownloadLinkButton pan123 = new DownloadLinkButton();
             pan123.Badge = "123";
-            pan123.Title = "123 云盘";
+            pan123.Title = Lang.T("123 云盘", "123 Pan");
             pan123.SetBounds(Ui.S(310), Ui.S(122), Ui.S(139), Ui.S(56));
             pan123.Open += delegate { OpenUrl("https://1816316610.share.123pan.cn/123pan/mqhqVv-fDAG3?pwd=amUI#"); };
             _pageIcons.Controls.Add(pan123);
             DownloadLinkButton google = new DownloadLinkButton();
             google.Badge = "G";
-            google.Title = "谷歌云盘";
+            google.Title = Lang.T("谷歌云盘", "Google Drive");
             google.SetBounds(Ui.S(461), Ui.S(122), Ui.S(139), Ui.S(56));
             google.Open += delegate { OpenUrl("https://drive.google.com/file/d/1Xgo_oAew1j6c37l1pP0UnnIR8sXJ6fiU/view?usp=sharing"); };
             _pageIcons.Controls.Add(google);
 
-            PageLabel(_pageIcons, "图标包约 283 MB（单文件，非分卷）：下载后解压得到 vehicles.zip，可放到程序目录或直接拖入下方区域。",
+            PageLabel(_pageIcons, Lang.T("图标包约 283 MB（单文件，非分卷）：下载后解压得到 vehicles.zip，可放到程序目录或直接拖入下方区域。", "The icon pack is about 283 MB as a single archive: extract it to get vehicles.zip, then place it in the program folder or drop it below."),
                       8, 190, 592, 22, Ui.Small, Ui.TextFaint);
 
             Panel drop = new Panel();
@@ -1114,14 +1114,14 @@ namespace WtSkin
                     pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
                     Ui.DrawRound(e.Graphics, r, Ui.S(10), pen.Color, (int)pen.Width);
                 }
-                Ui.DrawText(e.Graphics, "把 vehicles.zip 拖到这里导入", Ui.BodyBold,
+                Ui.DrawText(e.Graphics, Lang.T("把 vehicles.zip 拖到这里导入", "Drop vehicles.zip here to import"), Ui.BodyBold,
                         Ui.Text, new Rectangle(Ui.S(12), Ui.S(20), drop.Width - Ui.S(24), Ui.S(24)),
                         TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
-                Ui.DrawText(e.Graphics, "会自动复制到程序目录；旧图标包会保留为 .bak 备份。",
+                Ui.DrawText(e.Graphics, Lang.T("会自动复制到程序目录；旧图标包会保留为 .bak 备份。", "It is copied to the program folder; the old pack is kept as a .bak backup."),
                         Ui.Small, Ui.TextFaint,
                         new Rectangle(Ui.S(12), Ui.S(52), drop.Width - Ui.S(24), Ui.S(20)),
                         TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPrefix);
-                Ui.DrawText(e.Graphics, "也可以直接点击这里选择文件。",
+                Ui.DrawText(e.Graphics, Lang.T("也可以直接点击这里选择文件。", "You can also click here to choose a file."),
                         Ui.Small, Ui.TextFaint,
                         new Rectangle(Ui.S(12), Ui.S(76), drop.Width - Ui.S(24), Ui.S(20)),
                         TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPrefix);
@@ -1147,8 +1147,8 @@ namespace WtSkin
             {
                 using (OpenFileDialog dialog = new OpenFileDialog())
                 {
-                    dialog.Title = "选择涂装包 vehicles.zip";
-                    dialog.Filter = "图标包 (*.zip)|*.zip|所有文件 (*.*)|*.*";
+                    dialog.Title = Lang.T("选择涂装包 vehicles.zip", "Select icon pack vehicles.zip");
+                    dialog.Filter = Lang.T("图标包 (*.zip)|*.zip|所有文件 (*.*)|*.*", "Icon pack (*.zip)|*.zip|All files (*.*)|*.*");
                     if (dialog.ShowDialog(this) == DialogResult.OK)
                     {
                         ImportIconPackage(dialog.FileName);
@@ -1157,20 +1157,20 @@ namespace WtSkin
             };
             _pageIcons.Controls.Add(drop);
 
-            PageLabel(_pageIcons, "缺少图标包时程序仍可正常使用，只是显示占位图；导入后重启程序生效。",
+            PageLabel(_pageIcons, Lang.T("缺少图标包时程序仍可正常使用，只是显示占位图；导入后重启程序生效。", "The app still works without the icon pack and shows placeholders; restart after importing."),
                       8, 354, 592, 20, Ui.Small, Ui.TextFaint);
-            PageButton(_pageIcons, "打开程序目录", 8, 380, 140, false).Click += delegate
+            PageButton(_pageIcons, Lang.T("打开程序目录", "Open program folder"), 8, 380, 140, false).Click += delegate
             {
                 OpenFolder(Config.InstallDir);
             };
-            FlatButton deleteIcons = PageButton(_pageIcons, "删除图标包", 160, 380, 140, false);
+            FlatButton deleteIcons = PageButton(_pageIcons, Lang.T("删除图标包", "Delete icon pack"), 160, 380, 140, false);
             deleteIcons.Danger = true;
             deleteIcons.Click += delegate
             {
                 string target = Path.Combine(Config.ExeDir, "vehicles.zip");
                 if (!File.Exists(target))
                 {
-                    MessageBox.Show(this, "程序目录下没有 vehicles.zip。", "删除图标包",
+                    MessageBox.Show(this, Lang.T("程序目录下没有 vehicles.zip。", "vehicles.zip was not found in the program folder."), Lang.T("删除图标包", "Delete icon pack"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
@@ -1188,15 +1188,15 @@ namespace WtSkin
                     VehicleIcons.CloseCache();
                     File.Delete(target);
                     Config.Log("删除图标包：" + target);
-                    using (InfoDialog info = new InfoDialog("删除图标包",
-                        "已删除：" + target + "\r\n\r\n重启程序后图标会变为占位图，可随时重新拖入或从网盘下载。"))
+                    using (InfoDialog info = new InfoDialog(Lang.T("删除图标包", "Delete icon pack"),
+                        Lang.T("已删除：", "Deleted: ") + target + Lang.T("\r\n\r\n重启程序后图标会变为占位图，可随时重新拖入或从网盘下载。", "\r\n\r\nIcons will show placeholders after restart; you can drag the pack in again or download it later.")))
                     {
                         info.ShowDialog(this);
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, "删除失败：" + ex.Message, "删除图标包",
+                    MessageBox.Show(this, Lang.T("删除失败：", "Delete failed: ") + ex.Message, Lang.T("删除图标包", "Delete icon pack"),
                                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             };
@@ -1211,8 +1211,8 @@ namespace WtSkin
             }
             if (!path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
-                MessageBox.Show(this, "请拖入解压后的 vehicles.zip；.7z 等压缩包需要先用 7-Zip 解压。",
-                                "导入图标包", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, Lang.T("请拖入解压后的 vehicles.zip；.7z 等压缩包需要先用 7-Zip 解压。", "Drop the extracted vehicles.zip; other archives such as .7z must be extracted with 7-Zip first."),
+                                Lang.T("导入图标包", "Import icon pack"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             try
@@ -1236,15 +1236,15 @@ namespace WtSkin
                     }
                     if (!manifest || icons == 0)
                     {
-                        MessageBox.Show(this, "这不是有效的涂装包：缺少 manifest.json 或图标文件。",
-                                        "导入图标包", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, Lang.T("这不是有效的涂装包：缺少 manifest.json 或图标文件。", "This is not a valid icon pack: manifest.json or icons are missing."),
+                                        Lang.T("导入图标包", "Import icon pack"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "无法读取该 zip：" + ex.Message, "导入图标包",
+                MessageBox.Show(this, Lang.T("无法读取该 zip：", "Cannot read this zip: ") + ex.Message, Lang.T("导入图标包", "Import icon pack"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -1276,7 +1276,7 @@ namespace WtSkin
                 Config.Log("导入图标包：" + path + " → " + target);
                 bool restart;
                 using (RestartChoiceDialog dialog = new RestartChoiceDialog(
-                    "图标包已导入到：\r\n" + target + "\r\n\r\n重启程序后图标才会生效。"))
+                    Lang.T("图标包已导入到：\r\n", "Icon pack imported to:\r\n") + target + Lang.T("\r\n\r\n重启程序后图标才会生效。", "\r\n\r\nRestart the app for icons to appear.")))
                 {
                     restart = dialog.ShowDialog(this) == DialogResult.OK;
                 }
@@ -1288,7 +1288,7 @@ namespace WtSkin
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "导入失败：" + ex.Message, "导入图标包",
+                MessageBox.Show(this, Lang.T("导入失败：", "Import failed: ") + ex.Message, Lang.T("导入图标包", "Import icon pack"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -1310,8 +1310,8 @@ namespace WtSkin
             _logDivider.Height = 1;
             _pageUpdate.Controls.Add(_logDivider);
 
-            _logTitle = PageLabel(_pageUpdate, "更新日志", 8, 154, 200, 20, Ui.SmallBold, Ui.TextDim);
-            _logHint = PageLabel(_pageUpdate, "updates.dat · 与安装完成窗口同源", 292, 156, 300, 18,
+            _logTitle = PageLabel(_pageUpdate, Lang.T("更新日志", "Update log"), 8, 154, 200, 20, Ui.SmallBold, Ui.TextDim);
+            _logHint = PageLabel(_pageUpdate, Lang.T("updates.dat · 与安装完成窗口同源", "updates.dat · shared with the install-finished window"), 292, 156, 300, 18,
                                  Ui.Small, Ui.TextFaint);
             _logHint.TextAlign = ContentAlignment.MiddleRight;
 
@@ -1330,7 +1330,7 @@ namespace WtSkin
             _logView.Width = _logScroll.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - Ui.S(4);
             _logScroll.Controls.Add(_logView);
 
-            _logMore = PageButton(_pageUpdate, "加载更早的版本", 8, 474, 160, false);
+            _logMore = PageButton(_pageUpdate, Lang.T("加载更早的版本", "Load older versions"), 8, 474, 160, false);
             _logMore.Height = Ui.S(30);
             _logMore.Click += delegate
             {
@@ -1394,11 +1394,11 @@ namespace WtSkin
             }
             else if (remaining > 0)
             {
-                _logCount.Text = "已显示 " + Math.Min(_shownVersions, all.Count) + " / " + all.Count + " 个版本";
+                _logCount.Text = Lang.T("已显示 ", "Showing ") + Math.Min(_shownVersions, all.Count) + Lang.T(" / ", " / ") + all.Count + Lang.T(" 个版本", " versions");
             }
             else
             {
-                _logCount.Text = "已显示全部 " + all.Count + " 个版本";
+                _logCount.Text = Lang.T("已显示全部 ", "Showing all ") + all.Count + Lang.T(" 个版本", " versions");
             }
             FitLogView();
             LayoutUpdatePage();
@@ -1449,24 +1449,24 @@ namespace WtSkin
         /// <summary>发布者签名页：显示当前状态，提供「补装」与「移除」（移除前二次确认）。</summary>
         private void BuildCertPage()
         {
-            PageLabel(_pageCert, "发布者签名", 8, 6, 200, 22, Ui.SmallBold, Ui.TextDim);
+            PageLabel(_pageCert, Lang.T("发布者签名", "Publisher signature"), 8, 6, 200, 22, Ui.SmallBold, Ui.TextDim);
             _certState = PageLabel(_pageCert, "", 8, 30, 580, 26, Ui.BodyBold, Ui.TextFaint);
 
-            PageLabel(_pageCert, "签名用来告诉 Windows 这个软件是谁发布的，减少「未知发布者」的安全提示。",
+            PageLabel(_pageCert, Lang.T("签名用来告诉 Windows 这个软件是谁发布的，减少「未知发布者」的安全提示。", "A signature tells Windows who published this app and reduces unknown-publisher warnings."),
                       8, 62, 590, 20, Ui.Small, Ui.TextDim);
-            PageLabel(_pageCert, "签名只装到当前用户的受信任发布者列表，不需要管理员权限；移除后程序照常运行。",
+            PageLabel(_pageCert, Lang.T("签名只装到当前用户的受信任发布者列表，不需要管理员权限；移除后程序照常运行。", "The signature is installed for the current user only and needs no admin rights; the app still runs if removed."),
                       8, 84, 590, 20, Ui.Small, Ui.TextDim);
 
-            _certAdd = PageButton(_pageCert, "补装发布者签名", 8, 118, 150, true);
+            _certAdd = PageButton(_pageCert, Lang.T("补装发布者签名", "Install signature"), 8, 118, 150, true);
             _certAdd.Click += delegate { AddCert(); };
-            _certRemove = PageButton(_pageCert, "移除发布者签名", 172, 118, 150, false);
+            _certRemove = PageButton(_pageCert, Lang.T("移除发布者签名", "Remove signature"), 172, 118, 150, false);
             _certRemove.Danger = true;
             _certRemove.Click += delegate { RemoveCert(); };
 
             _certDetail = PageLabel(_pageCert, "", 8, 176, 590, 110, Ui.Small, Ui.TextFaint);
-            PageLabel(_pageCert, "证书随程序内嵌分发（publisher.cer，只含公钥），导入前会校验 SHA-256。",
+            PageLabel(_pageCert, Lang.T("证书随程序内嵌分发（publisher.cer，只含公钥），导入前会校验 SHA-256。", "The certificate is embedded (publisher.cer, public key only); SHA-256 is verified before installing."),
                       8, 300, 590, 20, Ui.Small, Ui.TextFaint);
-            PageLabel(_pageCert, "移除后 Windows 可能重新显示「未知发布者」，不影响导入涂装等功能；之后可随时补装。",
+            PageLabel(_pageCert, Lang.T("移除后 Windows 可能重新显示「未知发布者」，不影响导入涂装等功能；之后可随时补装。", "Windows may show unknown publisher again after removal; this does not affect skin importing, and you can reinstall it anytime."),
                       8, 322, 590, 20, Ui.Small, Ui.TextFaint);
             RefreshCert();
         }
@@ -1479,21 +1479,21 @@ namespace WtSkin
             }
             X509Certificate2 found;
             bool installed = PublisherCert.TryFindInstalled(out found);
-            _certState.Text = installed ? "已安装 · " + PublisherCert.PublisherName : "未安装";
+            _certState.Text = installed ? Lang.T("已安装 · ", "Installed · ") + PublisherCert.PublisherName : Lang.T("未安装", "Not installed");
             _certState.ForeColor = installed ? Ui.Good : Ui.Warn;
 
             byte[] bytes;
             string source;
             CertResult load = PublisherCert.LoadPackage(out bytes, out source);
-            string text = "主体：" + PublisherCert.ExpectedSubject;
-            text += "\n指纹：" + PublisherCert.ExpectedThumbprint;
+            string text = Lang.T("主体：", "Subject: ") + PublisherCert.ExpectedSubject;
+            text += Lang.T("\n指纹：", "\nThumbprint: ") + PublisherCert.ExpectedThumbprint;
             text += "\nSHA-256：" + PublisherCert.ExpectedSha256;
-            text += "\n证书来源：" + (load.Ok ? source : "不可用（" + load.Message + "）");
+            text += Lang.T("\n证书来源：", "\nCertificate source: ") + (load.Ok ? source : Lang.T("不可用（", "unavailable (") + load.Message + "）");
             if (installed && found != null)
             {
                 try
                 {
-                    text += "\n有效期至：" + found.NotAfter.ToString("yyyy-MM-dd");
+                    text += Lang.T("\n有效期至：", "\nValid until: ") + found.NotAfter.ToString("yyyy-MM-dd");
                 }
                 catch
                 {
@@ -1511,7 +1511,7 @@ namespace WtSkin
             if (PublisherCert.IsInstalled())
             {
                 InstallLog.Write("发布者签名：已存在，无需补装");
-                MessageBox.Show(this, "发布者签名已经安装过了。", "发布者签名",
+                MessageBox.Show(this, Lang.T("发布者签名已经安装过了。", "The publisher signature is already installed."), Lang.T("发布者签名", "Publisher signature"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                 RefreshCert();
                 return;
@@ -1528,12 +1528,12 @@ namespace WtSkin
             if (installed && result != null)
             {
                 InstallLog.Write("发布者签名：设置页补装成功 → " + result.Detail);
-                MessageBox.Show(this, result.Message, "发布者签名", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, result.Message, Lang.T("发布者签名", "Publisher signature"), MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else if (result != null && !result.Ok)
             {
                 InstallLog.Write("发布者签名：设置页补装失败 → " + result.Detail);
-                MessageBox.Show(this, result.Message, "发布者签名", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, result.Message, Lang.T("发布者签名", "Publisher signature"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             else
             {
@@ -1548,15 +1548,15 @@ namespace WtSkin
             if (!PublisherCert.IsInstalled())
             {
                 InstallLog.Write("发布者签名：设置页移除时发现未安装，无需移除");
-                MessageBox.Show(this, "当前用户的受信任发布者里没有这个签名。", "发布者签名",
+                MessageBox.Show(this, Lang.T("当前用户的受信任发布者里没有这个签名。", "This signature is not in the current user's trusted publishers."), Lang.T("发布者签名", "Publisher signature"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                 RefreshCert();
                 return;
             }
             DialogResult answer = MessageBox.Show(this,
-                "要从当前用户的受信任发布者里移除「" + PublisherCert.PublisherName + "」签名吗？\n\n" +
-                "移除后 Windows 可能重新显示「未知发布者」的安全提示；程序本身的功能不受影响，之后也可以随时补装。",
-                "移除发布者签名 · 请确认", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                Lang.T("要从当前用户的受信任发布者里移除「", "Remove the current user's trusted publisher \"") + PublisherCert.PublisherName + Lang.T("」签名吗？\n\n", "\"?\n\n") +
+                Lang.T("移除后 Windows 可能重新显示「未知发布者」的安全提示；程序本身的功能不受影响，之后也可以随时补装。", "Windows may show unknown-publisher warnings again; app features are unaffected and you can reinstall it anytime."),
+                Lang.T("移除发布者签名 · 请确认", "Remove publisher signature · confirm"), MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (answer != DialogResult.Yes)
             {
                 InstallLog.Write("发布者签名：设置页移除被取消；指纹 " + PublisherCert.ExpectedThumbprint);
@@ -1564,7 +1564,7 @@ namespace WtSkin
             }
             CertResult result = PublisherCert.Remove();
             InstallLog.Write("发布者签名：设置页移除" + (result.Ok ? "成功" : "失败") + " → " + result.Detail);
-            MessageBox.Show(this, result.Message, "发布者签名",
+            MessageBox.Show(this, result.Message, Lang.T("发布者签名", "Publisher signature"),
                             MessageBoxButtons.OK, result.Ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
             RefreshCert();
         }
@@ -1602,7 +1602,7 @@ namespace WtSkin
             string dir = _dirBox.Text.Trim();
             if (!Config.GameDirLooksValid(dir))
             {
-                MessageBox.Show(this, "这个目录不是有效的战雷安装目录。", "无法保存",
+                MessageBox.Show(this, Lang.T("这个目录不是有效的战雷安装目录。", "This is not a valid War Thunder install folder."), Lang.T("无法保存", "Cannot save"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -1623,7 +1623,7 @@ namespace WtSkin
             {
                 bool restart;
                 using (RestartChoiceDialog dialog = new RestartChoiceDialog(
-                    "界面设置已保存，主题和缩放需要重启程序才能完全生效。"))
+                    Lang.T("界面设置已保存，主题和缩放需要重启程序才能完全生效。", "Settings saved. Theme and zoom take full effect after restarting.")))
                 {
                     restart = dialog.ShowDialog(this) == DialogResult.OK;
                 }
@@ -1675,27 +1675,27 @@ namespace WtSkin
         public int Choice; // 1=默认目录 2=管理员重试 0=取消
 
         public InstallFailForm(string path, string reason)
-            : base("目录不可写", 660, 400)
+            : base(Lang.T("目录不可写", "Folder not writable"), 660, 400)
         {
-            MakeLabel("这个目录写不进去", 24, 14, 300, 24, Ui.H1, Ui.Warn);
+            MakeLabel(Lang.T("这个目录写不进去", "Cannot write to this folder"), 24, 14, 300, 24, Ui.H1, Ui.Warn);
             MakeLabel(path, 24, 46, 610, 22, Ui.Mono, Ui.Text);
 
-            Label reasonLabel = MakeLabel("原因：" + reason, 24, 76, 610, 40, Ui.Small, Ui.TextDim);
+            Label reasonLabel = MakeLabel(Lang.T("原因：", "Reason: ") + reason, 24, 76, 610, 40, Ui.Small, Ui.TextDim);
             reasonLabel.AutoEllipsis = true;
 
-            MakeLabel("可能的原因：", 24, 126, 300, 20, Ui.SmallBold, Ui.TextDim);
-            MakeLabel("· 桌面 / 文档等文件夹被安全软件（火绒、360 等）保护，未知程序不能写入\n" +
-                      "· 该文件夹的 Windows 权限不允许当前用户修改",
+            MakeLabel(Lang.T("可能的原因：", "Possible reasons:"), 24, 126, 300, 20, Ui.SmallBold, Ui.TextDim);
+            MakeLabel(Lang.T("· 桌面 / 文档等文件夹被安全软件（火绒、360 等）保护，未知程序不能写入\n", "· Desktop/Documents are protected by security software and block unknown programs\n") +
+                      Lang.T("· 该文件夹的 Windows 权限不允许当前用户修改", "· Windows permissions do not allow the current user to modify this folder"),
                       24, 148, 610, 44, Ui.Small, Ui.TextFaint);
 
-            MakeLabel("建议改用默认目录，或者自己在 D 盘里新建一个普通文件夹。",
+            MakeLabel(Lang.T("建议改用默认目录，或者自己在 D 盘里新建一个普通文件夹。", "Use the default folder, or create a normal folder on another drive."),
                       24, 200, 610, 20, Ui.Small, Ui.Accent);
 
-            FlatButton cancel = MakeButton("取消", 388, 288, 84, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 388, 288, 84, false);
             cancel.Click += delegate { Choice = 0; DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton admin = MakeButton("以管理员身份重试", 480, 288, 154, false);
+            FlatButton admin = MakeButton(Lang.T("以管理员身份重试", "Retry as admin"), 480, 288, 154, false);
             admin.Click += delegate { Choice = 2; DialogResult = DialogResult.OK; Close(); };
-            FlatButton useDefault = MakeButton("改用默认目录", 24, 288, 150, true);
+            FlatButton useDefault = MakeButton(Lang.T("改用默认目录", "Use default folder"), 24, 288, 150, true);
             useDefault.Click += delegate { Choice = 1; DialogResult = DialogResult.OK; Close(); };
         }
     }
@@ -1711,15 +1711,15 @@ namespace WtSkin
         public string ManualUnitId = "";
 
         public VehiclePickerForm(string suggestedId)
-            : base("选择载具", 660, 640)
+            : base(Lang.T("选择载具", "Select vehicle"), 660, 640)
         {
-            MakeLabel("这台涂装属于哪个载具？", 24, 12, 400, 24, Ui.H1, Ui.Text);
-            MakeLabel("搜索中文名、英文名或载具 ID，也可以直接在下面输入 ID。", 24, 38, 600, 22, Ui.Small, Ui.TextDim);
+            MakeLabel(Lang.T("这台涂装属于哪个载具？", "Which vehicle is this skin for?"), 24, 12, 400, 24, Ui.H1, Ui.Text);
+            MakeLabel(Lang.T("搜索中文名、英文名或载具 ID，也可以直接在下面输入 ID。", "Search by Chinese/English name or vehicle ID, or enter an ID below."), 24, 38, 600, 22, Ui.Small, Ui.TextDim);
 
             TextBox searchField;
             MakeField(24, 68, 610, 38, out searchField);
             _search = searchField;
-            Native.SetCue(_search, "搜索载具，例如：直-10ME / Z-10ME / z_10me");
+            Native.SetCue(_search, Lang.T("搜索载具，例如：直-10ME / Z-10ME / z_10me", "Search vehicles, e.g. Z-10ME / z_10me"));
 
             _list = new ListBox();
             _list.Left = Ui.S(24);
@@ -1737,21 +1737,21 @@ namespace WtSkin
             _list.DoubleClick += delegate { Accept(); };
             Content.Controls.Add(_list);
 
-            MakeLabel("手动输入载具 ID（列表里找不到时用）", 24, 518, 300, 20, Ui.SmallBold, Ui.TextDim);
+            MakeLabel(Lang.T("手动输入载具 ID（列表里找不到时用）", "Enter vehicle ID manually (if not in the list)"), 24, 518, 300, 20, Ui.SmallBold, Ui.TextDim);
             TextBox manualField;
             MakeField(24, 540, 300, 36, out manualField);
             _manual = manualField;
-            MakeLabel("ID 就是 .blk 文件的名字，例如 z_10me", 336, 548, 300, 20, Ui.Small, Ui.TextFaint);
+            MakeLabel(Lang.T("ID 就是 .blk 文件的名字，例如 z_10me", "The ID is the .blk filename, e.g. z_10me"), 336, 548, 300, 20, Ui.Small, Ui.TextFaint);
 
-            FlatButton cancel = MakeButton("取消", 402, 540, 92, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 402, 540, 92, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton ok = MakeButton("使用所选载具", 502, 540, 132, true);
+            FlatButton ok = MakeButton(Lang.T("使用所选载具", "Use selected vehicle"), 502, 540, 132, true);
             ok.Click += delegate { Accept(); };
 
             _search.TextChanged += delegate { RefreshList(_search.Text); };
             RefreshList("");
             Shown += delegate { Native.ThemeScrollbars(this); };
-            Native.SetCue(_manual, string.IsNullOrEmpty(suggestedId) ? "例如 z_10me" : "例如 " + suggestedId);
+            Native.SetCue(_manual, string.IsNullOrEmpty(suggestedId) ? Lang.T("例如 z_10me", "e.g. z_10me") : Lang.T("例如 ", "e.g. ") + suggestedId);
         }
 
         private void Accept()
@@ -1768,7 +1768,7 @@ namespace WtSkin
             Vehicle selected = _list.SelectedItem as Vehicle;
             if (selected == null)
             {
-                MessageBox.Show(this, "请先选择一个载具，或者在下面输入载具 ID。", "还没有选择",
+                MessageBox.Show(this, Lang.T("请先选择一个载具，或者在下面输入载具 ID。", "Select a vehicle or enter a vehicle ID below."), Lang.T("还没有选择", "No selection"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -1826,12 +1826,12 @@ namespace WtSkin
         public bool AllFound;
 
         public MissingFoldersForm(List<DetectedUnit> missing)
-            : base("还没有载具文件夹", 640, 470)
+            : base(Lang.T("还没有载具文件夹", "Missing vehicle folders"), 640, 470)
         {
             _missing = new List<DetectedUnit>(missing);
-            _hint = MakeLabel("下面这些载具在 UserSkins 里还没有文件夹，游戏不会读取它们的涂装。",
+            _hint = MakeLabel(Lang.T("下面这些载具在 UserSkins 里还没有文件夹，游戏不会读取它们的涂装。", "These vehicles have no folder under UserSkins, so the game cannot read their skins."),
                      24, 14, 592, 24, Ui.Body, Ui.Text);
-            MakeLabel("先在游戏里打开该载具的「外观 → 涂装」，点一次「创建涂装示例」，游戏会生成 template_<载具ID> 文件夹；然后回来点「重新检查」。",
+            MakeLabel(Lang.T("先在游戏里打开该载具的「外观 → 涂装」，点一次「创建涂装示例」，游戏会生成 template_<载具ID> 文件夹；然后回来点「重新检查」。", "In game, open Appearance → Skins for this vehicle and create a skin sample so the game creates template_<vehicle ID>; then click Recheck."),
                      24, 40, 592, 44, Ui.Small, Ui.TextDim);
 
             _list = new ListBox();
@@ -1858,7 +1858,7 @@ namespace WtSkin
                 Ui.DrawText(e.Graphics, unit.Title, Ui.BodyBold, Ui.Text,
                         new Rectangle(r.X, r.Y + Ui.S(4), r.Width, Ui.S(20)),
                         TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
-                Ui.DrawText(e.Graphics, unit.UnitId + "  ·  需要一个 template_" + unit.UnitId + " 或包含 " + unit.UnitId + ".blk 的文件夹",
+                Ui.DrawText(e.Graphics, unit.UnitId + Lang.T("  ·  需要一个 template_", "  ·  needs a template_") + unit.UnitId + Lang.T(" 或包含 ", " or a folder containing ") + unit.UnitId + Lang.T(".blk 的文件夹", ".blk"),
                         Ui.Small, Ui.TextFaint,
                         new Rectangle(r.X, r.Y + Ui.S(22), r.Width, Ui.S(18)),
                         TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
@@ -1867,10 +1867,10 @@ namespace WtSkin
             RefreshItems();
             Shown += delegate { Native.ThemeScrollbars(this); };
 
-            MakeLabel("提示：在游戏里创建模板后不需要重启游戏，回到这里点重新检查即可。",
+            MakeLabel(Lang.T("提示：在游戏里创建模板后不需要重启游戏，回到这里点重新检查即可。", "Creating the template in game does not require a restart; return here and click Recheck."),
                      24, 340, 592, 20, Ui.Small, Ui.TextFaint);
 
-            FlatButton open = MakeButton("打开 UserSkins", 24, 380, 130, false);
+            FlatButton open = MakeButton(Lang.T("打开 UserSkins", "Open UserSkins"), 24, 380, 130, false);
             open.Click += delegate
             {
                 string dir = Config.UserSkinsDir;
@@ -1879,9 +1879,9 @@ namespace WtSkin
                     System.Diagnostics.Process.Start("explorer.exe", "\"" + dir + "\"");
                 }
             };
-            FlatButton cancel = MakeButton("取消", 408, 380, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 408, 380, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton recheck = MakeButton("重新检查", 514, 380, 102, true);
+            FlatButton recheck = MakeButton(Lang.T("重新检查", "Recheck"), 514, 380, 102, true);
             recheck.Click += delegate
             {
                 for (int i = _missing.Count - 1; i >= 0; i--)
@@ -1900,7 +1900,7 @@ namespace WtSkin
                 }
                 else
                 {
-                    _hint.Text = "还有 " + _missing.Count + " 个载具没有文件夹，请先在游戏里创建模板。";
+                    _hint.Text = Lang.T("还有 ", "Still ") + _missing.Count + Lang.T(" 个载具没有文件夹，请先在游戏里创建模板。", " vehicles have no folder. Create templates in game first.");
                 }
             };
         }
@@ -1929,7 +1929,7 @@ namespace WtSkin
         private FlatButton _create;
 
         public CreateFoldersForm(List<DetectedUnit> units, bool simple)
-            : base("创建涂装目录", 640, 500)
+            : base(Lang.T("创建涂装目录", "Create skin folder"), 640, 500)
         {
             _units = new List<DetectedUnit>(units);
             _simple = simple;
@@ -1937,18 +1937,18 @@ namespace WtSkin
             string path = Config.UserSkinsDir;
             string first = _units.Count > 0 ? _units[0].Title : "";
             _hint = MakeLabel(simple
-                    ? "载具「" + first + "」缺少涂装目录，是否创建？"
-                    : "检测到 " + _units.Count + " 台载具缺少涂装目录，是否创建？",
+                    ? Lang.T("载具「", "Vehicle \"") + first + Lang.T("」缺少涂装目录，是否创建？", "\" is missing a skin folder. Create it?")
+                    : Lang.T("检测到 ", "Detected ") + _units.Count + Lang.T(" 台载具缺少涂装目录，是否创建？", " vehicles missing skin folders. Create them?"),
                 24, 14, 592, 26, Ui.Body, Ui.Text);
             MakeLabel(simple
-                    ? "只会创建一个空目录，不写任何文件；取消不会改动 UserSkins。"
-                    : "将创建以下空目录（与现有涂装同级），不会覆盖或删除任何已有内容。",
+                    ? Lang.T("只会创建一个空目录，不写任何文件；取消不会改动 UserSkins。", "Only an empty folder is created; cancel leaves UserSkins untouched.")
+                    : Lang.T("将创建以下空目录（与现有涂装同级），不会覆盖或删除任何已有内容。", "These empty folders will be created next to existing skins; nothing is overwritten or deleted."),
                 24, 42, 592, 22, Ui.Small, Ui.TextDim);
 
             int listTop = 72;
             if (!simple)
             {
-                MakeLabel("目标位置：" + path, 24, 66, 592, 22, Ui.Small, Ui.TextFaint);
+                MakeLabel(Lang.T("目标位置：", "Target: ") + path, 24, 66, 592, 22, Ui.Small, Ui.TextFaint);
                 listTop = 94;
             }
 
@@ -1983,7 +1983,7 @@ namespace WtSkin
             };
             Content.Controls.Add(_list);
 
-            _expand = MakeButton("展开全部", 24, listTop + 266, 110, false);
+            _expand = MakeButton(Lang.T("展开全部", "Show all"), 24, listTop + 266, 110, false);
             _expand.Click += delegate
             {
                 for (int i = _list.Items.Count; i < _units.Count; i++)
@@ -1998,13 +1998,13 @@ namespace WtSkin
             }
             _expand.Visible = _units.Count > 10;
 
-            _bottomHint = MakeLabel("创建目录后，需要在游戏内重新打开该载具的涂装界面才会出现。",
+            _bottomHint = MakeLabel(Lang.T("创建目录后，需要在游戏内重新打开该载具的涂装界面才会出现。", "Reopen the vehicle's skin menu in game for the folder to appear."),
                       24, 372, 592, 20, Ui.Small, Ui.TextDim);
 
-            FlatButton cancel = MakeButton("取消", 398, 394, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 398, 394, 96, false);
             _cancel = cancel;
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            FlatButton create = MakeButton("创建", 504, 394, 112, true);
+            FlatButton create = MakeButton(Lang.T("创建", "Create"), 504, 394, 112, true);
             _create = create;
             create.Click += delegate
             {
@@ -2053,7 +2053,7 @@ namespace WtSkin
         public bool Confirmed;
 
         public ImportPlanForm(ImportPlan plan)
-            : base("确认导入", 760, 700)
+            : base(Lang.T("确认导入", "Confirm import"), 760, 700)
         {
             _plan = plan;
 
@@ -2076,7 +2076,7 @@ namespace WtSkin
             }
             if (plan.Warnings.Count > 3)
             {
-                warnings += "· 还有 " + (plan.Warnings.Count - 3) + " 条提示";
+                warnings += Lang.T("· 还有 ", "· ") + (plan.Warnings.Count - 3) + Lang.T(" 条提示", " more notices");
             }
 
             int listHeight = Math.Min(240, Math.Max(56, plan.Targets.Count * 52));
@@ -2087,20 +2087,20 @@ namespace WtSkin
             int buttonsTop = warnTop + warnHeight + 10;
             ResizeToDesign(760, 58 + buttonsTop + 38 + 20);
 
-            MakeLabel(plan.Targets.Count.ToString(CultureInfo.InvariantCulture) + " 个载具 · 写入 " +
-                      plan.Targets.Count.ToString(CultureInfo.InvariantCulture) + " 个涂装子文件夹 · 约 " +
+            MakeLabel(plan.Targets.Count.ToString(CultureInfo.InvariantCulture) + Lang.T(" 个载具 · 写入 ", " vehicles · write ") +
+                      plan.Targets.Count.ToString(CultureInfo.InvariantCulture) + Lang.T(" 个涂装子文件夹 · 约 ", " skin subfolders · about ") +
                       Util.HumanSize(plan.TotalBytes),
                       24, 10, 500, 24, Ui.H1, Ui.Text);
-            MakeLabel("新涂装会写进 UserSkins 下对应载具的 template 文件夹里的子文件夹，不会清空模板文件夹里已有的内容。",
+            MakeLabel(Lang.T("新涂装会写进 UserSkins 下对应载具的 template 文件夹里的子文件夹，不会清空模板文件夹里已有的内容。", "New skins are written into subfolders of each vehicle's template folder and do not clear existing content."),
                       24, 36, 712, 20, Ui.Small, Ui.TextDim);
 
-            MakeLabel("涂装文件夹名", 24, 62, 200, 20, Ui.SmallBold, Ui.TextDim);
+            MakeLabel(Lang.T("涂装文件夹名", "Skin folder name"), 24, 62, 200, 20, Ui.SmallBold, Ui.TextDim);
             TextBox nameBox;
             MakeField(24, 84, 400, 34, out nameBox);
             _nameBox = nameBox;
             _nameBox.Text = defaultName;
 
-            _resetName = MakeButton("使用原文件夹名", 432, 84, 132, false);
+            _resetName = MakeButton(Lang.T("使用原文件夹名", "Use original name"), 432, 84, 132, false);
             _resetName.Height = Ui.S(34);
             _resetName.Font = Ui.SmallBold;
 
@@ -2109,10 +2109,10 @@ namespace WtSkin
             _pathLabel = MakeLabel("", 24, 140, 712, 20, Ui.Small, Ui.TextFaint);
             _pathLabel.AutoEllipsis = true;
 
-            MakeLabel("同名涂装文件夹已存在时：", 24, 166, 280, 20, Ui.SmallBold, Ui.TextDim);
-            _choiceRename = MakeChoice("改名", 24, 188);
-            _choiceOverwrite = MakeChoice("覆盖", 114, 188);
-            _choiceSkip = MakeChoice("跳过", 204, 188);
+            MakeLabel(Lang.T("同名涂装文件夹已存在时：", "If a skin folder already exists:"), 24, 166, 280, 20, Ui.SmallBold, Ui.TextDim);
+            _choiceRename = MakeChoice(Lang.T("改名", "Rename"), 24, 188);
+            _choiceOverwrite = MakeChoice(Lang.T("覆盖", "Overwrite"), 114, 188);
+            _choiceSkip = MakeChoice(Lang.T("跳过", "Skip"), 204, 188);
             _conflictStatus = MakeLabel("", 306, 190, 430, 20, Ui.Small, Ui.TextFaint);
             _conflictStatus.AutoEllipsis = true;
 
@@ -2136,8 +2136,8 @@ namespace WtSkin
             }
 
             _backupRow = new CheckRow();
-            _backupRow.Title = "覆盖前备份旧涂装";
-            _backupRow.Subtitle = "复制到安装目录 backups 下，按 载具文件夹 / 涂装名 保留两级结构";
+            _backupRow.Title = Lang.T("覆盖前备份旧涂装", "Back up old skin before overwrite");
+            _backupRow.Subtitle = Lang.T("复制到安装目录 backups 下，按 载具文件夹 / 涂装名 保留两级结构", "Copied to backups in the install folder, keeping vehicle/skin folders");
             _backupRow.Checked = Config.Backup;
             _backupRow.Left = Ui.S(20);
             _backupRow.Top = Ui.S(optionsTop);
@@ -2151,9 +2151,9 @@ namespace WtSkin
                 warn.AutoEllipsis = true;
             }
 
-            FlatButton cancel = MakeButton("取消", 520, buttonsTop, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 520, buttonsTop, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            _ok = MakeButton("开始导入", 626, buttonsTop, 110, true);
+            _ok = MakeButton(Lang.T("开始导入", "Start import"), 626, buttonsTop, 110, true);
 
             _nameBox.TextChanged += delegate
             {
@@ -2261,7 +2261,7 @@ namespace WtSkin
                     {
                         if (error.Length == 0)
                         {
-                            error = "目标路径不安全，请检查载具文件夹和涂装文件夹名";
+                            error = Lang.T("目标路径不安全，请检查载具文件夹和涂装文件夹名", "Unsafe target path; check the vehicle and skin folder names");
                         }
                         _effective[target] = target.SkinName;
                         continue;
@@ -2294,7 +2294,7 @@ namespace WtSkin
             }
             else
             {
-                _errorLabel.Text = "✓ 名称可用，会直接作为子文件夹名。";
+                _errorLabel.Text = Lang.T("✓ 名称可用，会直接作为子文件夹名。", "✓ Name is valid and will be used as the subfolder name.");
                 _errorLabel.ForeColor = Ui.TextFaint;
             }
             _ok.Enabled = error.Length == 0;
@@ -2318,7 +2318,7 @@ namespace WtSkin
             }
             catch
             {
-                templateName = "template_<载具ID>";
+                templateName = Lang.T("template_<载具ID>", "template_<vehicle ID>");
             }
             string name = _nameBox.Text;
             string effective;
@@ -2328,11 +2328,11 @@ namespace WtSkin
             }
             string sep = Path.DirectorySeparatorChar.ToString();
             string path = "UserSkins" + sep + templateName + sep +
-                          (valid && name.Length > 0 ? name : "<涂装文件夹名>");
-            string text = "写入预览：" + path;
+                          (valid && name.Length > 0 ? name : Lang.T("<涂装文件夹名>", "<skin folder name>"));
+            string text = Lang.T("写入预览：", "Write preview: ") + path;
             if (_plan.Targets.Count > 1)
             {
-                text += "     （其余 " + (_plan.Targets.Count - 1) + " 个载具写入各自的 template 文件夹）";
+                text += Lang.T("     （其余 ", "     (the other ") + (_plan.Targets.Count - 1) + Lang.T(" 个载具写入各自的 template 文件夹）", " vehicles write to their own template folders)");
             }
             return text;
         }
@@ -2341,25 +2341,25 @@ namespace WtSkin
         {
             if (conflicts == 0)
             {
-                _conflictStatus.Text = "当前没有同名涂装文件夹。";
+                _conflictStatus.Text = Lang.T("当前没有同名涂装文件夹。", "No conflicting skin folder.");
                 _conflictStatus.ForeColor = Ui.TextFaint;
                 return;
             }
             string rule;
             if (_policy == SkinConflictPolicy.Rename)
             {
-                rule = "自动改名后写入";
+                rule = Lang.T("自动改名后写入", "write with auto-renamed folder");
             }
             else if (_policy == SkinConflictPolicy.Overwrite)
             {
-                rule = "先备份旧涂装再覆盖";
+                rule = Lang.T("先备份旧涂装再覆盖", "back up and overwrite");
             }
             else
             {
-                rule = "跳过，不改动";
+                rule = Lang.T("跳过，不改动", "skip without changes");
             }
-            _conflictStatus.Text = "有 " + conflicts.ToString(CultureInfo.InvariantCulture) +
-                                   " 个同名涂装文件夹：" + rule + "。";
+            _conflictStatus.Text = Lang.T("有 ", "There are ") + conflicts.ToString(CultureInfo.InvariantCulture) +
+                                   Lang.T(" 个同名涂装文件夹：", " conflicting skin folders: ") + rule + "。";
             _conflictStatus.ForeColor = Ui.Warn;
         }
 
@@ -2437,7 +2437,7 @@ namespace WtSkin
                 conflict = Directory.Exists(dir) || File.Exists(dir);
             }
             string sep = Path.DirectorySeparatorChar.ToString();
-            string line = "→ " + templateName + sep + (effective.Length > 0 ? effective : "<涂装文件夹名>");
+            string line = "→ " + templateName + sep + (effective.Length > 0 ? effective : Lang.T("<涂装文件夹名>", "<skin folder name>"));
             Ui.DrawText(g, line, Ui.Small, conflict ? Ui.Warn : Ui.Good,
                     new Rectangle(r.X + Ui.S(10), r.Y + Ui.S(25), r.Width - Ui.S(20), Ui.S(18)),
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
@@ -2461,9 +2461,9 @@ namespace WtSkin
         public ImportResult Result;
 
         public ProgressForm(ImportPlan plan)
-            : base("正在导入涂装", 580, 276)
+            : base(Lang.T("正在导入涂装", "Importing skins"), 580, 276)
         {
-            _currentLabel = MakeLabel("准备中…", 24, 14, 520, 24, Ui.Body, Ui.Text);
+            _currentLabel = MakeLabel(Lang.T("准备中…", "Preparing…"), 24, 14, 520, 24, Ui.Body, Ui.Text);
             _percentLabel = MakeLabel("0%", 24, 68, 520, 22, Ui.SmallBold, Ui.TextDim);
 
             _bar = new Panel();
@@ -2486,13 +2486,13 @@ namespace WtSkin
             };
             Content.Controls.Add(_bar);
 
-            MakeLabel("导入过程中请不要关闭游戏目录里的文件夹。", 24, 118, 500, 20, Ui.Small, Ui.TextFaint);
-            _cancel = MakeButton("取消", 434, 150, 104, false);
+            MakeLabel(Lang.T("导入过程中请不要关闭游戏目录里的文件夹。", "Do not close folders in the game directory during import."), 24, 118, 500, 20, Ui.Small, Ui.TextFaint);
+            _cancel = MakeButton(Lang.T("取消", "Cancel"), 434, 150, 104, false);
             _cancel.Click += delegate
             {
                 _cancelRequested = true;
                 _cancel.Enabled = false;
-                _cancel.Text = "正在停止…";
+                _cancel.Text = Lang.T("正在停止…", "Stopping…");
             };
 
             Shown += delegate { Start(plan); };
@@ -2513,7 +2513,7 @@ namespace WtSkin
                 catch (Exception ex)
                 {
                     result = new ImportResult();
-                    result.Failed.Add("导入失败：" + ex.Message);
+                    result.Failed.Add(Lang.T("导入失败：", "Import failed: ") + ex.Message);
                 }
                 Final(result);
             });
@@ -2539,7 +2539,7 @@ namespace WtSkin
                     }
                     double ratio = total <= 0 ? 0 : Math.Min(1.0, (double)done / total);
                     _percentLabel.Text = ((int)(ratio * 100)).ToString(CultureInfo.InvariantCulture) + "%   " +
-                                         Util.HumanSize(done) + " / " + Util.HumanSize(total);
+                                         Util.HumanSize(done) + Lang.T(" / ", " / ") + Util.HumanSize(total);
                     _bar.Invalidate();
                 });
             }
@@ -2619,7 +2619,7 @@ namespace WtSkin
             Content.Controls.Add(list);
             Shown += delegate { Native.ThemeScrollbars(this); };
 
-            FlatButton open = MakeButton("打开 UserSkins", 24, buttonsTop, 150, false);
+            FlatButton open = MakeButton(Lang.T("打开 UserSkins", "Open UserSkins"), 24, buttonsTop, 150, false);
             open.Click += delegate
             {
                 string dir = Config.UserSkinsDir;
@@ -2628,7 +2628,7 @@ namespace WtSkin
                     System.Diagnostics.Process.Start("explorer.exe", "\"" + dir + "\"");
                 }
             };
-            FlatButton close = MakeButton("完成", 486, buttonsTop, 108, true);
+            FlatButton close = MakeButton(Lang.T("完成", "Done"), 486, buttonsTop, 108, true);
             close.Click += delegate { DialogResult = DialogResult.OK; Close(); };
         }
     }

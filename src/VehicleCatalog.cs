@@ -649,7 +649,7 @@ namespace WtSkin
             EnsureLoaded();
             if (_lastError.Length > 0)
             {
-                return "图标不可用";
+                return Lang.T("图标不可用", "icons unavailable");
             }
             int pending = RetryingCount + PermanentCount;
             string text = "图标 " + OkCount + "/" + Count;

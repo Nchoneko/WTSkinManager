@@ -66,11 +66,11 @@ namespace WtSkin
         public static string EnvironmentHint()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("可能的原因：");
-            sb.AppendLine("· 桌面 / 文档等文件夹被安全软件（火绒、360 等）保护，未知程序不能写入");
-            sb.AppendLine("· 该文件夹的 Windows 权限不允许当前用户修改");
+            sb.AppendLine(Lang.T("可能的原因：", "Possible reasons:"));
+            sb.AppendLine(Lang.T("· 桌面 / 文档等文件夹被安全软件（火绒、360 等）保护，未知程序不能写入", "· Desktop/Documents are protected by security software and block unknown programs"));
+            sb.AppendLine(Lang.T("· 该文件夹的 Windows 权限不允许当前用户修改", "· Windows permissions do not allow the current user to modify this folder"));
             sb.AppendLine();
-            sb.Append("建议装到不受保护的普通目录（例如 D 盘上新建一个文件夹），或者直接用默认目录。");
+            sb.Append(Lang.T("建议装到不受保护的普通目录（例如 D 盘上新建一个文件夹），或者直接用默认目录。", "Install to a normal unprotected folder (e.g. a new folder on D:) or use the default folder."));
             return sb.ToString();
         }
     }

@@ -128,7 +128,7 @@ namespace WtSkin
     {
         public const string TemplatePrefix = "template_";
         /// <summary>旧结构条目的提示。</summary>
-        public const string LegacyHint = "这是载具目录本身，请在外部处理";
+        public static readonly string LegacyHint = Lang.T("这是载具目录本身，请在外部处理", "This is the vehicle folder itself; handle it externally");
 
         private static readonly object CacheLock = new object();
         private static Dictionary<string, long> _sizeCache =
@@ -482,7 +482,7 @@ namespace WtSkin
         {
             if (bytes == -1)
             {
-                return "计算中…";
+                return Lang.T("计算中…", "calculating…");
             }
             if (bytes < 0)
             {
@@ -519,7 +519,7 @@ namespace WtSkin
             }
             catch (Exception ex)
             {
-                error = "无法创建备份目录：" + root + "（" + ex.Message + "）";
+                error = Lang.T("无法创建备份目录：", "Cannot create backup folder: ") + root + "（" + ex.Message + "）";
                 return false;
             }
             for (int i = 0; i < items.Count; i++)
@@ -550,7 +550,7 @@ namespace WtSkin
             {
                 if (!Directory.Exists(src))
                 {
-                    error = "目录不存在：" + source;
+                    error = Lang.T("目录不存在：", "Folder not found: ") + source;
                     return false;
                 }
                 Directory.CreateDirectory(Util.LongPath(target));
@@ -598,12 +598,12 @@ namespace WtSkin
                 }
                 if (item.Legacy)
                 {
-                    skipped.Add("· " + item.Name + "：旧结构项不可删除");
+                    skipped.Add("· " + item.Name + Lang.T("：旧结构项不可删除", ": legacy item cannot be deleted"));
                     continue;
                 }
                 if (!IsDirectChild(item.Path, vehiclePath))
                 {
-                    skipped.Add("· " + item.Name + "：不是载具目录内的涂装子目录，已跳过");
+                    skipped.Add("· " + item.Name + Lang.T("：不是载具目录内的涂装子目录，已跳过", ": not a skin subfolder of the vehicle; skipped"));
                     Config.Log("删除涂装跳过（越界）" + item.Path);
                     continue;
                 }
@@ -656,7 +656,7 @@ namespace WtSkin
             error = null;
             if (string.IsNullOrEmpty(dir))
             {
-                error = "目录为空";
+                error = Lang.T("目录为空", "Folder is empty");
                 return false;
             }
             string full = Util.LongPath(dir);
@@ -664,7 +664,7 @@ namespace WtSkin
             {
                 if (!Directory.Exists(full))
                 {
-                    error = "目录不存在";
+                    error = Lang.T("目录不存在", "Folder not found");
                     return false;
                 }
                 Directory.Delete(full, true);
@@ -701,11 +701,11 @@ namespace WtSkin
         {
             if (ex is UnauthorizedAccessException)
             {
-                return "没有删除权限：" + ex.Message;
+                return Lang.T("没有删除权限：", "No permission to delete: ") + ex.Message;
             }
             if (ex is IOException)
             {
-                return "目录被占用或正被其他程序使用：" + ex.Message;
+                return Lang.T("目录被占用或正被其他程序使用：", "Folder is in use by another program: ") + ex.Message;
             }
             return ex.Message;
         }
@@ -737,7 +737,7 @@ namespace WtSkin
             Cursor = Cursors.Hand;
             TabStop = true;
             _open = new FlatButton();
-            _open.Text = "打开文件夹";
+            _open.Text = Lang.T("打开文件夹", "Open folder");
             _open.Font = Ui.SmallBold;
             _open.Height = Ui.S(26);
             _open.Click += delegate { OpenFolder(); };
@@ -788,7 +788,7 @@ namespace WtSkin
             {
                 int openH = Ui.S(26);
                 int openW = Math.Max(Ui.S(78),
-                    TextRenderer.MeasureText("打开文件夹", Ui.SmallBold).Width + Ui.S(18));
+                    TextRenderer.MeasureText(Lang.T("打开文件夹", "Open folder"), Ui.SmallBold).Width + Ui.S(18));
                 _open.SetBounds(Width - Ui.S(Pad) - openW, (Height - openH) / 2, openW, openH);
             }
             Invalidate();
@@ -890,7 +890,7 @@ namespace WtSkin
             }
             catch (Exception ex)
             {
-                MessageBox.Show(FindForm(), "无法打开资源管理器：" + ex.Message, "打开文件夹",
+                MessageBox.Show(FindForm(), Lang.T("无法打开资源管理器：", "Cannot open File Explorer: ") + ex.Message, Lang.T("打开文件夹", "Open folder"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }

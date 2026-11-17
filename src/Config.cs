@@ -14,6 +14,11 @@ namespace WtSkin
         public static int KeepBackups = 8;
         /// <summary>缺少 template_ 目录时：0=每次询问，1=自动创建，2=关闭。</summary>
         public static int MissingFolderPolicy = 0;
+        /// <summary>界面语言：zh / en。</summary>
+        public static string Language = "zh";
+        /// <summary>用户协议是否已接受（首次启动必须同意）。</summary>
+        public static bool AgreementAccepted = false;
+        public static string AgreementVersion = "";
         public static int ThemeIndex = 0;
         public static int ZoomPercent = 100;
         public static bool Animations = false;
@@ -168,6 +173,20 @@ namespace WtSkin
                         case "backup":
                             Backup = value != "0";
                             break;
+                        case "agreementaccepted":
+                            AgreementAccepted = string.Equals(value, "1", StringComparison.Ordinal) ||
+                                                string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+                            break;
+                        case "agreementversion":
+                            AgreementVersion = value ?? "";
+                            break;
+                        case "language":
+                            if (string.Equals(value, "en", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(value, "zh", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Language = value.ToLowerInvariant();
+                            }
+                            break;
                         case "missingfolderpolicy":
                             int missingPolicy;
                             if (int.TryParse(value, out missingPolicy) && missingPolicy >= 0 && missingPolicy <= 2)
@@ -271,6 +290,9 @@ namespace WtSkin
                 sb.AppendLine("Backup=" + (Backup ? "1" : "0"));
                 sb.AppendLine("KeepBackups=" + KeepBackups);
                 sb.AppendLine("MissingFolderPolicy=" + MissingFolderPolicy);
+                sb.AppendLine("Language=" + Language);
+                sb.AppendLine("AgreementAccepted=" + (AgreementAccepted ? "1" : "0"));
+                sb.AppendLine("AgreementVersion=" + AgreementVersion);
                 sb.AppendLine("Theme=" + ThemeIndex);
                 sb.AppendLine("Zoom=" + ZoomPercent);
                 sb.AppendLine("Animations=" + (Animations ? "1" : "0"));

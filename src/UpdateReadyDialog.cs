@@ -76,13 +76,13 @@ namespace WtSkin
         public UpdateSource Source = UpdateSource.Mirror;
 
         public UpdateSourceDialog(string versionText)
-            : base("选择更新源", 560, 300)
+            : base(Lang.T("选择更新源", "Choose update source"), 560, 300)
         {
-            MakeLabel("发现新版本 v" + (versionText ?? ""), 24, 16, 512, 26, Ui.H1, Ui.Text);
-            MakeLabel("请选择下载方式：镜像更快，GitHub 官方源可能需要代理。",
+            MakeLabel(Lang.T("发现新版本 v", "New version v") + (versionText ?? ""), 24, 16, 512, 26, Ui.H1, Ui.Text);
+            MakeLabel(Lang.T("请选择下载方式：镜像更快，GitHub 官方源可能需要代理。", "Choose a download source: the mirror is faster; GitHub may require a proxy."),
                       24, 48, 512, 22, Ui.Small, Ui.TextDim);
 
-            FlatButton mirror = MakeButton("使用国内镜像源更新（推荐）", 24, 84, 512, true);
+            FlatButton mirror = MakeButton(Lang.T("使用国内镜像源更新（推荐）", "Use China mirror (recommended)"), 24, 84, 512, true);
             mirror.Height = Ui.S(44);
             mirror.Click += delegate
             {
@@ -90,7 +90,7 @@ namespace WtSkin
                 DialogResult = DialogResult.OK;
                 Close();
             };
-            FlatButton github = MakeButton("使用 GitHub 源（可能需要代理）", 24, 140, 512, false);
+            FlatButton github = MakeButton(Lang.T("使用 GitHub 源（可能需要代理）", "Use GitHub (proxy may be required)"), 24, 140, 512, false);
             github.Height = Ui.S(44);
             github.Click += delegate
             {
@@ -98,10 +98,10 @@ namespace WtSkin
                 DialogResult = DialogResult.OK;
                 Close();
             };
-            MakeLabel("镜像地址：gh-proxy.com（仅代理下载，不改变安装位置与校验方式）。",
+            MakeLabel(Lang.T("镜像地址：gh-proxy.com（仅代理下载，不改变安装位置与校验方式）。", "Mirror: gh-proxy.com (download only; install location and verification are unchanged)."),
                       24, 194, 512, 20, Ui.Small, Ui.TextFaint);
 
-            FlatButton cancel = MakeButton("取消", 440, 232, 96, false);
+            FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 440, 232, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
             Shown += delegate
             {
@@ -128,7 +128,7 @@ namespace WtSkin
 
         public static string FormatSource(UpdateSource source)
         {
-            return source == UpdateSource.Mirror ? "国内镜像" : "GitHub";
+            return source == UpdateSource.Mirror ? Lang.T("国内镜像", "China mirror") : "GitHub";
         }
     }
 
@@ -139,15 +139,15 @@ namespace WtSkin
     internal class UpdateReadyDialog : ModalForm
     {
         public UpdateReadyDialog(string currentVersion, string newVersion, long packageSize)
-            : base("更新已就绪", 520, 300)
+            : base(Lang.T("更新已就绪", "Update ready"), 520, 300)
         {
-            string current = string.IsNullOrEmpty(currentVersion) ? "未知" : "v" + TrimV(currentVersion);
-            string latest = string.IsNullOrEmpty(newVersion) ? "未知" : "v" + TrimV(newVersion);
+            string current = string.IsNullOrEmpty(currentVersion) ? Lang.T("未知", "unknown") : "v" + TrimV(currentVersion);
+            string latest = string.IsNullOrEmpty(newVersion) ? Lang.T("未知", "unknown") : "v" + TrimV(newVersion);
 
-            Row(24, 12, "新版本", latest, Ui.BodyBold, Ui.Accent);
-            Row(24, 40, "当前版本", current, Ui.Body, Ui.TextDim);
-            Row(24, 68, "安装包大小", DownloadFormat.Size(packageSize), Ui.Body, Ui.TextDim);
-            Row(24, 96, "文件校验", "SHA-256 校验通过", Ui.Body, Ui.Good);
+            Row(24, 12, Lang.T("新版本", "New version"), latest, Ui.BodyBold, Ui.Accent);
+            Row(24, 40, Lang.T("当前版本", "Current version"), current, Ui.Body, Ui.TextDim);
+            Row(24, 68, Lang.T("安装包大小", "Package size"), DownloadFormat.Size(packageSize), Ui.Body, Ui.TextDim);
+            Row(24, 96, Lang.T("文件校验", "Verification"), Lang.T("SHA-256 校验通过", "SHA-256 verified"), Ui.Body, Ui.Good);
 
             Panel divider = new Panel();
             divider.BackColor = Ui.LineSoft;
@@ -157,18 +157,18 @@ namespace WtSkin
             divider.Height = 1;
             Content.Controls.Add(divider);
 
-            Label hint = MakeLabel("更新会关闭当前程序，替换完成后自动重新启动。\n" +
-                                   "旧版本会备份到安装目录外的 backups 文件夹；替换失败会自动回滚并继续用旧版本。",
+            Label hint = MakeLabel(Lang.T("更新会关闭当前程序，替换完成后自动重新启动。\n", "The update closes the current app and restarts it when finished.\n") +
+                                   Lang.T("旧版本会备份到安装目录外的 backups 文件夹；替换失败会自动回滚并继续用旧版本。", "The old version is backed up; on failure the update rolls back and keeps using the old version."),
                                    24, 138, 472, 46, Ui.Small, Ui.TextFaint);
             hint.Height = Ui.S(46);
 
-            FlatButton later = MakeButton("稍后", 296, 190, 96, false);
+            FlatButton later = MakeButton(Lang.T("稍后", "Later"), 296, 190, 96, false);
             later.Click += delegate
             {
                 DialogResult = DialogResult.Cancel;
                 Close();
             };
-            FlatButton install = MakeButton("立即更新", 400, 190, 96, true);
+            FlatButton install = MakeButton(Lang.T("立即更新", "Update now"), 400, 190, 96, true);
             install.Click += delegate
             {
                 DialogResult = DialogResult.OK;
