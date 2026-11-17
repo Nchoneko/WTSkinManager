@@ -5,6 +5,9 @@ out/
 *.exe
 WTSkinManager.exe
 
+# 第三方载具图标（版权归 Gaijin，不随仓库分发；本地构建需要时自行放置）
+assets/vehicles/*.png
+
 # 构建期生成，不入库；由 build/build.ps1 从 assets/vehicles 重新生成
 assets/vehicles.zip
 assets/data/data-manifest.json

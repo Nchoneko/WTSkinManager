@@ -405,6 +405,141 @@ namespace WtSkin
         }
     }
 
+    /// <summary>网盘下载按钮：左侧单色图标底（与页面背景区分），右侧文字。</summary>
+    internal class DownloadLinkButton : Control
+    {
+        public event EventHandler Open;
+        private bool _hover;
+        private bool _down;
+        private string _badge = "";
+        private string _title = "";
+
+        public string Badge
+        {
+            get { return _badge; }
+            set { _badge = value ?? ""; Invalidate(); }
+        }
+
+        public string Title
+        {
+            get { return _title; }
+            set { _title = value ?? ""; Invalidate(); }
+        }
+
+        public DownloadLinkButton()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            BackColor = Ui.Panel;
+            Cursor = Cursors.Hand;
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { _hover = false; _down = false; Invalidate(); base.OnMouseLeave(e); }
+        protected override void OnMouseDown(MouseEventArgs e) { _down = true; Invalidate(); base.OnMouseDown(e); }
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            _down = false;
+            Invalidate();
+            if (e.Button == MouseButtons.Left && ClientRectangle.Contains(e.Location) && Open != null)
+            {
+                Open(this, EventArgs.Empty);
+            }
+            base.OnMouseUp(e);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            Ui.Smooth(g);
+            Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
+            Color fill = _down ? Ui.PanelActive : (_hover ? Ui.PanelHover : Ui.BgSoft);
+            Ui.FillRound(g, r, Ui.S(10), fill);
+            Ui.DrawRound(g, r, Ui.S(10), _hover ? Ui.Accent : Ui.LineSoft, Ui.BorderWidth);
+            int box = Ui.S(30);
+            Rectangle icon = new Rectangle(Ui.S(12), (Height - box) / 2, box, box);
+            Ui.FillRound(g, icon, Ui.S(8), Ui.PanelActive);
+            Ui.DrawText(g, _badge, Ui.SmallBold, Ui.Accent, icon,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+            Rectangle text = new Rectangle(icon.Right + Ui.S(10), 0,
+                    Math.Max(Ui.S(20), Width - icon.Right - Ui.S(20)), Height);
+            Ui.DrawText(g, _title, Ui.BodyBold, Ui.Text, text,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix |
+                    TextFormatFlags.EndEllipsis);
+        }
+    }
+
+    /// <summary>删除图标包确认：深色弹窗，默认焦点在取消上。</summary>
+    internal class DeleteIconsConfirmForm : ModalForm
+    {
+        public DeleteIconsConfirmForm(string path)
+            : base("删除图标包", 560, 280)
+        {
+            MakeLabel("确定删除图标包？", 24, 16, 512, 26, Ui.BodyBold, Ui.Text);
+            Label pathLabel = MakeLabel(path, 24, 48, 512, 22, Ui.Mono, Ui.TextDim);
+            pathLabel.AutoEllipsis = true;
+            MakeLabel("删除并重启后，载具图标会显示为占位图；之后可以重新拖入或从网盘下载。",
+                      24, 84, 512, 40, Ui.Small, Ui.TextDim);
+
+            FlatButton cancel = MakeButton("取消", 300, 190, 96, false);
+            cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
+            FlatButton delete = MakeButton("删除", 408, 190, 120, false);
+            delete.Danger = true;
+            delete.Click += delegate { DialogResult = DialogResult.OK; Close(); };
+            Shown += delegate
+            {
+                int y = Content.Height - Ui.S(18) - Ui.S(38);
+                delete.SetBounds(Content.Width - Ui.S(24) - Ui.S(120), y, Ui.S(120), Ui.S(38));
+                cancel.SetBounds(delete.Left - Ui.S(10) - Ui.S(96), y, Ui.S(96), Ui.S(38));
+                cancel.Focus();
+            };
+        }
+    }
+
+    /// <summary>深色信息提示：单一「确定」按钮。</summary>
+    internal class InfoDialog : ModalForm
+    {
+        public InfoDialog(string title, string message)
+            : base(title, 560, 260)
+        {
+            Label text = MakeLabel(message, 24, 16, 512, 120, Ui.Body, Ui.Text);
+            text.AutoEllipsis = true;
+            FlatButton ok = MakeButton("确定", 440, 180, 96, true);
+            ok.Click += delegate { DialogResult = DialogResult.OK; Close(); };
+            Shown += delegate
+            {
+                int y = Content.Height - Ui.S(18) - Ui.S(38);
+                ok.SetBounds(Content.Width - Ui.S(24) - Ui.S(96), y, Ui.S(96), Ui.S(38));
+                ok.Focus();
+            };
+        }
+    }
+
+    /// <summary>需要重启时的二选一：稍后重启（默认）或立刻重启。</summary>
+    internal class RestartChoiceDialog : ModalForm
+    {
+        public RestartChoiceDialog(string message)
+            : base("需要重启", 520, 250)
+        {
+            Label text = MakeLabel(message, 24, 16, 472, 88, Ui.Body, Ui.Text);
+            text.AutoEllipsis = true;
+            MakeLabel("选择「立刻重启」后约 2 秒自动重新打开程序。",
+                      24, 112, 472, 20, Ui.Small, Ui.TextFaint);
+
+            FlatButton later = MakeButton("稍后重启", 278, 160, 100, false);
+            later.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
+            FlatButton now = MakeButton("立刻重启", 390, 160, 100, true);
+            now.Click += delegate { DialogResult = DialogResult.OK; Close(); };
+            Shown += delegate
+            {
+                int y = Content.Height - Ui.S(18) - Ui.S(38);
+                now.SetBounds(Content.Width - Ui.S(24) - Ui.S(100), y, Ui.S(100), Ui.S(38));
+                later.SetBounds(now.Left - Ui.S(10) - Ui.S(100), y, Ui.S(100), Ui.S(38));
+                later.Focus();
+            };
+        }
+    }
+
     internal class SettingsForm : ModalForm
     {
         private TextBox _dirBox;
@@ -447,6 +582,8 @@ namespace WtSkin
         private FlatButton _policyAsk;
         private FlatButton _policyAuto;
         private FlatButton _policyOff;
+        private BufferedPanel _pageIcons;
+        private SideTab _tabIcons;
 
         public bool NeedRestart;
 
@@ -490,6 +627,12 @@ namespace WtSkin
             _pageUpdate.Visible = false;
             Content.Controls.Add(_pageUpdate);
 
+            _pageIcons = new BufferedPanel();
+            _pageIcons.BackColor = Ui.Panel;
+            _pageIcons.SetBounds(Ui.S(200), Ui.S(12), Ui.S(pageWidth), Ui.S(pageHeight));
+            _pageIcons.Visible = false;
+            Content.Controls.Add(_pageIcons);
+
             _pageDonate = new BufferedPanel();
             _pageDonate.BackColor = Ui.Panel;
             _pageDonate.SetBounds(Ui.S(200), Ui.S(12), Ui.S(pageWidth), Ui.S(pageHeight));
@@ -515,6 +658,12 @@ namespace WtSkin
             _tabCert.Click += delegate { SelectPage(2); };
             Content.Controls.Add(_tabCert);
 
+            _tabIcons = new SideTab();
+            _tabIcons.Text = "涂装包";
+            _tabIcons.SetBounds(Ui.S(16), Ui.S(208), Ui.S(168), Ui.S(42));
+            _tabIcons.Click += delegate { SelectPage(5); };
+            Content.Controls.Add(_tabIcons);
+
             _tabUpdate = new SideTab();
             _tabUpdate.Text = "更新与日志";
             _tabUpdate.SetBounds(Ui.S(16), Ui.S(160), Ui.S(168), Ui.S(42));
@@ -532,6 +681,7 @@ namespace WtSkin
             BuildCertPage();
             BuildUpdatePage();
             BuildDonatePage();
+            BuildIconsPage();
 
             FlatButton cancel = MakeButton("取消", 610, 536, 96, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
@@ -549,16 +699,19 @@ namespace WtSkin
             _pageCert.Visible = page == 2;
             _pageUpdate.Visible = page == 3;
             _pageDonate.Visible = page == 4;
+            _pageIcons.Visible = page == 5;
             _tabUi.Selected = page == 0;
             _tabPrefs.Selected = page == 1;
             _tabCert.Selected = page == 2;
             _tabUpdate.Selected = page == 3;
             _tabDonate.Selected = page == 4;
+            _tabIcons.Selected = page == 5;
             _tabUi.Invalidate();
             _tabPrefs.Invalidate();
             _tabCert.Invalidate();
             _tabUpdate.Invalidate();
             _tabDonate.Invalidate();
+            _tabIcons.Invalidate();
             if (page == 2)
             {
                 RefreshCert();
@@ -907,6 +1060,233 @@ namespace WtSkin
             }
         }
 
+        /// <summary>「涂装包」页：三个网盘并排下载入口 + 拖入 vehicles.zip 一键导入。</summary>
+        private void BuildIconsPage()
+        {
+            PageLabel(_pageIcons, "涂装包下载", 8, 2, 240, 30, Ui.H1, Ui.Text);
+            PageLabel(_pageIcons, "载具图标包属于第三方素材，不随软件、发行 zip 或 GitHub 提供，需要单独下载。",
+                      8, 36, 592, 22, Ui.Small, Ui.TextDim);
+            PageLabel(_pageIcons, "解压后把 vehicles.zip 拖到下方虚线区域，或放到程序目录后重启程序。",
+                      8, 60, 592, 22, Ui.Small, Ui.TextDim);
+
+            PageLabel(_pageIcons, "下载地址", 8, 96, 140, 22, Ui.SmallBold, Ui.TextDim);
+            DownloadLinkButton baidu = new DownloadLinkButton();
+            baidu.Badge = "百";
+            baidu.Title = "百度网盘";
+            baidu.SetBounds(Ui.S(8), Ui.S(122), Ui.S(190), Ui.S(56));
+            baidu.Open += delegate { OpenUrl("https://pan.baidu.com/s/1xxmhGCyle5F7KNd9OykdXA?pwd=97yx"); };
+            _pageIcons.Controls.Add(baidu);
+            DownloadLinkButton quark = new DownloadLinkButton();
+            quark.Badge = "夸";
+            quark.Title = "夸克网盘";
+            quark.SetBounds(Ui.S(210), Ui.S(122), Ui.S(190), Ui.S(56));
+            quark.Open += delegate { OpenUrl("https://pan.quark.cn/s/dad0fa59501a"); };
+            _pageIcons.Controls.Add(quark);
+            DownloadLinkButton pan123 = new DownloadLinkButton();
+            pan123.Badge = "123";
+            pan123.Title = "123 云盘";
+            pan123.SetBounds(Ui.S(412), Ui.S(122), Ui.S(190), Ui.S(56));
+            pan123.Open += delegate { OpenUrl("https://1816316610.share.123pan.cn/123pan/mqhqVv-fDAG3?pwd=amUI#"); };
+            _pageIcons.Controls.Add(pan123);
+
+            PageLabel(_pageIcons, "分卷包约 283 MB：全部分卷下载到同一目录后，用 7-Zip 解压第一个 .001 文件，得到 vehicles.zip。",
+                      8, 190, 592, 22, Ui.Small, Ui.TextFaint);
+
+            Panel drop = new Panel();
+            drop.BackColor = Ui.Panel;
+            drop.SetBounds(Ui.S(8), Ui.S(226), Ui.S(592), Ui.S(116));
+            drop.AllowDrop = true;
+            drop.Cursor = Cursors.Hand;
+            bool hot = false;
+            drop.Paint += delegate(object sender, PaintEventArgs e)
+            {
+                Ui.Smooth(e.Graphics);
+                Rectangle r = new Rectangle(0, 0, drop.Width - 1, drop.Height - 1);
+                Ui.FillRound(e.Graphics, r, Ui.S(10), hot ? Ui.PanelHover : Ui.BgSoft);
+                using (Pen pen = new Pen(hot ? Ui.Accent : Ui.Stroke, Math.Max(1f, Ui.BorderWidth)))
+                {
+                    pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                    Ui.DrawRound(e.Graphics, r, Ui.S(10), pen.Color, (int)pen.Width);
+                }
+                Ui.DrawText(e.Graphics, "把 vehicles.zip 拖到这里导入", Ui.BodyBold,
+                        Ui.Text, new Rectangle(Ui.S(12), Ui.S(20), drop.Width - Ui.S(24), Ui.S(24)),
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+                Ui.DrawText(e.Graphics, "会自动复制到程序目录；旧图标包会保留为 .bak 备份。",
+                        Ui.Small, Ui.TextFaint,
+                        new Rectangle(Ui.S(12), Ui.S(52), drop.Width - Ui.S(24), Ui.S(20)),
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPrefix);
+                Ui.DrawText(e.Graphics, "也可以直接点击这里选择文件。",
+                        Ui.Small, Ui.TextFaint,
+                        new Rectangle(Ui.S(12), Ui.S(76), drop.Width - Ui.S(24), Ui.S(20)),
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPrefix);
+            };
+            drop.DragEnter += delegate(object sender, DragEventArgs e)
+            {
+                hot = e.Data.GetDataPresent(DataFormats.FileDrop);
+                e.Effect = hot ? DragDropEffects.Copy : DragDropEffects.None;
+                drop.Invalidate();
+            };
+            drop.DragLeave += delegate { hot = false; drop.Invalidate(); };
+            drop.DragDrop += delegate(object sender, DragEventArgs e)
+            {
+                hot = false;
+                drop.Invalidate();
+                string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
+                if (files != null && files.Length > 0)
+                {
+                    ImportIconPackage(files[0]);
+                }
+            };
+            drop.Click += delegate
+            {
+                using (OpenFileDialog dialog = new OpenFileDialog())
+                {
+                    dialog.Title = "选择涂装包 vehicles.zip";
+                    dialog.Filter = "图标包 (*.zip)|*.zip|所有文件 (*.*)|*.*";
+                    if (dialog.ShowDialog(this) == DialogResult.OK)
+                    {
+                        ImportIconPackage(dialog.FileName);
+                    }
+                }
+            };
+            _pageIcons.Controls.Add(drop);
+
+            PageLabel(_pageIcons, "缺少图标包时程序仍可正常使用，只是显示占位图；导入后重启程序生效。",
+                      8, 354, 592, 20, Ui.Small, Ui.TextFaint);
+            PageButton(_pageIcons, "打开程序目录", 8, 380, 140, false).Click += delegate
+            {
+                OpenFolder(Config.InstallDir);
+            };
+            FlatButton deleteIcons = PageButton(_pageIcons, "删除图标包", 160, 380, 140, false);
+            deleteIcons.Danger = true;
+            deleteIcons.Click += delegate
+            {
+                string target = Path.Combine(Config.ExeDir, "vehicles.zip");
+                if (!File.Exists(target))
+                {
+                    MessageBox.Show(this, "程序目录下没有 vehicles.zip。", "删除图标包",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                bool confirmed;
+                using (DeleteIconsConfirmForm form = new DeleteIconsConfirmForm(target))
+                {
+                    confirmed = form.ShowDialog(this) == DialogResult.OK;
+                }
+                if (!confirmed)
+                {
+                    return;
+                }
+                try
+                {
+                    VehicleIcons.CloseCache();
+                    File.Delete(target);
+                    Config.Log("删除图标包：" + target);
+                    using (InfoDialog info = new InfoDialog("删除图标包",
+                        "已删除：" + target + "\r\n\r\n重启程序后图标会变为占位图，可随时重新拖入或从网盘下载。"))
+                    {
+                        info.ShowDialog(this);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "删除失败：" + ex.Message, "删除图标包",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            };
+        }
+
+        /// <summary>校验并导入拖入的 vehicles.zip：必须是合法图标包，复制到程序目录并备份旧包。</summary>
+        private void ImportIconPackage(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                return;
+            }
+            if (!path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show(this, "请拖入解压后的 vehicles.zip；分卷 .7z/.001 需要先用 7-Zip 解压。",
+                                "导入图标包", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            try
+            {
+                using (System.IO.Compression.ZipArchive zip =
+                       System.IO.Compression.ZipFile.OpenRead(path))
+                {
+                    bool manifest = false;
+                    int icons = 0;
+                    for (int i = 0; i < zip.Entries.Count; i++)
+                    {
+                        string name = zip.Entries[i].FullName;
+                        if (string.Equals(name, "manifest.json", StringComparison.OrdinalIgnoreCase))
+                        {
+                            manifest = true;
+                        }
+                        else if (name.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                        {
+                            icons++;
+                        }
+                    }
+                    if (!manifest || icons == 0)
+                    {
+                        MessageBox.Show(this, "这不是有效的涂装包：缺少 manifest.json 或图标文件。",
+                                        "导入图标包", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "无法读取该 zip：" + ex.Message, "导入图标包",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            string target = Path.Combine(Config.ExeDir, "vehicles.zip");
+            try
+            {
+                if (File.Exists(target))
+                {
+                    string backup = target + ".bak";
+                    try
+                    {
+                        if (File.Exists(backup))
+                        {
+                            File.Delete(backup);
+                        }
+                        File.Copy(target, backup, true);
+                    }
+                    catch
+                    {
+                    }
+                }
+                string temp = target + ".new";
+                File.Copy(path, temp, true);
+                if (File.Exists(target))
+                {
+                    File.Delete(target);
+                }
+                File.Move(temp, target);
+                Config.Log("导入图标包：" + path + " → " + target);
+                bool restart;
+                using (RestartChoiceDialog dialog = new RestartChoiceDialog(
+                    "图标包已导入到：\r\n" + target + "\r\n\r\n重启程序后图标才会生效。"))
+                {
+                    restart = dialog.ShowDialog(this) == DialogResult.OK;
+                }
+                if (restart)
+                {
+                    // 延迟 2 秒再启动新进程，先让当前进程完全退出，避免单实例检查拦截。
+                    AppRestart.Restart();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "导入失败：" + ex.Message, "导入图标包",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void BuildUpdatePage()
         {
             _updateSection = new UpdateCheckSection();
@@ -1235,10 +1615,13 @@ namespace WtSkin
 
             if (zoomChanged || themeChanged)
             {
-                DialogResult answer = MessageBox.Show(this,
-                    "界面设置已保存，主题和缩放需要重启程序才能完全生效。\n\n现在重启吗？",
-                    "需要重启", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (answer == DialogResult.Yes)
+                bool restart;
+                using (RestartChoiceDialog dialog = new RestartChoiceDialog(
+                    "界面设置已保存，主题和缩放需要重启程序才能完全生效。"))
+                {
+                    restart = dialog.ShowDialog(this) == DialogResult.OK;
+                }
+                if (restart)
                 {
                     NeedRestart = true;
                 }

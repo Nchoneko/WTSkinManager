@@ -6,6 +6,14 @@
 schemaVersion=1
 dataVersion=2026.11.08.1
 
+[3.9.29]
+date=2026-11-18
+data=2026.11.11.3
+changed=图标包移出安装包，改为单独分发的 vehicles.zip
+added=设置页涂装包下载与拖入导入
+fixed=安装/更新时自动确认关闭运行中的程序
+fixed=切页残影与重启提示样式
+
 [3.9.28]
 date=2026-11-18
 data=2026.11.11.3

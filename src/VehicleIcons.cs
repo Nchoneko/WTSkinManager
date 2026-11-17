@@ -98,6 +98,57 @@ namespace WtSkin
             return bitmap;
         }
 
+        /// <summary>删除/替换外部图标包前释放文件句柄与已缓存位图。</summary>
+        public static void CloseCache()
+        {
+            lock (Sync)
+            {
+                foreach (Bitmap bitmap in Cache.Values)
+                {
+                    try { bitmap.Dispose(); } catch { }
+                }
+                Cache.Clear();
+                Lru.Clear();
+            }
+            lock (ZipSync)
+            {
+                try { if (_zip != null) _zip.Dispose(); } catch { }
+                try { if (_zipStream != null) _zipStream.Dispose(); } catch { }
+                _zip = null;
+                _zipStream = null;
+            }
+        }
+
+        private static string FindExternalZip()
+        {
+            string[] dirs = new string[]
+            {
+                Config.ExeDir,
+                Config.InstallDir,
+                Path.Combine(Config.ExeDir ?? "", "assets"),
+                Path.Combine(Config.InstallDir ?? "", "assets")
+            };
+            for (int i = 0; i < dirs.Length; i++)
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(dirs[i]))
+                    {
+                        continue;
+                    }
+                    string path = Path.Combine(dirs[i], "vehicles.zip");
+                    if (File.Exists(path))
+                    {
+                        return path;
+                    }
+                }
+                catch
+                {
+                }
+            }
+            return "";
+        }
+
         private static ZipArchive _zip;
         private static Stream _zipStream;
         private static readonly object ZipSync = new object();
@@ -114,7 +165,13 @@ namespace WtSkin
                         _zipStream = typeof(VehicleIcons).Assembly.GetManifestResourceStream("vehicles.zip");
                         if (_zipStream == null)
                         {
-                            return null;
+                            // 新版发行包把图标拆成独立 vehicles.zip，放在 exe 同级或 assets 目录下。
+                            string zipPath = FindExternalZip();
+                            if (zipPath.Length == 0)
+                            {
+                                return null;
+                            }
+                            _zipStream = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                         }
                         _zip = new ZipArchive(_zipStream, ZipArchiveMode.Read);
                     }

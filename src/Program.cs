@@ -32,33 +32,78 @@ namespace WtSkin
             }
 
             bool created;
-            using (Mutex mutex = new Mutex(true, "WTSkinManager.SingleInstance", out created))
+            bool uiReady = false;
+            Mutex mutex = new Mutex(true, "WTSkinManager.SingleInstance", out created);
+            if (!created)
             {
-                InstanceGuard.Attach(mutex);
+                // 已经有一个实例（常见于「更新时主程序还开着」）：先在深色弹窗里询问是否关闭，
+                // 关闭成功后再重新抢锁继续启动，而不是直接弹系统「已经在运行了」。
+                mutex.Dispose();
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Config.InstallDir = Config.DetectInstallDir();
+                Config.Load();
+                Ui.SetTheme(Config.ThemeIndex);
+                Ui.Animations = false;
+                Ui.Init(Native.GetDpiScale() * (Config.ZoomPercent / 100f), Config.ZoomPercent / 100f);
+                uiReady = true;
+
+                List<Process> running = RunningInstance.FindOthers();
+                bool closeThem = false;
+                if (running.Count > 0)
+                {
+                    using (CloseRunningAppForm form = new CloseRunningAppForm(running.Count))
+                    {
+                        closeThem = form.ShowDialog() == DialogResult.OK;
+                    }
+                    if (closeThem)
+                    {
+                        string closeError;
+                        if (!RunningInstance.CloseAll(running, out closeError))
+                        {
+                            MessageBox.Show("无法关闭正在运行的程序：\n\n" + closeError +
+                                            "\n\n请手动退出后重试。", "关闭失败",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+                    }
+                }
+                if (!closeThem)
+                {
+                    return;
+                }
+                Thread.Sleep(500);
+                mutex = new Mutex(true, "WTSkinManager.SingleInstance", out created);
                 if (!created)
                 {
                     MessageBox.Show("战雷涂装管理器已经在运行了。", "战雷涂装管理器",
                                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
-
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-                Application.ThreadException += delegate(object sender, ThreadExceptionEventArgs e)
+            }
+            using (mutex)
+            {
+                InstanceGuard.Attach(mutex);
+                if (!uiReady)
                 {
-                    ShowCrash(e.Exception);
-                };
-                AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e)
-                {
-                    ShowCrash(e.ExceptionObject as Exception);
-                };
+                    Application.EnableVisualStyles();
+                    Application.SetCompatibleTextRenderingDefault(false);
+                    Application.ThreadException += delegate(object sender, ThreadExceptionEventArgs e)
+                    {
+                        ShowCrash(e.Exception);
+                    };
+                    AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e)
+                    {
+                        ShowCrash(e.ExceptionObject as Exception);
+                    };
 
-                Config.InstallDir = Config.DetectInstallDir();
-                Config.Load();
-                Ui.SetTheme(Config.ThemeIndex);
-                // 全部界面动画关闭：淡入/滑入/分页过渡/浮层渐变都不再执行
-                Ui.Animations = false;
-                Ui.Init(Native.GetDpiScale() * (Config.ZoomPercent / 100f), Config.ZoomPercent / 100f);
+                    Config.InstallDir = Config.DetectInstallDir();
+                    Config.Load();
+                    Ui.SetTheme(Config.ThemeIndex);
+                    // 全部界面动画关闭：淡入/滑入/分页过渡/浮层渐变都不再执行
+                    Ui.Animations = false;
+                    Ui.Init(Native.GetDpiScale() * (Config.ZoomPercent / 100f), Config.ZoomPercent / 100f);
+                }
 
                 // 上次自更新失败回滚过：启动时提示一次（读完即删）。
                 UpdateInstaller.ShowRollbackNotice();

@@ -390,6 +390,28 @@ namespace WtSkin
                 return;
             }
 
+            // 安装/更新前先处理仍在运行的主程序，否则覆盖文件会失败或需要重启。
+            List<System.Diagnostics.Process> running = RunningInstance.FindOthers();
+            if (running.Count > 0)
+            {
+                using (CloseRunningAppForm form = new CloseRunningAppForm(running.Count))
+                {
+                    if (form.ShowDialog(this) != DialogResult.OK)
+                    {
+                        return;
+                    }
+                }
+                string closeError;
+                if (!RunningInstance.CloseAll(running, out closeError))
+                {
+                    MessageBox.Show(this, "无法关闭正在运行的程序：\n\n" + closeError +
+                                    "\n\n请手动退出后重试。", "关闭失败",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                InstallLog.Write("安装前已关闭正在运行的实例 " + running.Count + " 个");
+            }
+
             InstallCandidate target = _scan.Match(fullInstall);
             if (target != null && target.Version != null)
             {
@@ -708,6 +730,33 @@ namespace WtSkin
             cancel.Click += delegate { Retry = false; DialogResult = DialogResult.Cancel; Close(); };
             FlatButton retry = MakeButton("重试", 510, 220, 96, true);
             retry.Click += delegate { Retry = true; DialogResult = DialogResult.OK; Close(); };
+        }
+    }
+
+    /// <summary>安装/更新前发现主程序仍在运行：确认是否关闭并继续。</summary>
+    internal class CloseRunningAppForm : ModalForm
+    {
+        public CloseRunningAppForm(int count)
+            : base("程序正在运行", 540, 260)
+        {
+            MakeLabel("检测到战雷涂装管理器正在运行" + (count > 1 ? "（" + count + " 个实例）" : "") + "。",
+                      24, 16, 492, 24, Ui.BodyBold, Ui.Text);
+            MakeLabel("安装 / 更新需要先关闭它，未保存的操作会丢失。关闭后安装向导会继续。",
+                      24, 48, 492, 40, Ui.Small, Ui.TextDim);
+            MakeLabel("也可以选择「取消」，手动退出程序后重新打开安装包。",
+                      24, 92, 492, 20, Ui.Small, Ui.TextFaint);
+
+            FlatButton cancel = MakeButton("取消", 300, 180, 96, false);
+            cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
+            FlatButton close = MakeButton("关闭并继续", 408, 180, 120, true);
+            close.Click += delegate { DialogResult = DialogResult.OK; Close(); };
+            Shown += delegate
+            {
+                int y = Content.Height - Ui.S(18) - Ui.S(38);
+                close.SetBounds(Content.Width - Ui.S(24) - Ui.S(120), y, Ui.S(120), Ui.S(38));
+                cancel.SetBounds(close.Left - Ui.S(10) - Ui.S(96), y, Ui.S(96), Ui.S(38));
+                cancel.Focus();
+            };
         }
     }
 }

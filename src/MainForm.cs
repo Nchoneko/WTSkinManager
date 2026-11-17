@@ -1588,6 +1588,11 @@ namespace WtSkin
             hide.Visible = false;
             show.Visible = true;
             show.BringToFront();
+            // 切页时隐藏/显示会改变空态拖放区高度，按钮位置随之变化；
+            // 同时整块重绘并立即刷新，避免旧位置残留一帧（表现为两个「选择文件」按钮）。
+            hide.Invalidate(true);
+            show.Invalidate(true);
+            Update();
             LayoutResizeEdges();
             _tabs.Active = page;
             _tabs.Invalidate();
@@ -3113,7 +3118,7 @@ namespace WtSkin
                     UpdateStatus();
                     if (settings.NeedRestart)
                     {
-                        Application.Restart();
+                        AppRestart.Restart();
                         return;
                     }
                 }

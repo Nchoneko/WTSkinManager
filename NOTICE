@@ -28,11 +28,13 @@ See the LICENSE file for the full license text.
 图标与数据素材 / Artwork and data
 --------------------------------------------------------------------------------
 
-1. 载具图标
+1. 载具图标（不随本仓库/发行物分发）
    来自 War Thunder 官方 Wiki（https://wiki.warthunder.com/）与官方百科图床
    （https://static.encyclopedia.warthunder.com/），仅用于在界面中识别、展示
    对应载具。图片版权归 Gaijin Entertainment 及各权利人所有，不以 Apache-2.0
    授权，也不表示与 Gaijin Entertainment 存在隶属、合作或背书关系。
+   为符合开源许可，本仓库与 GitHub Release 均不包含这些图片；
+   图标包由用户自行从第三方网盘下载，放置到程序目录后由程序本地读取。
    来源与抓取方式的逐项说明见 assets/SOURCES.md。
 
 2. 应用图标与界面图形

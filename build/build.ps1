@@ -150,6 +150,12 @@ $shortVersion = (($buildVersion.Split('.')[0..2]) -join '.')
 
 # ---------------- 图标清单 ----------------
 Write-Step '校验载具图标清单'
+$hasIcons = @(Get-ChildItem -LiteralPath $VehicleDir -Filter *.png -File -ErrorAction SilentlyContinue).Count -gt 0
+if (-not $hasIcons) {
+    Write-Host 'ICONS 跳过：开源仓库不包含第三方图标资源，由单独分发的 vehicles.zip 提供'
+    $zipItems = New-Object System.Collections.ArrayList
+}
+else {
 if (-not (Test-Path $VehicleDir)) { throw "找不到图标目录：$VehicleDir" }
 $manifestPath = Join-Path $VehicleDir 'manifest.json'
 if (-not (Test-Path $manifestPath)) { throw "缺少清单：$manifestPath" }
@@ -206,6 +212,7 @@ if ($bad.Count -gt 0) {
 if ($totalBytes -gt 350MB) { throw ("图标总体积超出 350MB 预算: {0:N0} bytes" -f $totalBytes) }
 Write-Host ("ICONS 清单 {0} 条：成功 {1} · 重试中 {2} · 永久失败 {3}" -f $entries.Count, $ok, $retrying, $permanent)
 Write-Host ("ICONS 唯一文件 {0} 张  {1:N0} bytes（{2:N1} MB）" -f $unique.Count, $totalBytes, ($totalBytes / 1MB))
+}
 
 # ---------------- 数据版本 ----------------
 Write-Step '校验随包数据版本头'
@@ -245,11 +252,13 @@ if ($metaCount -ge 0 -and $metaCount -ne $metaActual) {
 Require-Header $metaPath $metaActual $schemaVersion $dataVersion
 $specs += @{ file = 'vehicle_meta.dat'; entries = $metaActual }
 
-$manifestSchema = [int]$manifest.schemaVersion
-$manifestData = [string]$manifest.dataVersion
-if ($manifestSchema -ne $schemaVersion) { throw 'manifest.json 的 schemaVersion 与 data-version.ini 不一致' }
-if ($manifestData -ne $dataVersion) { throw 'manifest.json 的 dataVersion 与 data-version.ini 不一致' }
-$specs += @{ file = 'vehicles/manifest.json'; entries = $entries.Count }
+if ($hasIcons) {
+    $manifestSchema = [int]$manifest.schemaVersion
+    $manifestData = [string]$manifest.dataVersion
+    if ($manifestSchema -ne $schemaVersion) { throw 'manifest.json 的 schemaVersion 与 data-version.ini 不一致' }
+    if ($manifestData -ne $dataVersion) { throw 'manifest.json 的 dataVersion 与 data-version.ini 不一致' }
+    $specs += @{ file = 'vehicles/manifest.json'; entries = $entries.Count }
+}
 
 $dataManifest = [ordered]@{
     schemaVersion = $schemaVersion
@@ -318,6 +327,7 @@ if ($privateKeys.Count -gt 0) {
 Write-Host ("CERT publisher.cer {0:N0} bytes SHA256 {1}" -f (Get-Item $CertAsset).Length, $certHash)
 
 # ---------------- 重新生成 vehicles.zip ----------------
+if ($hasIcons) {
 Write-Step '从 assets/vehicles/*.png 重新生成 vehicles.zip'
 $iconsZip = Join-Path $OutputDir 'vehicles.zip'
 if (Test-Path $iconsZip) { Remove-Item $iconsZip -Force }
@@ -354,6 +364,7 @@ if ($zipEntryCount -ne ($zipItems.Count + 2)) {
 }
 $zipBytes = (Get-Item $iconsZip).Length
 Write-Host ("ZIP {0} 个条目  {1:N0} bytes（{2:N1} MB）" -f $zipEntryCount, $zipBytes, ($zipBytes / 1MB))
+}
 
 # ---------------- 构建信息 ----------------
 Write-Step '写入构建信息'
@@ -391,7 +402,6 @@ $cscArgs = @(
     ('/resource:' + (Join-Path $Root 'assets\donate\alipay.jpg') + ',donate_alipay.jpg'),
     ('/resource:' + (Join-Path $Root 'assets\donate\wechat.png') + ',donate_wechat.png'),
     ('/resource:' + $CertAsset + ',publisher.cer'),
-    ('/resource:' + $iconsZip + ',vehicles.zip'),
     ('/out:' + $exe),
     '/r:System.dll',
     '/r:System.Core.dll',
