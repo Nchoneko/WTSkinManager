@@ -155,7 +155,7 @@ namespace WtSkin
                 }
                 if (VehicleDb.Find(id) != null)
                 {
-                    return id;
+                    return VehicleDb.CanonicalId(id);
                 }
             }
             if (VehicleDb.Find(name) != null)

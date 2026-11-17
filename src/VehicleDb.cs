@@ -534,8 +534,27 @@ namespace WtSkin
             return map;
         }
 
+        private static readonly Dictionary<string, string> IdAliases =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                // 游戏内正确代号是 vjtf（VJTF）；vjft 是历史误写，统一归一到正确代号。
+                { "germ_schutzenpanzer_puma_vjft", "germ_schutzenpanzer_puma_vjtf" }
+            };
+
+        /// <summary>把已知误写代号归一到游戏内正确代号。</summary>
+        public static string CanonicalId(string unitId)
+        {
+            if (string.IsNullOrEmpty(unitId))
+            {
+                return unitId;
+            }
+            string canonical;
+            return IdAliases.TryGetValue(unitId, out canonical) ? canonical : unitId;
+        }
+
         public static Vehicle Find(string unitId)
         {
+            unitId = CanonicalId(unitId);
             EnsureLoaded();
             if (string.IsNullOrEmpty(unitId))
             {

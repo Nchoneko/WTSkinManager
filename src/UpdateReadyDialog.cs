@@ -60,6 +60,78 @@ namespace WtSkin
         }
     }
 
+    internal enum UpdateSource
+    {
+        Mirror,
+        GitHub
+    }
+
+    /// <summary>
+    /// 发现新版本后先选更新源：国内镜像（推荐）或 GitHub 直连。
+    /// 直接点其中一行即开始，取消 = 不更新。Esc 等同取消。
+    /// </summary>
+    internal class UpdateSourceDialog : ModalForm
+    {
+        public const string MirrorPrefix = "https://gh-proxy.com/";
+        public UpdateSource Source = UpdateSource.Mirror;
+
+        public UpdateSourceDialog(string versionText)
+            : base("选择更新源", 560, 300)
+        {
+            MakeLabel("发现新版本 v" + (versionText ?? ""), 24, 16, 512, 26, Ui.H1, Ui.Text);
+            MakeLabel("请选择下载方式：镜像更快，GitHub 官方源可能需要代理。",
+                      24, 48, 512, 22, Ui.Small, Ui.TextDim);
+
+            FlatButton mirror = MakeButton("使用国内镜像源更新（推荐）", 24, 84, 512, true);
+            mirror.Height = Ui.S(44);
+            mirror.Click += delegate
+            {
+                Source = UpdateSource.Mirror;
+                DialogResult = DialogResult.OK;
+                Close();
+            };
+            FlatButton github = MakeButton("使用 GitHub 源（可能需要代理）", 24, 140, 512, false);
+            github.Height = Ui.S(44);
+            github.Click += delegate
+            {
+                Source = UpdateSource.GitHub;
+                DialogResult = DialogResult.OK;
+                Close();
+            };
+            MakeLabel("镜像地址：gh-proxy.com（仅代理下载，不改变安装位置与校验方式）。",
+                      24, 194, 512, 20, Ui.Small, Ui.TextFaint);
+
+            FlatButton cancel = MakeButton("取消", 440, 232, 96, false);
+            cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
+            Shown += delegate
+            {
+                int y = Content.Height - Ui.S(18) - Ui.S(38);
+                cancel.SetBounds(Content.Width - Ui.S(24) - Ui.S(96), y, Ui.S(96), Ui.S(38));
+                cancel.Focus();
+            };
+        }
+
+        /// <summary>把 GitHub 资产地址转成镜像地址；已经是镜像地址时原样返回。</summary>
+        public static string MirrorUrl(string url)
+        {
+            string value = (url ?? "").Trim();
+            if (value.Length == 0)
+            {
+                return value;
+            }
+            if (value.StartsWith(MirrorPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return value;
+            }
+            return MirrorPrefix + value;
+        }
+
+        public static string FormatSource(UpdateSource source)
+        {
+            return source == UpdateSource.Mirror ? "国内镜像" : "GitHub";
+        }
+    }
+
     /// <summary>
     /// 「更新已就绪」模态弹窗：深色现有样式，显示新旧版本、包大小与 SHA-256 校验结果；
     /// 「立即更新」为主按钮，「稍后」关闭；Esc = 稍后（由 ModalForm 统一处理）。

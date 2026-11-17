@@ -1152,6 +1152,8 @@ namespace WtSkin
 
         // ---------------- 应用内下载 ----------------
 
+        private UpdateSource _source = UpdateSource.Mirror;
+
         private void OnPrimaryAction()
         {
             if (_ready)
@@ -1159,7 +1161,33 @@ namespace WtSkin
                 ShowReadyDialog();
                 return;
             }
+            if (!AskUpdateSource())
+            {
+                return;
+            }
             StartDownload();
+        }
+
+        /// <summary>下载前让用户选镜像或 GitHub 源；取消返回 false。</summary>
+        private bool AskUpdateSource()
+        {
+            if (_result == null || _result.Latest == null)
+            {
+                return false;
+            }
+            Form owner = FindForm();
+            using (UpdateSourceDialog dialog = new UpdateSourceDialog(_result.Latest.ToDisplay()))
+            {
+                DialogResult result = owner != null ? dialog.ShowDialog(owner) : dialog.ShowDialog();
+                if (result != DialogResult.OK)
+                {
+                    Config.Log("自更新：用户取消选择更新源");
+                    return false;
+                }
+                _source = dialog.Source;
+            }
+            Config.Log("自更新：用户选择更新源 → " + UpdateSourceDialog.FormatSource(_source));
+            return true;
         }
 
         private void StartDownload()
@@ -1196,11 +1224,17 @@ namespace WtSkin
             _bar.Visible = true;
             ApplyLayout();
 
-            Config.Log("自更新：开始下载 v" + version +
-                       (_result.DownloadUrl.Length > 0 ? "，地址 " + _result.DownloadUrl : "") +
+            string downloadUrl = _source == UpdateSource.Mirror
+                ? UpdateSourceDialog.MirrorUrl(_result.DownloadUrl)
+                : _result.DownloadUrl;
+            string shaUrl = _source == UpdateSource.Mirror
+                ? UpdateSourceDialog.MirrorUrl(_result.Sha256Url)
+                : _result.Sha256Url;
+            Config.Log("自更新：开始下载 v" + version + "，源 " + UpdateSourceDialog.FormatSource(_source) +
+                       (downloadUrl.Length > 0 ? "，地址 " + downloadUrl : "") +
                        (existing > 0 ? "，断点续传起始 " + existing + " 字节" : ""));
-            UpdateDownloader downloader = new UpdateDownloader(version, _result.DownloadUrl, _result.Sha256,
-                                                               _result.Sha256Url, _result.DownloadSize,
+            UpdateDownloader downloader = new UpdateDownloader(version, downloadUrl, _result.Sha256,
+                                                               shaUrl, _result.DownloadSize,
                                                                OnDownloadProgress, OnDownloadDone);
             _downloader = downloader;
             downloader.Start();

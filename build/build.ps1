@@ -174,12 +174,12 @@ $zipItems = New-Object System.Collections.ArrayList
 
 foreach ($e in $entries) {
     $slug = [string]$e.slug
-    if ($slug -notmatch '^[a-z0-9_]+$') { $bad += "非法 slug: $slug"; continue }
+    if ($slug -notmatch '^[a-z0-9_-]+$') { $bad += "非法 slug: $slug"; continue }
     switch ([string]$e.status) {
         'ok' {
             $ok++
             $file = [string]$e.file
-            if ($file -notmatch '^[a-z0-9_]+\.png$') { $bad += "非法文件名 $slug -> $file"; continue }
+            if ($file -notmatch '^[a-z0-9_-]+\.png$') { $bad += "非法文件名 $slug -> $file"; continue }
             $path = Join-Path $VehicleDir $file
             if (-not (Test-Path $path)) { $bad += "清单登记但文件缺失: $slug -> $file"; continue }
             $size = (Get-Item $path).Length

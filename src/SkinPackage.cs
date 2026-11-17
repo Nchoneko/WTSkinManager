@@ -455,7 +455,7 @@ namespace WtSkin
                     continue;
                 }
                 DetectedUnit unit = new DetectedUnit();
-                unit.UnitId = unitId;
+                unit.UnitId = VehicleDb.CanonicalId(unitId);
                 unit.Vehicle = vehicle;
                 unit.Confidence = confidence;
                 unit.BlkRel = pe.Rel;
