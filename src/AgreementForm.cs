@@ -66,6 +66,10 @@ namespace WtSkin
             {
                 string line = lines[i].TrimEnd();
                 string trim = line.Trim();
+                if (trim.IndexOf("本文件为本地草稿", StringComparison.Ordinal) >= 0)
+                {
+                    continue;
+                }
                 if (trim == "---" || trim == "***")
                 {
                     continue;

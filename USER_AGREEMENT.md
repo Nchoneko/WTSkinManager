@@ -308,6 +308,3 @@ By installing or using the software you agree to this agreement. Key points:
 
 For the full binding terms, see the Chinese text above. Questions or takedown notices: https://github.com/Nchoneko/WTSkinManager/issues
 
----
-
-*本文件为本地草稿：未上传 GitHub、未提交、未集成到软件安装/更新流程、未在程序内展示。*
