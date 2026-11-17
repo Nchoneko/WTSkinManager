@@ -1,6 +1,6 @@
 # 战雷涂装管理器（WTSkinManager）
 
-一个 Windows 小工具（[English version below](#wtskinmanager-english)）：把《战争雷霆》第三方自定义涂装包拖进来，自动识别所属载具，导入到游戏 `UserSkins` 的载具目录下；同时提供涂装备份/还原、删除、重命名、占用统计与载具图标显示。
+一个 Windows 小工具：把《战争雷霆》第三方自定义涂装包拖进来，自动识别所属载具，导入到游戏 `UserSkins` 的载具目录下；同时提供涂装备份/还原、删除、重命名、占用统计与载具图标显示。
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/Nchoneko/WTSkinManager)](https://github.com/Nchoneko/WTSkinManager/releases/latest)
@@ -9,6 +9,8 @@
 > 当前版本 **v3.9.29**（程序内版本 `3.9.29.0`）。
 
 ---
+
+**语言 / Language：** [![简体中文](https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-current-2f81f7?style=for-the-badge)](#战雷涂装管理器wtskinmanager) [![English](https://img.shields.io/badge/English-switch-24292f?style=for-the-badge)](#wtskinmanager-english)
 
 ## 功能
 
@@ -77,6 +79,9 @@ War Thunder 是 Gaijin Entertainment 的商标。
 ---
 
 # WTSkinManager (English)
+
+**Language：** [![简体中文](https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-switch-24292f?style=for-the-badge)](#战雷涂装管理器wtskinmanager) [![English](https://img.shields.io/badge/English-current-2f81f7?style=for-the-badge)](#wtskinmanager-english)
+
 
 A small Windows tool for *War Thunder* third-party custom skins: drag skin packages in, it identifies the vehicle, imports them into the game's `UserSkins\template_<vehicle-id>\` folders, and provides backup/restore, delete, rename, disk-usage stats and offline vehicle icons.
 
