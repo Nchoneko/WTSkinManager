@@ -44,7 +44,7 @@
 - 123 云盘：https://1816316610.share.123pan.cn/123pan/mqhqVv-fDAG3?pwd=amUI
 - Google Drive: https://drive.google.com/file/d/1Xgo_oAew1j6c37l1pP0UnnIR8sXJ6fiU/view?usp=sharing
 
-分卷包约 283 MB，需要全部分卷下载到同一目录，用 7-Zip 解压第一个 `.001`。也可以在「设置 → 涂装包」里把 `vehicles.zip` 直接拖入导入。
+图标包约 283 MB（单文件，非分卷），下载后解压即可得到 `vehicles.zip`。也可以在「设置 → 涂装包」里把 `vehicles.zip` 直接拖入导入。
 
 ## 从源码构建
 
@@ -124,7 +124,7 @@ Vehicle icons are third-party artwork and are **not** included in the exe, the r
 - 123 Pan: https://1816316610.share.123pan.cn/123pan/mqhqVv-fDAG3?pwd=amUI
 - Google Drive: https://drive.google.com/file/d/1Xgo_oAew1j6c37l1pP0UnnIR8sXJ6fiU/view?usp=sharing
 
-The split archive is about 283 MB; download all volumes into one folder and extract the first `.001` file with 7-Zip. You can also drag `vehicles.zip` into "Settings → Icon pack" to import it.
+The icon pack is about 283 MB as a single archive (not split); extract it to get `vehicles.zip`. You can also drag `vehicles.zip` into "Settings → Icon pack" to import it.
 
 ## Build from source
 

@@ -1095,7 +1095,7 @@ namespace WtSkin
             google.Open += delegate { OpenUrl("https://drive.google.com/file/d/1Xgo_oAew1j6c37l1pP0UnnIR8sXJ6fiU/view?usp=sharing"); };
             _pageIcons.Controls.Add(google);
 
-            PageLabel(_pageIcons, "分卷包约 283 MB：全部分卷下载到同一目录后，用 7-Zip 解压第一个 .001 文件，得到 vehicles.zip。",
+            PageLabel(_pageIcons, "图标包约 283 MB（单文件，非分卷）：下载后解压得到 vehicles.zip，可放到程序目录或直接拖入下方区域。",
                       8, 190, 592, 22, Ui.Small, Ui.TextFaint);
 
             Panel drop = new Panel();
@@ -1211,7 +1211,7 @@ namespace WtSkin
             }
             if (!path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
-                MessageBox.Show(this, "请拖入解压后的 vehicles.zip；分卷 .7z/.001 需要先用 7-Zip 解压。",
+                MessageBox.Show(this, "请拖入解压后的 vehicles.zip；.7z 等压缩包需要先用 7-Zip 解压。",
                                 "导入图标包", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
