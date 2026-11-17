@@ -42,6 +42,7 @@
 - 百度网盘：https://pan.baidu.com/s/1xxmhGCyle5F7KNd9OykdXA?pwd=97yx
 - 夸克网盘：https://pan.quark.cn/s/dad0fa59501a
 - 123 云盘：https://1816316610.share.123pan.cn/123pan/mqhqVv-fDAG3?pwd=amUI
+- Google Drive: https://drive.google.com/file/d/1Xgo_oAew1j6c37l1pP0UnnIR8sXJ6fiU/view?usp=sharing
 
 分卷包约 283 MB，需要全部分卷下载到同一目录，用 7-Zip 解压第一个 `.001`。也可以在「设置 → 涂装包」里把 `vehicles.zip` 直接拖入导入。
 
@@ -121,6 +122,7 @@ Vehicle icons are third-party artwork and are **not** included in the exe, the r
 - Baidu Pan: https://pan.baidu.com/s/1xxmhGCyle5F7KNd9OykdXA?pwd=97yx
 - Quark: https://pan.quark.cn/s/dad0fa59501a
 - 123 Pan: https://1816316610.share.123pan.cn/123pan/mqhqVv-fDAG3?pwd=amUI
+- Google Drive: https://drive.google.com/file/d/1Xgo_oAew1j6c37l1pP0UnnIR8sXJ6fiU/view?usp=sharing
 
 The split archive is about 283 MB; download all volumes into one folder and extract the first `.001` file with 7-Zip. You can also drag `vehicles.zip` into "Settings → Icon pack" to import it.
 

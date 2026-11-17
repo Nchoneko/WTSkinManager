@@ -1073,21 +1073,27 @@ namespace WtSkin
             DownloadLinkButton baidu = new DownloadLinkButton();
             baidu.Badge = "百";
             baidu.Title = "百度网盘";
-            baidu.SetBounds(Ui.S(8), Ui.S(122), Ui.S(190), Ui.S(56));
+            baidu.SetBounds(Ui.S(8), Ui.S(122), Ui.S(139), Ui.S(56));
             baidu.Open += delegate { OpenUrl("https://pan.baidu.com/s/1xxmhGCyle5F7KNd9OykdXA?pwd=97yx"); };
             _pageIcons.Controls.Add(baidu);
             DownloadLinkButton quark = new DownloadLinkButton();
             quark.Badge = "夸";
             quark.Title = "夸克网盘";
-            quark.SetBounds(Ui.S(210), Ui.S(122), Ui.S(190), Ui.S(56));
+            quark.SetBounds(Ui.S(159), Ui.S(122), Ui.S(139), Ui.S(56));
             quark.Open += delegate { OpenUrl("https://pan.quark.cn/s/dad0fa59501a"); };
             _pageIcons.Controls.Add(quark);
             DownloadLinkButton pan123 = new DownloadLinkButton();
             pan123.Badge = "123";
             pan123.Title = "123 云盘";
-            pan123.SetBounds(Ui.S(412), Ui.S(122), Ui.S(190), Ui.S(56));
+            pan123.SetBounds(Ui.S(310), Ui.S(122), Ui.S(139), Ui.S(56));
             pan123.Open += delegate { OpenUrl("https://1816316610.share.123pan.cn/123pan/mqhqVv-fDAG3?pwd=amUI#"); };
             _pageIcons.Controls.Add(pan123);
+            DownloadLinkButton google = new DownloadLinkButton();
+            google.Badge = "G";
+            google.Title = "谷歌云盘";
+            google.SetBounds(Ui.S(461), Ui.S(122), Ui.S(139), Ui.S(56));
+            google.Open += delegate { OpenUrl("https://drive.google.com/file/d/1Xgo_oAew1j6c37l1pP0UnnIR8sXJ6fiU/view?usp=sharing"); };
+            _pageIcons.Controls.Add(google);
 
             PageLabel(_pageIcons, "分卷包约 283 MB：全部分卷下载到同一目录后，用 7-Zip 解压第一个 .001 文件，得到 vehicles.zip。",
                       8, 190, 592, 22, Ui.Small, Ui.TextFaint);
