@@ -1737,11 +1737,11 @@ namespace WtSkin
             _list.DoubleClick += delegate { Accept(); };
             Content.Controls.Add(_list);
 
-            MakeLabel(Lang.T("手动输入载具 ID（列表里找不到时用）", "Enter vehicle ID manually (if not in the list)"), 24, 518, 300, 20, Ui.SmallBold, Ui.TextDim);
+            Label manualTitle = MakeLabel(Lang.T("手动输入载具 ID（列表里找不到时用）", "Enter vehicle ID manually (if not in the list)"), 24, 518, 600, 20, Ui.SmallBold, Ui.TextDim);
             TextBox manualField;
             MakeField(24, 540, 300, 36, out manualField);
             _manual = manualField;
-            MakeLabel(Lang.T("ID 就是 .blk 文件的名字，例如 z_10me", "The ID is the .blk filename, e.g. z_10me"), 336, 548, 300, 20, Ui.Small, Ui.TextFaint);
+            Label manualHint = MakeLabel(Lang.T("ID 就是 .blk 文件的名字，例如 z_10me", "The ID is the .blk filename, e.g. z_10me"), 24, 500, 600, 20, Ui.Small, Ui.TextFaint);
 
             FlatButton cancel = MakeButton(Lang.T("取消", "Cancel"), 402, 540, 92, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
@@ -1750,7 +1750,26 @@ namespace WtSkin
 
             _search.TextChanged += delegate { RefreshList(_search.Text); };
             RefreshList("");
-            Shown += delegate { Native.ThemeScrollbars(this); };
+            Shown += delegate
+            {
+                Native.ThemeScrollbars(this);
+                // 底部一行按容器宽度动态排：输入框可收缩、说明独占一行、按钮完整贴右。
+                int pad = Ui.S(24);
+                int by = Content.Height - Ui.S(18) - Ui.S(38);
+                int okW = Math.Max(Ui.S(132),
+                    TextRenderer.MeasureText(ok.Text, ok.Font).Width + Ui.S(28));
+                int cancelW = Math.Max(Ui.S(92),
+                    TextRenderer.MeasureText(cancel.Text, cancel.Font).Width + Ui.S(24));
+                ok.SetBounds(Content.Width - pad - okW, by, okW, Ui.S(38));
+                cancel.SetBounds(ok.Left - Ui.S(10) - cancelW, by, cancelW, Ui.S(38));
+                int fieldW = Math.Max(Ui.S(160), cancel.Left - Ui.S(12) - pad);
+                _manual.SetBounds(pad, by, fieldW, Ui.S(36));
+                manualTitle.SetBounds(pad, by - Ui.S(50), Math.Max(Ui.S(120), Content.Width - pad * 2), Ui.S(20));
+                manualHint.SetBounds(pad, by - Ui.S(26), Math.Max(Ui.S(120), Content.Width - pad * 2), Ui.S(20));
+                _list.Height = Math.Max(Ui.S(80), manualTitle.Top - Ui.S(8) - _list.Top);
+                _list.Width = Math.Max(Ui.S(160), Content.Width - pad * 2);
+                _search.Width = Math.Max(Ui.S(160), Content.Width - pad * 2);
+            };
             Native.SetCue(_manual, string.IsNullOrEmpty(suggestedId) ? Lang.T("例如 z_10me", "e.g. z_10me") : Lang.T("例如 ", "e.g. ") + suggestedId);
         }
 
